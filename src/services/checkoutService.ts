@@ -1,154 +1,125 @@
 import { AppDataSource } from '../data-source';
+import { v4 as uuidv4 } from 'uuid';
 import { User } from '../entity/User';
 import { InfluencerCart } from '../entity/InfluencerCart';
 import { PackageCart } from '../entity/PackageCart';
-import { PackageHeader } from '../entity/PackageHeader';
 import { CheckoutDetails } from '../entity/CheckoutDetails';
 import { UserCheckoutInfluencer } from '../entity/UserCheckoutInfluencer';
 import { UserCheckoutPackages } from '../entity/UserCheckoutPackages';
-import { v4 as uuidv4 } from 'uuid';
 
-const checkoutService = async (body: any) => {
-  try {
-    const userRepository = AppDataSource.getRepository(User);
-    const influencerCartRepository = AppDataSource.getRepository(InfluencerCart);
-    const packageCartRepository = AppDataSource.getRepository(PackageCart);
-    const packageHeaderRepository = AppDataSource.getRepository(PackageHeader);
-    const checkoutDetailsRepository = AppDataSource.getRepository(CheckoutDetails);
-    const userCheckoutInfluencerRepository = AppDataSource.getRepository(UserCheckoutInfluencer);
-    const userCheckoutPackagesRepository = AppDataSource.getRepository(UserCheckoutPackages);
+export const processCheckout = async (body: any) => {
+  const { user_id, projectName, projectURL, firstName, lastName, email, link } = body;
 
-    // Check user existence and status
-    const user = await userRepository.findOne({
-      where: {
-        id: body.user_id,
-        status: 'active',
-      },
-    });
+  const userRepository = AppDataSource.getRepository(User);
+  const influencerCartRepository = AppDataSource.getRepository(InfluencerCart);
+  const packageCartRepository = AppDataSource.getRepository(PackageCart);
+  const checkoutDetailsRepository = AppDataSource.getRepository(CheckoutDetails);
+  const userCheckoutInfluencerRepository = AppDataSource.getRepository(UserCheckoutInfluencer);
+  const userCheckoutPackagesRepository = AppDataSource.getRepository(UserCheckoutPackages);
 
-    if (!user) {
-      throw new Error('User not found or not active');
-    }
+  // Check user existence and status
+  const user = await userRepository.findOne({ where: { id: user_id } });
 
-    // Fetch selected influencers from cart
-    const carts = await influencerCartRepository.find({
-      where: {
-        user: { id: body.user_id },
-      },
-      relations: ['influencerPR'],
-    });
-
-    // Fetch selected packages from packageCart
-    const packageCarts = await packageCartRepository.find({
-      where: {
-        user: { id: body.user_id },
-      },
-      relations: ['packageHeader'],
-    });
-
-    // Handle case when no items are in both carts and packageCarts
-    if (carts.length === 0 && packageCarts.length === 0) {
-      throw new Error('No items added in cart or package cart');
-    }
-
-    // Initialize influencers and totalPrice
-    let influencers = '';
-    let totalPrice = 0;
-
-    if (carts.length > 0) {
-      influencers = carts.map(cart => cart.influencerPR.name).join(', ');
-      totalPrice = carts.reduce((sum, cart) => sum + cart.influencerPR.price, 0);
-    }
-
-    if (packageCarts.length > 0) {
-      const packageHeaders = await Promise.all(
-        packageCarts.map(async packageCart => {
-          const header = await packageHeaderRepository.findOne({
-            where: {
-              id: packageCart.packageHeader.id,
-            },
-          });
-          return header?.header ?? '';
-        })
-      );
-
-      packageHeaders.forEach(header => {
-        if (header) {
-          influencers += influencers ? `, ${header}` : header;
-          // Calculate total price (assuming cost is a string that needs parsing)
-          // totalPrice += parseFloat(header.cost); // Uncomment if 'cost' is a numeric type
-        }
-      });
-    }
-
-    const orderId = uuidv4();
-
-    const checkoutDetails = await checkoutDetailsRepository.save({
-      id: orderId,
-      user: user,  // Set the user relationship here
-      projectName: body.projectName,
-      projectURL: body.projectURL,
-      firstName: body.firstName,
-      lastName: body.lastName || '',
-      email: body.email,
-      influencers: influencers,
-      link: body.link || '',
-      status: 'Open',
-      totalPrice: parseFloat(totalPrice.toFixed(2)),
-      createdDateTime: new Date(),
-    });
-
-    // Save cart details to userCheckoutInfluencer
-    if (carts.length > 0) {
-      await userCheckoutInfluencerRepository.save(
-        carts.map(cart => ({
-          id: uuidv4(),
-          influencers_id: cart.influencerPR.id,
-          user: user,  // Set the user relationship here
-          order: checkoutDetails,  // Set the order relationship here
-          createdDateTime: new Date(),
-        }))
-      );
-    }
-
-    // Save package cart details to userCheckoutPackages
-    if (packageCarts.length > 0) {
-      await userCheckoutPackagesRepository.save(
-        packageCarts.map(packageCart => ({
-          id: uuidv4(),
-          packages_id: packageCart.packageHeader.id,
-          user: user,  // Set the user relationship here
-          order: checkoutDetails,  // Set the order relationship here
-          createdDateTime: new Date(),
-        }))
-      );
-    }
-
-    return {
-      message: 'Data written successfully',
-      data: {
-        projectName: body.projectName,
-        projectURL: body.projectURL,
-        firstName: body.firstName,
-        lastName: body.lastName || '',
-        email: body.email,
-        influencers,
-        totalPrice: totalPrice.toFixed(2),
-        link: body.link || '',
-        carts: carts.map(cart => ({
-          cart_id: cart.id,
-          product_id: cart.influencerPR.id,
-        })),
-        packageCarts: packageCarts.map(packageCart => ({
-          package_cart_id: packageCart.id,
-          package_id: packageCart.packageHeader.id,
-        })),
-      },
-    };
-  } catch (error) {
-    console.error('Error processing request:', error);
-    throw new Error('Failed to process the request');
+  if (!user || user.status !== 'active') {
+    throw new Error('User not found or not active');
   }
-};
 
-export default checkoutService;
+  // Fetch items from carts
+  const carts = await influencerCartRepository.find({ where: { user: { id: user_id } }, relations: ['influencerPR'] });
+  const packageCarts = await packageCartRepository.find({ where: { user: { id: user_id } }, relations: ['packageHeader'] });
+
+  if (carts.length === 0 && packageCarts.length === 0) {
+    throw new Error('No item added in a cart');
+  }
+
+  let influencers = '';
+  let totalPrice = 0;
+
+  if (carts.length > 0) {
+    influencers = carts.map(cart => cart.influencerPR.name).join(', ');
+    totalPrice += carts.reduce((sum, cart) => sum + cart.influencerPR.price, 0);
+  }
+
+  if (packageCarts.length > 0) {
+    packageCarts.forEach(packageCart => {
+      const { header, cost } = packageCart.packageHeader;
+      if (header) {
+        influencers += influencers ? `, ${header}` : header;
+      }
+      if (cost) {
+        totalPrice += parseFloat(cost);
+      }
+    });
+  }
+
+  const orderId = uuidv4();
+
+  // Create checkout details
+  const checkoutDetails = new CheckoutDetails();
+  checkoutDetails.id = orderId;
+  checkoutDetails.user_id = user_id; // Directly setting user_id
+  checkoutDetails.projectName = projectName;
+  checkoutDetails.projectURL = projectURL;
+  checkoutDetails.firstName = firstName;
+  checkoutDetails.lastName = lastName || '';
+  checkoutDetails.email = email;
+  checkoutDetails.influencers = influencers;
+  checkoutDetails.link = link || '';
+  checkoutDetails.status = 'Open';
+  checkoutDetails.totalPrice = parseFloat(totalPrice.toFixed(2));
+  checkoutDetails.createdDateTime = new Date();
+
+  const savedCheckoutDetails = await checkoutDetailsRepository.save(checkoutDetails);
+
+  // Save cart details
+  if (carts.length > 0) {
+    const userCheckoutInfluencers = carts.map(cart => {
+      const userCheckoutInfluencer = new UserCheckoutInfluencer();
+      userCheckoutInfluencer.id = uuidv4();
+      userCheckoutInfluencer.influencers_id = cart.influencerPRId;
+      userCheckoutInfluencer.user_id = user_id; // Directly setting user_id
+      userCheckoutInfluencer.order_id = orderId;
+      userCheckoutInfluencer.checkoutDetails = savedCheckoutDetails; // Setting checkoutDetails relationship
+      userCheckoutInfluencer.createdDateTime = new Date();
+      return userCheckoutInfluencer;
+    });
+    await userCheckoutInfluencerRepository.save(userCheckoutInfluencers);
+  }
+
+  if (packageCarts.length > 0) {
+    const userCheckoutPackages = packageCarts.map(packageCart => {
+      const userCheckoutPackage = new UserCheckoutPackages();
+      userCheckoutPackage.id = uuidv4();
+      userCheckoutPackage.packages_id = packageCart.packageHeader.id;
+      userCheckoutPackage.user_id = user_id; // Directly setting user_id
+      userCheckoutPackage.order_id = orderId;
+      userCheckoutPackage.checkoutDetails = savedCheckoutDetails; // Setting checkoutDetails relationship
+      userCheckoutPackage.createdDateTime = new Date();
+      return userCheckoutPackage;
+    });
+    await userCheckoutPackagesRepository.save(userCheckoutPackages);
+  }
+
+  // Response data
+  return {
+    message: 'Data written successfully',
+    data: {
+      projectName,
+      projectURL,
+      firstName,
+      lastName: lastName || '',
+      email,
+      influencers,
+      totalPrice: totalPrice.toFixed(2),
+      link: link || '',
+      carts: carts.map(cart => ({
+        cart_id: cart.id,
+        product_id: cart.influencerPRId,
+      })),
+      packageCarts: packageCarts.map(packageCart => ({
+        package_cart_id: packageCart.id,
+        package_id: packageCart.packageHeader.id,
+      })),
+    },
+  };
+};

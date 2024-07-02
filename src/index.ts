@@ -16,6 +16,7 @@ import influncereRouter from './routes/influencerRoutes';
 import packageRouter from './routes/packageRoutes';
 import cartRouter from './routes/cartRoutes';
 import checkoutRouter from './routes/checkoutRoutes';
+import invoiceRouter from './routes/invoiceRoutes'
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -41,6 +42,7 @@ app.use('/admin/package', packageRouter);
 app.use('/user/package', packageRouter);
 app.use('/user/cart', cartRouter);
 app.use('/user/checkout', checkoutRouter);
+app.use('/user/invoice', invoiceRouter)
 
 
 app.get('/', (req: Request, res: Response) => {

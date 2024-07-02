@@ -1,8 +1,8 @@
 import express from 'express';
-import { handler } from '../controllers/checkoutController';
+import { checkoutHandler } from '../controllers/checkoutController';
 
 const router = express.Router();
 
-router.post('/create', handler);
+router.post('/create', checkoutHandler);
 
 export default router;

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Invoice Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: 0 auto; }
+        h1 { text-align: center; }
+        .details { margin-bottom: 20px; }
+        .details h2 { margin-bottom: 10px; }
+        .details p { margin: 0; }
+        .section { margin-bottom: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Invoice Details</h1>
+        <div class="details">
+            <h2>Project Details</h2>
+            <p><strong>Project Name:</strong> <%= checkoutDetails.projectName %></p>
+            <p><strong>Project URL:</strong> <%= checkoutDetails.projectURL %></p>
+            <p><strong>First Name:</strong> <%= checkoutDetails.firstName %></p>
+            <p><strong>Last Name:</strong> <%= checkoutDetails.lastName %></p>
+            <p><strong>Email:</strong> <%= checkoutDetails.email %></p>
+            <p><strong>Link:</strong> <%= checkoutDetails.link %></p>
+        </div>
+        <div class="section">
+            <h2>Influencers</h2>
+            <% influencerPRs.forEach(influencer => { %>
+                <div>
+                    <p><strong>Name:</strong> <%= influencer.name %></p>
+                    <p><strong>Category Name:</strong> <%= influencer.category_name %></p>
+                    <p><strong>Subscribers:</strong> <%= influencer.subscribers %></p>
+                    <p><strong>Price:</strong> <%= influencer.price %></p>
+                    <p><strong>Content Type:</strong> <%= influencer.content_type %></p>
+                </div>
+            <% }) %>
+        </div>
+        <div class="section">
+            <h2>Packages</h2>
+            <% packageHeaders.forEach(packageHeader => { %>
+                <div>
+                    <p><strong>Header:</strong> <%= packageHeader.header %></p>
+                    <p><strong>Cost:</strong> <%= packageHeader.cost %></p>
+                    <div>
+                        <h3>Packages:</h3>
+                        <% packageHeader.packages.forEach(pkg => { %>
+                            <p><strong>Media:</strong> <%= pkg.media %></p>
+                            <p><strong>Link:</strong> <%= pkg.link %></p>
+                            <p><strong>Format:</strong> <%= pkg.format %></p>
+                            <p><strong>Monthly Traffic:</strong> <%= pkg.monthlyTraffic %></p>
+                            <p><strong>Turnaround Time:</strong> <%= pkg.turnaroundTime %></p>
+                        <% }) %>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</body>
+</html>
