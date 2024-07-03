@@ -6,6 +6,7 @@ import { PackageCart } from '../entity/PackageCart';
 import { CheckoutDetails } from '../entity/CheckoutDetails';
 import { UserCheckoutInfluencer } from '../entity/UserCheckoutInfluencer';
 import { UserCheckoutPackages } from '../entity/UserCheckoutPackages';
+import logger from '../config/logger'; 
 
 export const processCheckout = async (body: any) => {
   const { user_id, projectName, projectURL, firstName, lastName, email, link } = body;
@@ -17,18 +18,18 @@ export const processCheckout = async (body: any) => {
   const userCheckoutInfluencerRepository = AppDataSource.getRepository(UserCheckoutInfluencer);
   const userCheckoutPackagesRepository = AppDataSource.getRepository(UserCheckoutPackages);
 
-  // Check user existence and status
-  const user = await userRepository.findOne({ where: { id: user_id } });
+  const user = await userRepository.findOne({ where: { id: String(user_id) } });
 
   if (!user || user.status !== 'active') {
+    logger.warn(`User not found or not active: user_id=${user_id}`);
     throw new Error('User not found or not active');
   }
 
-  // Fetch items from carts
-  const carts = await influencerCartRepository.find({ where: { user: { id: user_id } }, relations: ['influencerPR'] });
-  const packageCarts = await packageCartRepository.find({ where: { user: { id: user_id } }, relations: ['packageHeader'] });
+  const carts = await influencerCartRepository.find({ where: { user: { id: String(user_id) } }, relations: ['influencerPR'] });
+  const packageCarts = await packageCartRepository.find({ where: { user: { id: String(user_id) } }, relations: ['packageHeader'] });
 
   if (carts.length === 0 && packageCarts.length === 0) {
+    logger.warn(`No items added in the cart for user: ${user_id}`);
     throw new Error('No item added in a cart');
   }
 
@@ -54,10 +55,9 @@ export const processCheckout = async (body: any) => {
 
   const orderId = uuidv4();
 
-  // Create checkout details
   const checkoutDetails = new CheckoutDetails();
   checkoutDetails.id = orderId;
-  checkoutDetails.user_id = user_id; // Directly setting user_id
+  checkoutDetails.user_id = String(user_id);
   checkoutDetails.projectName = projectName;
   checkoutDetails.projectURL = projectURL;
   checkoutDetails.firstName = firstName;
@@ -70,20 +70,21 @@ export const processCheckout = async (body: any) => {
   checkoutDetails.createdDateTime = new Date();
 
   const savedCheckoutDetails = await checkoutDetailsRepository.save(checkoutDetails);
+  logger.info(`Checkout details saved for order: ${orderId}, user: ${user_id}`);
 
-  // Save cart details
   if (carts.length > 0) {
     const userCheckoutInfluencers = carts.map(cart => {
       const userCheckoutInfluencer = new UserCheckoutInfluencer();
       userCheckoutInfluencer.id = uuidv4();
       userCheckoutInfluencer.influencers_id = cart.influencerPRId;
-      userCheckoutInfluencer.user_id = user_id; // Directly setting user_id
+      userCheckoutInfluencer.user_id = String(user_id); 
       userCheckoutInfluencer.order_id = orderId;
-      userCheckoutInfluencer.checkoutDetails = savedCheckoutDetails; // Setting checkoutDetails relationship
+      userCheckoutInfluencer.checkoutDetails = savedCheckoutDetails; 
       userCheckoutInfluencer.createdDateTime = new Date();
       return userCheckoutInfluencer;
     });
     await userCheckoutInfluencerRepository.save(userCheckoutInfluencers);
+    logger.info(`User checkout influencer details saved for order: ${orderId}`);
   }
 
   if (packageCarts.length > 0) {
@@ -91,16 +92,17 @@ export const processCheckout = async (body: any) => {
       const userCheckoutPackage = new UserCheckoutPackages();
       userCheckoutPackage.id = uuidv4();
       userCheckoutPackage.packages_id = packageCart.packageHeader.id;
-      userCheckoutPackage.user_id = user_id; // Directly setting user_id
+      userCheckoutPackage.user_id = String(user_id); 
       userCheckoutPackage.order_id = orderId;
-      userCheckoutPackage.checkoutDetails = savedCheckoutDetails; // Setting checkoutDetails relationship
+      userCheckoutPackage.checkoutDetails = savedCheckoutDetails; 
       userCheckoutPackage.createdDateTime = new Date();
       return userCheckoutPackage;
     });
     await userCheckoutPackagesRepository.save(userCheckoutPackages);
+    logger.info(`User checkout packages details saved for order: ${orderId}`);
   }
 
-  // Response data
+  logger.info(`Checkout process completed for user: ${user_id}, order: ${orderId}`);
   return {
     message: 'Data written successfully',
     data: {

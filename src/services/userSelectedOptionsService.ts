@@ -4,6 +4,7 @@ import { User } from '../entity/User';
 import { Option } from '../entity/Option';
 import { UserSelectedOptions } from '../entity/UserSelectedOptions';
 import { UserReferencePriority } from '../entity/UserReferencePriority';
+import logger from '../config/logger';
 
 export const processUserSelectedOptions = async (user_id: string, questions: any[]) => {
   const userRepository = AppDataSource.getRepository(User);
@@ -19,6 +20,7 @@ export const processUserSelectedOptions = async (user_id: string, questions: any
     });
 
     if (!userDetails) {
+      logger.warn(`User not found or not active: user_id=${user_id}`);
       throw new Error('User Not Found or Not Active');
     }
 
@@ -42,6 +44,7 @@ export const processUserSelectedOptions = async (user_id: string, questions: any
       const selectedOption = optionMap.get(selected_option_id);
 
       if (!selectedOption || selectedOption.question_id !== question_id) {
+        logger.warn(`Invalid option selected: question_id=${question_id}, selected_option_id=${selected_option_id}`);
         throw new Error('Invalid Option');
       }
 
@@ -84,11 +87,12 @@ export const processUserSelectedOptions = async (user_id: string, questions: any
     const endTime = Date.now();
     const responseTimeInMilliseconds = endTime - startTime;
     const responseTimeInSeconds = responseTimeInMilliseconds / 1000;
-    console.log(`Response time: ${responseTimeInSeconds.toFixed(2)} seconds`);
+    logger.info(`Response time: ${responseTimeInSeconds.toFixed(2)} seconds`);
 
+    logger.info(`User selected options processed and priorities saved successfully for user_id: ${user_id}`);
     return 'Answers processed and priorities saved successfully👍';
   } catch (error: any) {
-    console.error('Error processing answers or saving priorities:', error);
+    logger.error('Error processing answers or saving priorities:', error);
     throw error;
   }
 };

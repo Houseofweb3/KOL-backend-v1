@@ -6,12 +6,12 @@ import { AppDataSource } from '../data-source';
 import { Admin } from '../entity/Admin';
 import { PackageHeader } from '../entity/PackageHeader';
 import { Packages } from '../entity/Packages';
+import logger from '../config/logger'; 
 
 export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Response) => {
   const results: any[] = [];
 
   try {
-    // Fetch admin record
     const adminRepository = AppDataSource.getRepository(Admin);
     const packageHeaderRepository = AppDataSource.getRepository(PackageHeader);
     const packagesRepository = AppDataSource.getRepository(Packages);
@@ -19,11 +19,12 @@ export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Re
     const admin = await adminRepository.findOne({ where: { id: adminId } });
 
     if (!admin || admin.status !== 'active') {
+      logger.warn(`Admin not found or inactive: admin_id=${adminId}`);
       return res.status(403).json({ message: 'Admin not found or inactive.' });
     }
 
     const createdBy = admin.fullname ?? 'system';
-    
+
     fs.createReadStream(filePath)
       .pipe(csv())
       .on('data', (data) => results.push(data))
@@ -47,6 +48,7 @@ export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Re
           } = row;
 
           if (header === 'N/A' || cost === 'N/A') {
+            logger.warn('Header and cost are required fields.');
             return res.status(400).json({ message: 'Header and cost are required fields.' });
           }
 
@@ -61,7 +63,7 @@ export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Re
                 packageHeader.text6 === text6 &&
                 packageHeader.text7 === text7 &&
                 packageHeader.cost === cost) {
-              console.log(`Package header with ID ${packageHeader.id} already exists with matching data.`);
+              logger.info(`Package header with ID ${packageHeader.id} already exists with matching data.`);
             } else {
               packageHeader = packageHeaderRepository.create({
                 id: uuidv4(),
@@ -78,7 +80,7 @@ export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Re
                 updatedBy: createdBy,
               });
               await packageHeaderRepository.save(packageHeader);
-              console.log(`Package header with ID ${packageHeader.id} created successfully.`);
+              logger.info(`Package header with ID ${packageHeader.id} created successfully.`);
             }
           } else {
             packageHeader = packageHeaderRepository.create({
@@ -96,7 +98,7 @@ export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Re
               updatedBy: createdBy,
             });
             await packageHeaderRepository.save(packageHeader);
-            console.log(`Package header with ID ${packageHeader.id} created successfully.`);
+            logger.info(`Package header with ID ${packageHeader.id} created successfully.`);
           }
 
           const newPackage = packagesRepository.create({
@@ -112,29 +114,31 @@ export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Re
           });
           await packagesRepository.save(newPackage);
 
-          console.log(`Package associated with header ${header} created successfully.`);
+          logger.info(`Package associated with header ${header} created successfully.`);
         }
 
+        logger.info('CSV parsing and saving completed successfully.');
         return res.status(200).json({
           message: 'Package headers and associated packages have been created successfully.'
         });
       });
   } catch (error) {
-    const err = error as Error; // Assert the type of error
-    console.error('Failed to read and parse CSV file:', err);
+    const err = error as Error;
+    logger.error('Failed to read and parse CSV file:', err);
     return res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 };
 
 export const getPackageHeadersWithPackages = async () => {
-    const packageHeaderRepository = AppDataSource.getRepository(PackageHeader);
-    
-    try {
-      const packageHeaders = await packageHeaderRepository.find({ relations: ['packages'] });
-      return packageHeaders;
-    } catch (error) {
-      const err = error as Error; // Assert the type of error
-      console.error('Failed to fetch package headers and packages:', err);
-      throw new Error('Internal server error');
-    }
-  };
+  const packageHeaderRepository = AppDataSource.getRepository(PackageHeader);
+
+  try {
+    const packageHeaders = await packageHeaderRepository.find({ relations: ['packages'] });
+    logger.info('Fetched package headers and packages successfully.');
+    return packageHeaders;
+  } catch (error) {
+    const err = error as Error;
+    logger.error('Failed to fetch package headers and packages:', err);
+    throw new Error('Internal server error');
+  }
+};

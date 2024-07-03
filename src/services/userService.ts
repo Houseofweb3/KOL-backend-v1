@@ -1,14 +1,15 @@
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../data-source';
 import { User } from '../entity/User';
+import logger from '../config/logger';
 
 export const createUser = async (id: string, email: string, password?: string, fullname?: string) => {
   const userRepository = AppDataSource.getRepository(User);
 
-  // Check if the user already exists by ID or email
   const existingUser = await userRepository.findOne({ where: [{ id }, { email }] });
 
   if (existingUser) {
+    logger.warn(`User already exists with email: ${email}`);
     throw new Error('User already exists');
   }
 
@@ -23,6 +24,7 @@ export const createUser = async (id: string, email: string, password?: string, f
   });
 
   await userRepository.save(user);
+  logger.info(`User created successfully: ${id}`);
 
   return user;
 };

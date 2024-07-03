@@ -3,6 +3,7 @@ import { AppDataSource } from '../data-source';
 import { Admin } from '../entity/Admin';
 import { Question } from '../entity/Question';
 import { Option } from '../entity/Option';
+import logger from '../config/logger';
 
 interface OptionData {
   text: string;
@@ -30,10 +31,12 @@ export const createQuestion = async ({ admin_id, question, options }: CreateQues
   const admin = await adminRepository.findOne({ where: { id: admin_id } });
 
   if (!admin) {
+    logger.warn(`Admin not found: admin_id=${admin_id}`);
     throw new Error('Admin not found');
   }
 
   if (admin.status !== 'active') {
+    logger.warn(`Admin is not active: admin_id=${admin_id}`);
     throw new Error('Admin is not active');
   }
 
@@ -47,6 +50,7 @@ export const createQuestion = async ({ admin_id, question, options }: CreateQues
   });
 
   if (existingQuestion) {
+    logger.warn(`Question already exists for the admin: admin_id=${admin_id}, question=${question}`);
     throw new Error('Question already exists for the admin');
   }
 
@@ -73,11 +77,13 @@ export const createQuestion = async ({ admin_id, question, options }: CreateQues
 
   await optionRepository.save(newOptions);
 
+  logger.info(`Question created successfully: question_id=${newQuestion.id}, admin_id=${admin_id}`);
   return newQuestion;
 };
 
 export const getQuestionsWithOptions = async () => {
   const questionRepository = AppDataSource.getRepository(Question);
+  logger.info('Fetched questions with options');
   return questionRepository.find({ relations: ['options'] });
 };
 
@@ -89,10 +95,12 @@ export const updateQuestion = async ({ question_id, admin_id, question, options 
   const admin = await adminRepository.findOne({ where: { id: admin_id } });
 
   if (!admin) {
+    logger.warn(`Admin not found: admin_id=${admin_id}`);
     throw new Error('Admin not found');
   }
 
   if (admin.status !== 'active') {
+    logger.warn(`Admin is not active: admin_id=${admin_id}`);
     throw new Error('Admin is not active');
   }
 
@@ -101,10 +109,12 @@ export const updateQuestion = async ({ question_id, admin_id, question, options 
   const existingQuestion = await questionRepository.findOne({ where: { id: question_id } });
 
   if (!existingQuestion) {
+    logger.warn(`Question not found: question_id=${question_id}`);
     throw new Error('Question not found');
   }
 
   if (existingQuestion.admin_id !== admin_id) {
+    logger.warn(`Admin does not have permission to update this question: admin_id=${admin_id}, question_id=${question_id}`);
     throw new Error('Admin does not have permission to update this question');
   }
 
@@ -128,6 +138,7 @@ export const updateQuestion = async ({ question_id, admin_id, question, options 
 
   await optionRepository.save(newOptions);
 
+  logger.info(`Question updated successfully: question_id=${question_id}, admin_id=${admin_id}`);
   return existingQuestion;
 };
 
@@ -139,20 +150,24 @@ export const deleteQuestion = async (question_id: string, admin_id: string) => {
   const admin = await adminRepository.findOne({ where: { id: admin_id } });
 
   if (!admin) {
+    logger.warn(`Admin not found: admin_id=${admin_id}`);
     throw new Error('Admin not found');
   }
 
   if (admin.status !== 'active') {
+    logger.warn(`Admin is not active: admin_id=${admin_id}`);
     throw new Error('Admin is not active');
   }
 
   const question = await questionRepository.findOne({ where: { id: question_id } });
 
   if (!question) {
+    logger.warn(`Question not found: question_id=${question_id}`);
     throw new Error('Question not found');
   }
 
   if (question.admin_id !== admin_id) {
+    logger.warn(`Admin does not have permission to delete this question: admin_id=${admin_id}, question_id=${question_id}`);
     throw new Error('Admin does not have permission to delete this question');
   }
 
@@ -160,5 +175,6 @@ export const deleteQuestion = async (question_id: string, admin_id: string) => {
 
   await questionRepository.delete({ id: question_id });
 
+  logger.info(`Question and its options deleted successfully: question_id=${question_id}, admin_id=${admin_id}`);
   return { message: 'Question and its options deleted successfully' };
 };

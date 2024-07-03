@@ -5,6 +5,7 @@ import { InfluencerCart } from '../entity/InfluencerCart';
 import { PackageHeader } from '../entity/PackageHeader';
 import { PackageCart } from '../entity/PackageCart';
 import { v4 as uuidv4 } from 'uuid';
+import logger from '../config/logger';
 
 export const addProductToCartService = async (userId: string, influencerId: string) => {
   const influencerPRRepository = AppDataSource.getRepository(InfluencerPR);
@@ -17,6 +18,7 @@ export const addProductToCartService = async (userId: string, influencerId: stri
   ]);
 
   if (!product || !user || user.status !== 'active') {
+    logger.warn(`Product not found or user is not active: userId=${userId}, influencerId=${influencerId}`);
     throw new Error('Product not found or user is not active');
   }
 
@@ -25,6 +27,7 @@ export const addProductToCartService = async (userId: string, influencerId: stri
   });
 
   if (cartCount >= 1) {
+    logger.warn(`User has reached the maximum number of times they can add this product to their cart: userId=${userId}, influencerId=${influencerId}`);
     throw new Error('You have reached the maximum number of times you can add this product to your cart');
   }
 
@@ -37,6 +40,7 @@ export const addProductToCartService = async (userId: string, influencerId: stri
   });
 
   await influencerCartRepository.save(cart);
+  logger.info(`Product added to cart: userId=${userId}, influencerId=${influencerId}`);
 
   return 'Product added to cart successfully 👍';
 };
@@ -53,20 +57,24 @@ export const addPackageToCartService = async (userId: string, packageId: string)
   ]);
 
   if (!user || user.status !== 'active') {
+    logger.warn(`User not found or not active: userId=${userId}`);
     throw new Error('User not found or not active');
   }
 
   if (!packageHeaderExists) {
+    logger.warn(`Package not found: packageId=${packageId}`);
     throw new Error('Package not found');
   }
 
   if (existingPackageCart) {
+    logger.warn(`Package is already in the cart: userId=${userId}, packageId=${packageId}`);
     throw new Error('Package is already in the cart 🙃');
   }
 
   const packageHeader = await packageHeaderRepository.findOne({ where: { id: packageId } });
 
   if (!packageHeader) {
+    logger.error(`Package Header not found: packageId=${packageId}`);
     throw new Error('Package Header not found');
   }
 
@@ -79,36 +87,37 @@ export const addPackageToCartService = async (userId: string, packageId: string)
   });
 
   await packageCartRepository.save(packageCart);
+  logger.info(`Package added to cart: userId=${userId}, packageId=${packageId}`);
 
   return 'Package added to cart successfully 👍';
 };
 
 export const getUserCartDetailsService = async (userId: string) => {
-    const userRepository = AppDataSource.getRepository(User);
-    const influencerCartRepository = AppDataSource.getRepository(InfluencerCart);
-    const packageCartRepository = AppDataSource.getRepository(PackageCart);
-  
-    // Verify the user is active
-    const user = await userRepository.findOne({
-      where: { id: userId },
-      select: ['status'],
-    });
-  
-    if (!user || user.status !== 'active') {
-      throw new Error('User not found or not active');
-    }
-  
-    // Fetch influencer cart and package cart details
-    const [influencerCart, packageCart] = await Promise.all([
-      influencerCartRepository.find({
-        where: { user: { id: userId } },
-        relations: ['influencerPR'],
-      }),
-      packageCartRepository.find({
-        where: { user: { id: userId } },
-        relations: ['packageHeader', 'packageHeader.packages'],
-      }),
-    ]);
-  
-    return { influencerCart, packageCart };
-  };
+  const userRepository = AppDataSource.getRepository(User);
+  const influencerCartRepository = AppDataSource.getRepository(InfluencerCart);
+  const packageCartRepository = AppDataSource.getRepository(PackageCart);
+
+  const user = await userRepository.findOne({
+    where: { id: userId },
+    select: ['status'],
+  });
+
+  if (!user || user.status !== 'active') {
+    logger.warn(`User not found or not active: userId=${userId}`);
+    throw new Error('User not found or not active');
+  }
+
+  const [influencerCart, packageCart] = await Promise.all([
+    influencerCartRepository.find({
+      where: { user: { id: userId } },
+      relations: ['influencerPR'],
+    }),
+    packageCartRepository.find({
+      where: { user: { id: userId } },
+      relations: ['packageHeader', 'packageHeader.packages'],
+    }),
+  ]);
+
+  logger.info(`Fetched cart details for user: userId=${userId}`);
+  return { influencerCart, packageCart };
+};

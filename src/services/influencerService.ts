@@ -7,7 +7,8 @@ import { InfluencerPR } from '../entity/InfluencerPR';
 import { User } from '../entity/User';
 import { UserSelectedNiche } from '../entity/UserSelectedNiche';
 import { UserReferencePriority } from '../entity/UserReferencePriority';
-import { In } from 'typeorm'; 
+import { In } from 'typeorm';
+import logger from '../config/logger';
 
 interface CSVRow {
   Influencer: string;
@@ -140,8 +141,10 @@ export const uploadCSV = async (filePath: string, adminId: string) => {
       insertedRows++;
     }
 
+    logger.info(`CSV processed successfully by admin: ${adminId}. Inserted: ${insertedRows}, Skipped: ${skippedRows}`);
     return { message: "CSV processed successfully", insertedRows, skippedRows, skippedReasons };
   } catch (error: any) {
+    logger.error('Error saving data from CSV:', error);
     return { status: 500, message: "Error saving data", error: error.message };
   } finally {
     fs.unlinkSync(filePath);
@@ -153,60 +156,62 @@ function capitalizeWords(str: string): string {
 }
 
 export const getInfluencersWithHiddenPrices = async (user_id?: string) => {
-    const userRepository = AppDataSource.getRepository(User);
-    const userSelectedNicheRepository = AppDataSource.getRepository(UserSelectedNiche);
-    const userReferencePriorityRepository = AppDataSource.getRepository(UserReferencePriority);
-    const influencerPRRepository = AppDataSource.getRepository(InfluencerPR);
-  
-    let userSelectedNiche;
-    let referenceNames: string[] = [];
-  
-    if (user_id) {
-      const user = await userRepository.findOne({
-        where: { id: user_id }
+  const userRepository = AppDataSource.getRepository(User);
+  const userSelectedNicheRepository = AppDataSource.getRepository(UserSelectedNiche);
+  const userReferencePriorityRepository = AppDataSource.getRepository(UserReferencePriority);
+  const influencerPRRepository = AppDataSource.getRepository(InfluencerPR);
+
+  let userSelectedNiche;
+  let referenceNames: string[] = [];
+
+  if (user_id) {
+    const user = await userRepository.findOne({
+      where: { id: String(user_id) }
+    });
+
+    if (user) {
+      if (user.status !== 'active') {
+        logger.warn(`User is not active: user_id=${user_id}`);
+        throw new Error('User is not active');
+      }
+
+      userSelectedNiche = await userSelectedNicheRepository.findOne({
+        where: { user_id: String(user_id) }
       });
-  
-      if (user) {
-        if (user.status !== 'active') {
-          throw new Error('User is not active');
-        }
-  
-        userSelectedNiche = await userSelectedNicheRepository.findOne({
-          where: { user_id: user_id }
+
+      if (userSelectedNiche) {
+        const userReferencePriority = await userReferencePriorityRepository.find({
+          where: { user_id: String(user_id) }
         });
-  
-        if (userSelectedNiche) {
-          const userReferencePriority = await userReferencePriorityRepository.find({
-            where: { user_id: user_id }
-          });
-  
-          referenceNames = userReferencePriority.map(reference => reference.reference_name);
-        }
+
+        referenceNames = userReferencePriority.map(reference => reference.reference_name);
       }
     }
-  
-    const influencers = await influencerPRRepository.find({
-      where: {
-        ...(userSelectedNiche && { niche: In(userSelectedNiche.niche_name) }),
-        ...(referenceNames.length > 0 && { investor_type: In(referenceNames) })
-      },
-      order: {
-        price: 'asc'
-      }
-    });
-  
-    const influencersWithHiddenPrices = influencers.map(influencer => ({
-      ...influencer,
-      hiddenPrice: getHiddenPrice(influencer.price)
-    }));
-  
-    return influencersWithHiddenPrices;
-  };
-  
-  const getHiddenPrice = (price: number): string => {
-    if (price <= 1000) return '$';
-    if (price > 1000 && price <= 2000) return '$$';
-    if (price > 2000 && price <= 3000) return '$$$';
-    if (price > 3000) return '$$$$';
-    return '';
-  };
+  }
+
+  const influencers = await influencerPRRepository.find({
+    where: {
+      ...(userSelectedNiche && { niche: In(userSelectedNiche.niche_name) }),
+      ...(referenceNames.length > 0 && { investor_type: In(referenceNames) })
+    },
+    order: {
+      price: 'asc'
+    }
+  });
+
+  const influencersWithHiddenPrices = influencers.map(influencer => ({
+    ...influencer,
+    hiddenPrice: getHiddenPrice(influencer.price)
+  }));
+
+  logger.info(`Fetched influencers with hidden prices for user: ${user_id}`);
+  return influencersWithHiddenPrices;
+};
+
+const getHiddenPrice = (price: number): string => {
+  if (price <= 1000) return '$';
+  if (price > 1000 && price <= 2000) return '$$';
+  if (price > 2000 && price <= 3000) return '$$$';
+  if (price > 3000) return '$$$$';
+  return '';
+};
