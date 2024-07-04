@@ -4,8 +4,8 @@ import { body } from 'express-validator';
 
 import { AuthController } from '../controllers';
 
-
 const router = Router();
+
 const authController = new AuthController();
 
 /**
