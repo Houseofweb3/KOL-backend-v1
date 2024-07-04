@@ -28,12 +28,6 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Hello World!');
 });
 
-
-
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello World!');
-});
-
 // Initialize TypeORM data source
 AppDataSource.initialize().then(() => {
     logger.info('Database connected successfully');
