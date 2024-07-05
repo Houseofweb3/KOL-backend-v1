@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 
 import { AuthController } from '../controllers';
+import { ExtendedRequest, ExtendedResponse } from '../types';
 
 const router = Router();
 
@@ -33,7 +34,7 @@ router.post(
     body('email').isEmail().withMessage('Please include a valid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
   ],
-  authController.register
+  (req: ExtendedRequest, res: ExtendedResponse) => authController.register(req, res)
 );
 
 /**

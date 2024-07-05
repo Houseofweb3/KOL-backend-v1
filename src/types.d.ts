@@ -1,10 +1,9 @@
-// src/types.d.ts
-import { Request } from 'express';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: number;
-    }
+// src/types.ts
+export interface ExtendedRequest extends Request {
+    user?: any;  // Adjust the type of "user" based on your data
   }
+  
+export interface ExtendedResponse extends Response {
+    user?: any;  // Adjust the type of "user" based on your data
 }
+  

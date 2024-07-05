@@ -1,16 +1,16 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Request, Response } from 'express';
 import { StatusCodes, ReasonPhrases } from 'http-status-codes';
 
 import { User } from '../entity';
 import { ENV } from '../config/env';
 import { AppDataSource } from '../config/data-source';
+import { ExtendedRequest, ExtendedResponse } from '../types';
 
 export class AuthController {
   private userRepository = AppDataSource.getRepository(User);
 
-  public register = async (req: Request, res: Response): Promise<Response> => {
+  public register = async (req: ExtendedRequest, res: ExtendedResponse): Promise<ExtendedResponse> => {
     const { name, email, password } = req.body;
 
     try {
@@ -32,7 +32,7 @@ export class AuthController {
     }
   };
 
-  public login = async (req: Request, res: Response): Promise<Response> => {
+  public login = async (req: ExtendedRequest, res: ExtendedResponse): Promise<ExtendedResponse> => {
     const { email, password } = req.body;
 
     try {
@@ -54,7 +54,7 @@ export class AuthController {
     }
   };
   
-  public getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
+  public getCurrentUser = async (req: ExtendedRequest, res: ExtendedResponse): Promise<ExtendedResponse> => {
     try {
       const user = await this.userRepository.findOneBy({ id: req.user });
       if (!user) {
