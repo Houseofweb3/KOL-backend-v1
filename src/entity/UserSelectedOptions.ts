@@ -1,7 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+    Entity,
+    Column,
+    PrimaryGeneratedColumn
+} from "typeorm";
+
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class UserSelectedOptions {
+export class UserSelectedOptions extends TimestampedEntity{
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -14,10 +20,4 @@ export class UserSelectedOptions {
 
     @Column()
     selected_option_id!: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
 }

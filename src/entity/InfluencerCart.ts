@@ -1,9 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { User } from "./User";
+import "reflect-metadata";
+import { 
+    Entity,
+    Column,
+    ManyToOne,
+    PrimaryGeneratedColumn 
+} from "typeorm";
+
+import { User } from "./index";
 import { InfluencerPR } from "./InfluencerPR";
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class InfluencerCart {
+export class InfluencerCart extends TimestampedEntity {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -13,15 +21,6 @@ export class InfluencerCart {
 
     @Column()
     userId!: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
-
-    @ManyToOne(() => User, user => user.influencerCarts)
-    user!: User;
 
     @ManyToOne(() => InfluencerPR, influencerPR => influencerPR.influencerCarts)
     influencerPR!: InfluencerPR;

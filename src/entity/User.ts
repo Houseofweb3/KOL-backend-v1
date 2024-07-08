@@ -1,45 +1,47 @@
-import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { InfluencerCart } from './InfluencerCart';
-import { PackageCart } from './PackageCart';
-import { CheckoutDetails } from './CheckoutDetails';
-import { UserCheckoutInfluencer } from './UserCheckoutInfluencer';
-import { UserCheckoutPackages } from './UserCheckoutPackages';
+import "reflect-metadata";
+import bcrypt from 'bcryptjs';
+import { 
+    Index,
+    Entity,
+    Column,
+    BeforeInsert,
+    BeforeUpdate,
+    PrimaryGeneratedColumn
+} from 'typeorm';
+
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
+
+enum UserType {
+    Company = 'COMPANY',
+    Admin = 'ADMIN',
+}
 
 @Entity()
-export class User {
-  @PrimaryColumn()
-  id!: string;
+export class User extends TimestampedEntity {
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
 
-  @Column({ unique: true })
-  email!: string;
+    @Index()
+    @Column({ unique: true })
+    email!: string;
 
-  @Column({ nullable: true })
-  password?: string;
+    @Column({ select: false })
+    password?: string;
 
-  @Column({ nullable: true })
-  fullname?: string;
+    @Column({ nullable: true })
+    firstname?: string;
 
-  @Column({ default: 'active' })
-  status!: string;
+    @Column({ nullable: true })
+    lastname?: string;
 
-  @CreateDateColumn()
-  createdAt!: Date;
+    @Column({ type: 'enum', enum: UserType, default: UserType.Company })
+    userType!: UserType;
 
-  @UpdateDateColumn()
-  updatedAt!: Date;
-
-  @OneToMany(() => InfluencerCart, influencerCart => influencerCart.user)
-  influencerCarts!: InfluencerCart[];
-
-  @OneToMany(() => PackageCart, packageCart => packageCart.user)
-  packageCarts!: PackageCart[];
-
-  @OneToMany(() => CheckoutDetails, checkoutDetails => checkoutDetails.user)
-  checkoutDetails!: CheckoutDetails[];
-
-  @OneToMany(() => UserCheckoutInfluencer, userCheckoutInfluencer => userCheckoutInfluencer.user)
-  userCheckoutInfluencers!: UserCheckoutInfluencer[];
-
-  @OneToMany(() => UserCheckoutPackages, userCheckoutPackages => userCheckoutPackages.user)
-  userCheckoutPackages!: UserCheckoutPackages[];
+    @BeforeInsert()
+    @BeforeUpdate()
+    async hashPassword(): Promise<void> {
+        if (this.password) {
+          this.password = await bcrypt.hash(this.password, 10);
+        }
+    }
 }

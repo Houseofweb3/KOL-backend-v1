@@ -1,7 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class UserReferencePriority {
+export class UserReferencePriority extends TimestampedEntity{
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -14,10 +16,4 @@ export class UserReferencePriority {
 
     @Column("int")
     reference_count!: number;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
 }

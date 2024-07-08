@@ -1,9 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from "typeorm";
-import { User } from "./User";
+import {
+    Entity,
+    Column,
+    ManyToOne,
+    CreateDateColumn,
+    PrimaryGeneratedColumn
+} from "typeorm";
+
 import { CheckoutDetails } from "./CheckoutDetails";
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class UserCheckoutPackages {
+export class UserCheckoutPackages extends TimestampedEntity{
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -19,9 +26,6 @@ export class UserCheckoutPackages {
 
     @CreateDateColumn()
     createdDateTime!: Date;
-
-    @ManyToOne(() => User, user => user.userCheckoutPackages)
-    user!: User;
 
     @ManyToOne(() => CheckoutDetails, checkoutDetails => checkoutDetails.userCheckoutPackages)
     checkoutDetails!: CheckoutDetails;

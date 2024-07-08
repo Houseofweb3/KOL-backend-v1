@@ -1,8 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import "reflect-metadata";
+import {
+    Entity,
+    Column,
+    ManyToOne,
+    PrimaryGeneratedColumn 
+} from "typeorm";
+
 import { Question } from "./Question";
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class Option {
+export class Option extends TimestampedEntity {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -24,12 +32,6 @@ export class Option {
 
     @Column({ nullable: true })
     updatedBy?: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
 
     @ManyToOne(() => Question, question => question.options)
     question!: Question;

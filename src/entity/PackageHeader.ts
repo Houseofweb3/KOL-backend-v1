@@ -1,9 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+    Entity,
+    Column,
+    OneToMany,
+    PrimaryGeneratedColumn
+} from "typeorm";
+
 import { Packages } from "./Packages";
 import { PackageCart } from "./PackageCart";
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class PackageHeader {
+export class PackageHeader extends TimestampedEntity {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -34,18 +41,6 @@ export class PackageHeader {
 
     @Column({ nullable: true })
     text7?: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
-
-    @Column({ nullable: true })
-    createdBy?: string;
-
-    @Column({ nullable: true })
-    updatedBy?: string;
 
     @OneToMany(() => Packages, packages => packages.packageHeader)
     packages!: Packages[];

@@ -1,34 +1,22 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { Admin } from "./Admin";
+import {
+    Entity,
+    Column,
+    OneToMany,
+    PrimaryGeneratedColumn
+} from "typeorm";
+
 import { Option } from "./Option";
+import { TimestampedEntity } from '../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class Question {
+export class Question extends TimestampedEntity {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column()
-    admin_id!: string;
-
-    @Column()
-    text!: string;
-
-    @Column({ nullable: true })
-    createdBy?: string;
-
-    @Column({ nullable: true })
-    updatedBy?: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
+    question!: string;
 
     @OneToMany(() => Option, option => option.question)
     options!: Option[];
-
-    @ManyToOne(() => Admin, admin => admin.questions)
-    admin!: Admin;
 }
