@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, JoinColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
-import { Package } from './Package';
+import { Package } from './Package.entity';
 
 @Entity()
 export class PackageItem {

@@ -1,19 +1,22 @@
 import { DataSource } from "typeorm";
 import { ENV } from "./env";
-import { Admin } from "../entity/auth/Admin";
-import { Question } from "../entity/questionaries/Question";
-import { Option } from "../entity/questionaries/Option";
-import { User } from "../entity/auth/User";
-import { InfluencerPR } from "../entity/influencer/InfluencerPR";
-import { UserSelectedNiche } from "../entity/user/UserSelectedNiche";
-import { UserSelectedOptions } from "../entity/user/UserSelectedOptions";
-import { UserReferencePriority } from "../entity/user/UserReferencePriority";
-import { Package } from "../entity/package/Package";
-import { InfluencerCart } from "../entity/influencer/InfluencerCart";
-import { PackageCart } from "../entity/package/PackageCart";
-import { CheckoutDetails } from "../entity/checkout/CheckoutDetails";
-import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer";
-import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages";
+import { Admin } from "../entity/auth/Admin.entity";
+import { Question } from "../entity/questionaries/Question.entity";
+import { Option } from "../entity/questionaries/Option.entity";
+import { User } from "../entity/auth/User.entity";
+import { InfluencerPR } from "../entity/influencer/InfluencerPR.entity";
+import { UserSelectedNiche } from "../entity/selectedInfluncer/UserSelectedNiche.entity";
+import { UserSelections } from "../entity/selectedInfluncer/UserSelections.entity";
+import { UserReferencePriority } from "../entity/selectedInfluncer/UserReferencePriority.entity";
+import { Package } from "../entity/package/Package.entity";
+import { PackageItem } from "../entity/package/PackageItem.entity";
+import { InfluencerCart } from "../entity/cart/InfluencerCart.entity";
+import { InfluencerCartItem } from "../entity/cart/InfluencerCartItem.entity";
+import { PackageCart } from "../entity/cart/PackageCart.entity";
+import { PackageCartItem } from "../entity/cart/PackageCartItem.entity";
+import { CheckoutDetails } from "../entity/checkout/CheckoutDetails.entity";
+import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer.entity";
+import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages.entity";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -31,11 +34,14 @@ export const AppDataSource = new DataSource({
     User,
     InfluencerPR,
     UserSelectedNiche,
-    UserSelectedOptions,
+    UserSelections,
     UserReferencePriority,
     Package,
+    PackageItem,
     InfluencerCart,
+    InfluencerCartItem,
     PackageCart,
+    PackageCartItem,
     CheckoutDetails,
     UserCheckoutInfluencer,
     UserCheckoutPackages,

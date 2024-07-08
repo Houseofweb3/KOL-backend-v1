@@ -1,30 +1,30 @@
-import bcrypt from 'bcryptjs';
-import { AppDataSource } from '../config/data-source';
-import { Admin } from '../entity/auth/Admin';
-import logger from '../config/logger';
+// import bcrypt from 'bcryptjs';
+// import { AppDataSource } from '../config/data-source';
+// import { Admin } from '../entity/auth/Admin.entity';
+// import logger from '../config/logger';
 
-export const createAdmin = async (id: string, email: string, password?: string, fullname?: string) => {
-  const adminRepository = AppDataSource.getRepository(Admin);
+// export const createAdmin = async (id: string, email: string, password?: string, fullname?: string) => {
+//   const adminRepository = AppDataSource.getRepository(Admin);
 
-  const existingAdmin = await adminRepository.findOne({ where: [{ id }, { email }] });
+//   const existingAdmin = await adminRepository.findOne({ where: [{ id }, { email }] });
 
-  if (existingAdmin) {
-    logger.warn(`Admin already exists with email: ${email}`);
-    throw new Error('Admin already exists');
-  }
+//   if (existingAdmin) {
+//     logger.warn(`Admin already exists with email: ${email}`);
+//     throw new Error('Admin already exists');
+//   }
 
-  const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+//   const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-  const admin = adminRepository.create({
-    id,
-    email,
-    password: hashedPassword,
-    fullname,
-    status: 'active',
-  });
+//   const admin = adminRepository.create({
+//     id,
+//     email,
+//     password: hashedPassword,
+//     fullname,
+//     status: 'active',
+//   });
 
-  await adminRepository.save(admin);
-  logger.info(`New admin created: ${id}`);
+//   await adminRepository.save(admin);
+//   logger.info(`New admin created: ${id}`);
 
-  return admin;
-};
+//   return admin;
+// };

@@ -1,9 +1,9 @@
-import { Router } from 'express';
-import { getInvoiceDetails } from '../controllers/invoiceController';
+// import { Router } from 'express';
+// import { getInvoiceDetails } from '../controllers/invoiceController';
 
-const router = Router();
+// const router = Router();
 
-// Define the route for fetching invoice details
-router.get('/fetch', getInvoiceDetails);
+// // Define the route for fetching invoice details
+// router.get('/fetch', getInvoiceDetails);
 
-export default router;
+// export default router;

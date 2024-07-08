@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn , CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Admin } from '../auth/Admin';
-import { PackageItem } from './PackageItem';
+import { Admin } from '../auth/Admin.entity';
+import { PackageItem } from './PackageItem.entity';
 
 @Entity()
 export class Package {

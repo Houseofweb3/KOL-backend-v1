@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, OneToMany,UpdateDateColumn } from 'typeorm';
-import { User } from '../auth/User';
-import { PackageCartItem } from './PackageCartItem';
+import { Entity, PrimaryGeneratedColumn, JoinColumn, ManyToOne, CreateDateColumn, OneToMany,UpdateDateColumn } from 'typeorm';
+import { User } from '../auth/User.entity';
+import { PackageCartItem } from './PackageCartItem.entity';
 
 @Entity()
 export class PackageCart {
@@ -8,7 +8,8 @@ export class PackageCart {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @ManyToOne(() => User, user => user.packageCart)
+  @ManyToOne(() => User, user => user.packageCarts)
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @OneToMany(() => PackageCartItem, (item) => item.packageCart, { cascade: true, onDelete: 'CASCADE' })

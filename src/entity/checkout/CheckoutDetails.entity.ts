@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from "typeorm";
-import { User } from "../auth/User";
-import { UserCheckoutInfluencer } from "./UserCheckoutInfluencer";
-import { UserCheckoutPackages } from "./UserCheckoutPackages";
+import { User } from "../auth/User.entity";
+import { UserCheckoutInfluencer } from "./UserCheckoutInfluencer.entity";
+import { UserCheckoutPackages } from "./UserCheckoutPackages.entity";
 
 @Entity()
 export class CheckoutDetails {

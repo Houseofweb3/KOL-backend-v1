@@ -1,6 +1,7 @@
 import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Question } from '../questionaries/Question';
-import { Package } from '../package/Package';
+import { Question } from '../questionaries/Question.entity';
+import { Package } from '../package/Package.entity';
+import {InfluencerPR} from '../influencer/InfluencerPR.entity'
 
 @Entity()
 export class Admin {
@@ -30,4 +31,7 @@ export class Admin {
 
   @OneToMany(() => Package, pkg => pkg.admin)
   package!: Package[];
+
+  @OneToMany(() => InfluencerPR, influencerPR => influencerPR.admin)
+  influencerPRs!: InfluencerPR[];
 }

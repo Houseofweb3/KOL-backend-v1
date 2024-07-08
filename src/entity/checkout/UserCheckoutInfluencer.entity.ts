@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from "typeorm";
-import { User } from "../auth/User";
-import { CheckoutDetails } from "./CheckoutDetails";
+import { User } from "../auth/User.entity";
+import { CheckoutDetails } from "./CheckoutDetails.entity";
 
 @Entity()
 export class UserCheckoutInfluencer {

@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Question } from './Question';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
+import { Question } from './Question.entity';
 
 @Entity()
 export class Option {
@@ -8,6 +8,7 @@ export class Option {
   id!: string;
 
   @ManyToOne(() => Question, question => question.options)
+  @JoinColumn({ name: 'question_id' })
   question!: Question;
 
   @Column()

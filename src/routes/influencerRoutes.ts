@@ -1,12 +1,12 @@
-import express from 'express';
-import multer from 'multer';
-import { uploadCSVHandler, getInfluencersWithHiddenPricesHandler } from '../controllers/influencerController';
+// import express from 'express';
+// import multer from 'multer';
+// import { uploadCSVHandler, getInfluencersWithHiddenPricesHandler } from '../controllers/influencerController';
 
-const upload = multer({ dest: 'uploads/' });
+// const upload = multer({ dest: 'uploads/' });
 
-const router = express.Router();
+// const router = express.Router();
 
-router.post('/upload', upload.single('file'), uploadCSVHandler);
-router.get('/fetch', getInfluencersWithHiddenPricesHandler)
+// router.post('/upload', upload.single('file'), uploadCSVHandler);
+// router.get('/fetch', getInfluencersWithHiddenPricesHandler)
 
-export default router;
+// export default router;
