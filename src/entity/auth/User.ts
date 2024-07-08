@@ -1,9 +1,9 @@
-import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { InfluencerCart } from './InfluencerCart';
-import { PackageCart } from './PackageCart';
-import { CheckoutDetails } from './CheckoutDetails';
-import { UserCheckoutInfluencer } from './UserCheckoutInfluencer';
-import { UserCheckoutPackages } from './UserCheckoutPackages';
+import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { InfluencerCart } from '../influencer/InfluencerCart';
+import { PackageCart } from '../package/PackageCart';
+import { CheckoutDetails } from '../checkout/CheckoutDetails';
+import { UserCheckoutInfluencer } from '../checkout/UserCheckoutInfluencer';
+import { UserCheckoutPackages } from '../checkout/UserCheckoutPackages';
 
 @Entity()
 export class User {
@@ -13,7 +13,7 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   password?: string;
 
   @Column({ nullable: true })
@@ -32,7 +32,7 @@ export class User {
   influencerCarts!: InfluencerCart[];
 
   @OneToMany(() => PackageCart, packageCart => packageCart.user)
-  packageCarts!: PackageCart[];
+  packageCart!: PackageCart[];  // Ensure the relation name matches in the PackageCart entity
 
   @OneToMany(() => CheckoutDetails, checkoutDetails => checkoutDetails.user)
   checkoutDetails!: CheckoutDetails[];

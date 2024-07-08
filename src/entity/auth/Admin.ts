@@ -1,5 +1,6 @@
 import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Question } from './Question';
+import { Question } from '../questionaries/Question';
+import { Package } from '../package/Package';
 
 @Entity()
 export class Admin {
@@ -26,4 +27,7 @@ export class Admin {
 
   @OneToMany(() => Question, question => question.admin)
   questions!: Question[];
+
+  @OneToMany(() => Package, pkg => pkg.admin)
+  package!: Package[];
 }

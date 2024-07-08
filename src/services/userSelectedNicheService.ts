@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AppDataSource } from '../config/data-source';
-import { User } from '../entity/User';
-import { UserSelectedNiche } from '../entity/UserSelectedNiche';
+import { User } from '../entity/auth/User';
+import { UserSelectedNiche } from '../entity/user/UserSelectedNiche';
 import logger from '../config/logger';
 
 export const updateUserSelectedNiche = async (user_id: string, niche_name: string[]) => {

@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../config/data-source';
-import { User } from '../entity/User';
-import { UserSelectedNiche } from '../entity/UserSelectedNiche';
-import { UserReferencePriority } from '../entity/UserReferencePriority';
-import { UserSelectedOptions } from '../entity/UserSelectedOptions';
+import { User } from '../entity/auth/User';
+import { UserSelectedNiche } from '../entity/user/UserSelectedNiche';
+import { UserReferencePriority } from '../entity/user/UserReferencePriority';
+import { UserSelectedOptions } from '../entity/user/UserSelectedOptions';
 import logger from '../config/logger';
 
 export const createUser = async (id: string, email: string, password?: string, fullname?: string) => {

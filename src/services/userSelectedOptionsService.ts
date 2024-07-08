@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AppDataSource } from '../config/data-source';
-import { User } from '../entity/User';
-import { Option } from '../entity/Option';
-import { UserSelectedOptions } from '../entity/UserSelectedOptions';
-import { UserReferencePriority } from '../entity/UserReferencePriority';
+import { User } from '../entity/auth/User';
+import { Option } from '../entity/questionaries/Option';
+import { UserSelectedOptions } from '../entity/user/UserSelectedOptions';
+import { UserReferencePriority } from '../entity/user/UserReferencePriority';
 import logger from '../config/logger';
 
 export const processUserSelectedOptions = async (user_id: string, questions: any[]) => {

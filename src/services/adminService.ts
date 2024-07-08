@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../config/data-source';
-import { Admin } from '../entity/Admin';
+import { Admin } from '../entity/auth/Admin';
 import logger from '../config/logger';
 
 export const createAdmin = async (id: string, email: string, password?: string, fullname?: string) => {

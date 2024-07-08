@@ -3,9 +3,9 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import { Response } from 'express';
 import { AppDataSource } from '../config/data-source';
-import { Admin } from '../entity/Admin';
+import { Admin } from '../entity/auth/Admin';
 import { PackageHeader } from '../entity/PackageHeader';
-import { Packages } from '../entity/Packages';
+import { Packages } from '../entity/package/Packages';
 import logger from '../config/logger'; 
 
 export const parseAndSaveCSV = async (filePath: string, adminId: string, res: Response) => {

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from "typeorm";
-import { User } from "./User";
+import { User } from "../auth/User";
 import { CheckoutDetails } from "./CheckoutDetails";
 
 @Entity()

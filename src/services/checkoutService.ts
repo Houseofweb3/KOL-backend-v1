@@ -1,11 +1,11 @@
 import { AppDataSource } from '../config/data-source';
 import { v4 as uuidv4 } from 'uuid';
-import { User } from '../entity/User';
-import { InfluencerCart } from '../entity/InfluencerCart';
-import { PackageCart } from '../entity/PackageCart';
+import { User } from '../entity/auth/User';
+import { InfluencerCart } from '../entity/influencer/InfluencerCart';
+import { PackageCart } from '../entity/package/PackageCart';
 import { CheckoutDetails } from '../entity/CheckoutDetails';
-import { UserCheckoutInfluencer } from '../entity/UserCheckoutInfluencer';
-import { UserCheckoutPackages } from '../entity/UserCheckoutPackages';
+import { UserCheckoutInfluencer } from '../entity/checkout/UserCheckoutInfluencer';
+import { UserCheckoutPackages } from '../entity/checkout/UserCheckoutPackages';
 import logger from '../config/logger'; 
 
 export const processCheckout = async (body: any) => {

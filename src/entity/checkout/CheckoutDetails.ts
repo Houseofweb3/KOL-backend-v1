@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from "typeorm";
-import { User } from "./User";
+import { User } from "../auth/User";
 import { UserCheckoutInfluencer } from "./UserCheckoutInfluencer";
 import { UserCheckoutPackages } from "./UserCheckoutPackages";
 

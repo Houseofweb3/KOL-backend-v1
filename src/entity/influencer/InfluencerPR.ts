@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { InfluencerCart } from "./InfluencerCart";
 
 @Entity()
 export class InfluencerPR {
@@ -72,7 +71,4 @@ export class InfluencerPR {
 
     @UpdateDateColumn()
     updatedAt!: Date;
-
-    @OneToMany(() => InfluencerCart, influencerCart => influencerCart.influencerPR)
-    influencerCarts!: InfluencerCart[];
 }

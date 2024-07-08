@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AppDataSource } from '../config/data-source';
-import { Admin } from '../entity/Admin';
-import { Question } from '../entity/Question';
-import { Option } from '../entity/Option';
+import { Admin } from '../entity/auth/Admin';
+import { Question } from '../entity/questionaries/Question';
+import { Option } from '../entity/questionaries/Option';
 import logger from '../config/logger';
 
 interface OptionData {

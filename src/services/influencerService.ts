@@ -2,11 +2,11 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import csv from 'csv-parser';
 import { AppDataSource } from '../config/data-source';
-import { Admin } from '../entity/Admin';
+import { Admin } from '../entity/auth/Admin';
 import { InfluencerPR } from '../entity/InfluencerPR';
-import { User } from '../entity/User';
-import { UserSelectedNiche } from '../entity/UserSelectedNiche';
-import { UserReferencePriority } from '../entity/UserReferencePriority';
+import { User } from '../entity/auth/User';
+import { UserSelectedNiche } from '../entity/user/UserSelectedNiche';
+import { UserReferencePriority } from '../entity/user/UserReferencePriority';
 import { In } from 'typeorm';
 import logger from '../config/logger';
 

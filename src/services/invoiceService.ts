@@ -1,11 +1,11 @@
 import { AppDataSource } from '../config/data-source';
 import { CheckoutDetails } from '../entity/CheckoutDetails';
-import { UserCheckoutInfluencer } from '../entity/UserCheckoutInfluencer';
-import { UserCheckoutPackages } from '../entity/UserCheckoutPackages';
+import { UserCheckoutInfluencer } from '../entity/checkout/UserCheckoutInfluencer';
+import { UserCheckoutPackages } from '../entity/checkout/UserCheckoutPackages';
 import { InfluencerPR } from '../entity/InfluencerPR';
 import { PackageHeader } from '../entity/PackageHeader';
-import { Packages } from '../entity/Packages';
-import { User } from '../entity/User'; 
+import { Packages } from '../entity/package/Packages';
+import { User } from '../entity/auth/User'; 
 import ejs from 'ejs';
 import { writeFileSync } from 'fs';
 import { join } from 'path';

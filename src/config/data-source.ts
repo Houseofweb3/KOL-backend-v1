@@ -1,20 +1,19 @@
 import { DataSource } from "typeorm";
 import { ENV } from "./env";
-import { Admin } from "../entity/Admin";
-import { Question } from "../entity/Question";
-import { Option } from "../entity/Option";
-import { User } from "../entity/User";
-import { InfluencerPR } from "../entity/InfluencerPR";
-import { UserSelectedNiche } from "../entity/UserSelectedNiche";
-import { UserSelectedOptions } from "../entity/UserSelectedOptions";
-import { UserReferencePriority } from "../entity/UserReferencePriority";
-import { PackageHeader } from "../entity/PackageHeader";
-import { Packages } from "../entity/Packages";
-import { InfluencerCart } from "../entity/InfluencerCart";
-import { PackageCart } from "../entity/PackageCart";
-import { CheckoutDetails } from "../entity/CheckoutDetails";
-import { UserCheckoutInfluencer } from "../entity/UserCheckoutInfluencer";
-import { UserCheckoutPackages } from "../entity/UserCheckoutPackages";
+import { Admin } from "../entity/auth/Admin";
+import { Question } from "../entity/questionaries/Question";
+import { Option } from "../entity/questionaries/Option";
+import { User } from "../entity/auth/User";
+import { InfluencerPR } from "../entity/influencer/InfluencerPR";
+import { UserSelectedNiche } from "../entity/user/UserSelectedNiche";
+import { UserSelectedOptions } from "../entity/user/UserSelectedOptions";
+import { UserReferencePriority } from "../entity/user/UserReferencePriority";
+import { Package } from "../entity/package/Package";
+import { InfluencerCart } from "../entity/influencer/InfluencerCart";
+import { PackageCart } from "../entity/package/PackageCart";
+import { CheckoutDetails } from "../entity/checkout/CheckoutDetails";
+import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer";
+import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -34,8 +33,7 @@ export const AppDataSource = new DataSource({
     UserSelectedNiche,
     UserSelectedOptions,
     UserReferencePriority,
-    PackageHeader,
-    Packages,
+    Package,
     InfluencerCart,
     PackageCart,
     CheckoutDetails,

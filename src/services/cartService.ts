@@ -1,9 +1,9 @@
 import { AppDataSource } from '../config/data-source';
 import { InfluencerPR } from '../entity/InfluencerPR';
-import { User } from '../entity/User';
-import { InfluencerCart } from '../entity/InfluencerCart';
+import { User } from '../entity/auth/User';
+import { InfluencerCart } from '../entity/influencer/InfluencerCart';
 import { PackageHeader } from '../entity/PackageHeader';
-import { PackageCart } from '../entity/PackageCart';
+import { PackageCart } from '../entity/package/PackageCart';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../config/logger';
 
