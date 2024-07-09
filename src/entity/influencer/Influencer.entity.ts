@@ -1,6 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+    Entity,
+    Column,
+    OneToMany,
+    PrimaryGeneratedColumn
+} from 'typeorm';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
+import { InfluencerCartItem } from '../cart/InfluencerCartItem.entity';
 
 @Entity()
 export class Influencer extends BaseModel {
@@ -31,7 +37,9 @@ export class Influencer extends BaseModel {
     @Column('decimal')
     engagementRate!: number;
 
-    // TODO: Discuss this with Mohit
-    @Column('jsonb', { nullable: true })
-    additionalDetails!: Record<string, any>;
+    @Column()
+    investorType!: string;
+
+    @OneToMany(() => InfluencerCartItem, (item) => item.influencer)
+    influencerCartItems!: InfluencerCartItem[];
 }

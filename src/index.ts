@@ -8,6 +8,7 @@ import routes from './routes';
 import logger from './config/logger';
 import swaggerDocument from './swagger.json';
 import { AppDataSource } from './config/data-source';
+import userRoutes from './routes/v1/userRoutes'
 
 // import adminRoutes from './routes/adminRoutes';
 // import questionRoutes from './routes/questionRoutes';
@@ -36,20 +37,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // To parse URL-encoded data
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
-app.use('/api', routes);
-// app.use('/admin', adminRoutes);
-// app.use('/user', userRoutes);
-// app.use('/admin/question', questionRoutes);
-// app.use('/admin/influncer', influncereRouter);
-// app.use('/user/influncer', influncereRouter);
-// app.use('/admin/package', packageRouter);
-// app.use('/user/package', packageRouter);
-// app.use('/user/niche', userSelectedNicheRoutes);
-// app.use('/user/influncer/type', userSelectedOptionsRoutes);
-// app.use('/user/cart', cartRouter);
-// app.use('/user/checkout', checkoutRouter);
-// app.use('/user/invoice', invoiceRouter);
-// app.use('/user/search', searchRouter);
+// app.use('/api', routes);
+
+
+// user routes
+app.use('/api/v1/users', userRoutes);
 
 // Dummy API 
 app.get('/', (req: Request, res: Response) => {

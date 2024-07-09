@@ -6,6 +6,7 @@ import {
 } from 'typeorm';
 
 import { Option } from './Option.entity';
+import { OnboardingQuestion } from './OnboardingQuestion';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 export enum QuestionType {
@@ -34,4 +35,7 @@ export class Question extends BaseModel {
 
     @OneToMany(() => Option, option => option.question)
     options!: Option[];
+
+    @OneToMany(() => OnboardingQuestion, onboardingQuestion => onboardingQuestion.question)
+    onboardingQuestions!: OnboardingQuestion[];
 }

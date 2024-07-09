@@ -19,7 +19,4 @@ export class Option extends BaseModel {
 
     @ManyToOne(() => Question, question => question.options)
     question!: Question;
-
-    @Column({ nullable: true })
-    reference?: string;
 }
