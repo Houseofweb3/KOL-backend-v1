@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn , CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Admin } from '../auth/Admin.entity';
+import { User } from '../auth/User.entity';
 import { PackageItem } from './PackageItem.entity';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
@@ -10,9 +10,9 @@ export class Package extends BaseModel{
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @ManyToOne(() => Admin, (admin) => admin.package)
+  @ManyToOne(() => User, (admin) => admin.package)
   @JoinColumn({ name: 'admin_id' })
-  admin!: Admin;
+  admin!: User;
   
   @Column()
   header!: string;

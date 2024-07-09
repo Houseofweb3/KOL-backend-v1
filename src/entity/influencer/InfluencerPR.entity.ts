@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
-import { Admin } from '../auth/Admin.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import { User } from '../auth/User.entity';
 import { InfluencerCartItem } from '../cart/InfluencerCartItem.entity';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
@@ -38,12 +38,6 @@ export class InfluencerPR extends BaseModel {
 
     @Column('jsonb', { nullable: true })
     additionalDetails!: Record<string, any>;
-
-    @Column()
-    createdBy!: string;
-
-    @Column()
-    updatedBy!: string;
 
     @OneToMany(() => InfluencerCartItem, item => item.influencer)
     influencerCartItems!: InfluencerCartItem[];
