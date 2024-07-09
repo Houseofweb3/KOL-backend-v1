@@ -22,8 +22,8 @@ export class UserCheckoutPackages extends BaseModel {
     @CreateDateColumn()
     createdDateTime!: Date;
 
-    @ManyToOne(() => User, user => user.userCheckoutPackages)
-    user!: User;
+    // @ManyToOne(() => User, user => user.userCheckoutPackages)
+    // user!: User;
 
     @ManyToOne(() => CheckoutDetails, checkoutDetails => checkoutDetails.userCheckoutPackages)
     checkoutDetails!: CheckoutDetails;

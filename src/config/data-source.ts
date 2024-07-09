@@ -1,13 +1,13 @@
 import { DataSource } from "typeorm";
 import { ENV } from "./env";
-import { Admin } from "../entity/auth/Admin.entity";
-import { Question } from "../entity/questionaries/Question.entity";
-import { Option } from "../entity/questionaries/Option.entity";
+// import { Admin } from "../entity/auth/Admin.entity";
+// import { Question } from "../entity/questionaries/Question.entity";
+// import { Option } from "../entity/questionaries/Option.entity";
 import { User } from "../entity/auth/User.entity";
-import { InfluencerPR } from "../entity/influencer/Influencer.entity";
-import { UserSelectedNiche } from "../entity/influencer/UserSelectedNiche.entity";
-import { UserSelections } from "../entity/onboarding/UserOnboardingSelection.entity";
-import { UserReferencePriority } from "../entity/influencer/UserReferencePriority.entity";
+// import { InfluencerPR } from "../entity/influencer/Influencer.entity";
+// import { UserSelectedNiche } from "../entity/influencer/UserSelectedNiche.entity";
+// import { UserSelections } from "../entity/onboarding/UserOnboardingSelection.entity";
+// import { UserReferencePriority } from "../entity/influencer/UserReferencePriority.entity";
 import { Package } from "../entity/package/Package.entity";
 import { PackageItem } from "../entity/package/PackageItem.entity";
 import { InfluencerCart } from "../entity/cart/InfluencerCart.entity";
@@ -28,14 +28,14 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   logging: false,
   entities: [
-    Admin,
-    Question,
-    Option,
+    // Admin,
+    // Question,
+    // Option,
     User,
-    InfluencerPR,
-    UserSelectedNiche,
-    UserSelections,
-    UserReferencePriority,
+    // InfluencerPR,
+    // UserSelectedNiche,
+    // UserSelections,
+    // UserReferencePriority,
     Package,
     PackageItem,
     InfluencerCart,

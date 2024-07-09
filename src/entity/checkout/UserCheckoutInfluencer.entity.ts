@@ -22,8 +22,8 @@ export class UserCheckoutInfluencer extends BaseModel {
     @CreateDateColumn()
     createdDateTime!: Date;
 
-    @ManyToOne(() => User, user => user.userCheckoutInfluencers)
-    user!: User;
+    // @ManyToOne(() => User, user => user.userCheckoutInfluencers)
+    // user!: User;
 
     @ManyToOne(() => CheckoutDetails, checkoutDetails => checkoutDetails.userCheckoutInfluencers)
     checkoutDetails!: CheckoutDetails;

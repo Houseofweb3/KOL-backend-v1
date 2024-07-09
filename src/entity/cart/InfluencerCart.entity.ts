@@ -10,8 +10,8 @@ export class InfluencerCart extends BaseModel {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @ManyToOne(() => User, user => user.influencerCarts)
-  @JoinColumn({ name: 'user_id' })
+  // @ManyToOne(() => User, user => user.influencerCarts)
+  // @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @OneToMany(() => InfluencerCartItem, (item) => item.influencerCart, { cascade: true, onDelete: 'CASCADE' })

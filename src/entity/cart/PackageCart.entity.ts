@@ -10,8 +10,8 @@ export class PackageCart extends BaseModel {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @ManyToOne(() => User, user => user.packageCarts)
-  @JoinColumn({ name: 'user_id' })
+  // @ManyToOne(() => User, user => user.packageCarts)
+  // @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @OneToMany(() => PackageCartItem, (item) => item.packageCart, { cascade: true, onDelete: 'CASCADE' })

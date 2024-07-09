@@ -44,8 +44,8 @@ export class CheckoutDetails extends BaseModel {
     @CreateDateColumn()
     createdDateTime!: Date;
 
-    @ManyToOne(() => User, user => user.checkoutDetails)
-    user!: User;
+    // @ManyToOne(() => User, user => user.checkoutDetails)
+    // user!: User;
 
     @OneToMany(() => UserCheckoutInfluencer, userCheckoutInfluencer => userCheckoutInfluencer.checkoutDetails)
     userCheckoutInfluencers!: UserCheckoutInfluencer[];

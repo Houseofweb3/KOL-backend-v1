@@ -18,7 +18,7 @@ export class Package extends BaseModel{
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @ManyToOne(() => User, (admin) => admin.package)
+  // @ManyToOne(() => User, (admin) => admin.package)
   @JoinColumn({ name: 'admin_id' })
   admin!: User;
   

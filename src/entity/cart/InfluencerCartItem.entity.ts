@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { InfluencerCart } from './InfluencerCart.entity';
-import { InfluencerPR } from '../influencer/Influencer.entity';
+// import { InfluencerPR } from '../influencer/Influencer.entity';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
@@ -13,9 +13,9 @@ export class InfluencerCartItem extends BaseModel {
     @JoinColumn({ name: 'influencer_cart_id' })
     influencerCart!: InfluencerCart;
 
-    @ManyToOne(() => InfluencerPR, (influencer) => influencer.influencerCartItems)
-    @JoinColumn({ name: 'influencer_id' })
-    influencer!: InfluencerPR;
+    // @ManyToOne(() => InfluencerPR, (influencer) => influencer.influencerCartItems)
+    // @JoinColumn({ name: 'influencer_id' })
+    // influencer!: InfluencerPR;
 
     @Column()
     quantity!: number;
