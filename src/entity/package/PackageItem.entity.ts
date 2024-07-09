@@ -28,7 +28,6 @@ export class PackageItem extends BaseModel {
   updatedBy!: string;
 
   @ManyToOne(() => Package, pkg => pkg.packageItems)
-  @JoinColumn({ name: 'admin_id' })
   package!: Package; 
     packageCartItems: any;
 }

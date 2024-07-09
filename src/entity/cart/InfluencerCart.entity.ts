@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, JoinColumn, ManyToOne, CreateDateColumn, OneToMany, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, OneToMany, UpdateDateColumn } from 'typeorm';
 import { User } from '../auth/User.entity';
 import { InfluencerCartItem } from './InfluencerCartItem.entity';
 
@@ -10,8 +10,7 @@ export class InfluencerCart extends BaseModel {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  // @ManyToOne(() => User, user => user.influencerCarts)
-  // @JoinColumn({ name: 'user_id' })
+  @ManyToOne(() => User, user => user.influencerCarts)
   user!: User;
 
   @OneToMany(() => InfluencerCartItem, (item) => item.influencerCart, { cascade: true, onDelete: 'CASCADE' })

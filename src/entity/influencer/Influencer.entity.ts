@@ -31,6 +31,9 @@ export class Influencer extends BaseModel {
     @Column('decimal')
     engagementRate!: number;
 
+    @Column()
+    investorType!: string;
+
     // TODO: Discuss this with Mohit
     @Column('jsonb', { nullable: true })
     additionalDetails!: Record<string, any>;

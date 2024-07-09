@@ -2,12 +2,10 @@ import {
   Entity,
   Column,
   OneToMany,
-  ManyToOne,
-  JoinColumn,
   PrimaryGeneratedColumn
 } from 'typeorm';
 
-import { User } from '../auth/User.entity';
+// import { User } from '../auth/User.entity';
 import { PackageItem } from './PackageItem.entity';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
@@ -19,8 +17,7 @@ export class Package extends BaseModel{
   id!: string;
 
   // @ManyToOne(() => User, (admin) => admin.package)
-  @JoinColumn({ name: 'admin_id' })
-  admin!: User;
+  // admin!: User;
   
   @Column()
   header!: string;
