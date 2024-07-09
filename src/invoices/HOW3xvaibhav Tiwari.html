@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Invoice Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: 0 auto; }
+        h1 { text-align: center; }
+        .details { margin-bottom: 20px; }
+        .details h2 { margin-bottom: 10px; }
+        .details p { margin: 0; }
+        .section { margin-bottom: 40px; }
+
+        .border { border: 0.5px solid gray; border-radius: 10px; overflow: hidden; }
+        .header { background-color: #4036F4; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 20px 10px 10px 10px; display: flex; justify-content: space-between; color: white; font-size: 1.8rem; font-weight: 700; }
+        .header div { display: flex; gap: 2rem; align-items: center; }
+        .table { width: 100%; padding: 10px 3px; font-weight: 700; color: gray; display: flex; justify-content: space-between; }
+        .table div { flex: 1; }
+        .table .description { flex: 3; }
+        .item-row { display: flex; justify-content: space-between; padding: 10px 3px; }
+        .item-row div { flex: 1; }
+        .item-row .description { flex: 3; }
+        .item-row:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Invoice Details</h1>
+        <div class="details">
+            <h2>Project Details</h2>
+            <table>
+                <tr>
+                    <th>Project Name</th>
+                    <td>Awesome Project</td>
+                </tr>
+                <tr>
+                    <th>Project URL</th>
+                    <td>http://example.com</td>
+                </tr>
+                <tr>
+                    <th>First Name</th>
+                    <td>vaibhav</td>
+                </tr>
+                <tr>
+                    <th>Last Name</th>
+                    <td>Tiwari</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>vaibhavtiwari.945@gmail.com</td>
+                </tr>
+                <tr>
+                    <th>Link</th>
+                    <td>http://example-link.com</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Influencers Section -->
+        <div class="py-16">
+            <div class="w-full h-fit border border-gray-500 rounded-xl overflow-hidden">
+                <div class="w-full h-fit bg-[#4036F4] rounded-t-xl">
+                    <div class="header">
+                        <div>Influencers List</div>
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 font-[700]">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+                            </svg>
+                            <div>SUBTOTAL</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Influencer Table Change -->
+                <div id="Div15000" class="flex flex-col justify-between w-full">
+                    <!-- heading -->
+                    <div class="table">
+                        <div class="description">Description</div>
+                        <div>Item</div>
+                        <div>Price</div>
+                    </div>
+                    
+                    <div class="item-row">
+                        <div class="description">
+                            <p><strong>Ferrenft</strong></p>
+                            <p>Hype  | 160200 Subscribers | Nft, General Crypto</p>
+                            
+                        </div>
+                        <div>Influencer</div>
+                        <div>$550</div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- Packages Section -->
+        <div class="py-16">
+            <div class="w-full h-fit border border-gray-500 rounded-xl">
+                <div class="w-full h-fit bg-[#4036F4] rounded-t-xl">
+                    <div class="header">
+                        <div>PR Packages</div>
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 font-[700]">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+                            </svg>
+                            <div>SUBTOTAL</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Packages heading -->
+                <div id="Div8000" class="flex flex-col justify-between w-full overflow-hidden">
+                    <div class="table">
+                        <div class="description">Description</div>
+                        <div>Price</div>
+                    </div>
+                    
+                    <div class="item-row">
+                        <div class="description">
+                            <h3>Crypto Organic - 1</h3>
+                            
+                            <p><strong>Media:</strong> CoinMarketCap</p>
+                            <p><strong>Link:</strong> <a href="http://coinmarketcap.com/">http://coinmarketcap.com/</a></p>
+                            <p><strong>Format:</strong> Feature (syndication)</p>
+                            <p><strong>Monthly Traffic:</strong> 9,28,00,000</p>
+                            <p><strong>Turnaround Time:</strong> 2-3 business days</p>
+                            
+                            <p><strong>Media:</strong> Crypto Daily</p>
+                            <p><strong>Link:</strong> <a href="http://cryptodaily.co.uk/">http://cryptodaily.co.uk/</a></p>
+                            <p><strong>Format:</strong> Feature or interview</p>
+                            <p><strong>Monthly Traffic:</strong> 97,00,000</p>
+                            <p><strong>Turnaround Time:</strong> 3-5 business days</p>
+                            
+                            <p><strong>Media:</strong> Hackernoon</p>
+                            <p><strong>Link:</strong> <a href="http://hackernoon.com">http://hackernoon.com</a></p>
+                            <p><strong>Format:</strong> Interview (link not guaranteed)</p>
+                            <p><strong>Monthly Traffic:</strong> 23,00,000</p>
+                            <p><strong>Turnaround Time:</strong> 1-1,5 weeks</p>
+                            
+                            <p><strong>Media:</strong> Coinpedia</p>
+                            <p><strong>Link:</strong> <a href="http://coinpedia.org/">http://coinpedia.org/</a></p>
+                            <p><strong>Format:</strong> Feature</p>
+                            <p><strong>Monthly Traffic:</strong> 12,00,000</p>
+                            <p><strong>Turnaround Time:</strong> 3-5 business days</p>
+                            
+                            <p><strong>Media:</strong> TechBullion</p>
+                            <p><strong>Link:</strong> <a href="https://techbullion.com/">https://techbullion.com/</a></p>
+                            <p><strong>Format:</strong> Feature or interview</p>
+                            <p><strong>Monthly Traffic:</strong> 2,30,900</p>
+                            <p><strong>Turnaround Time:</strong> 3-5 business days</p>
+                            
+                        </div>
+                        <div>$4600</div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

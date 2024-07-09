@@ -2,13 +2,13 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { StatusCodes, ReasonPhrases } from 'http-status-codes';
 
-import { User } from '../entity';
+import { Auth } from '../entity/auth/User'; // Adjusted import
 import { ENV } from '../config/env';
 import { AppDataSource } from '../config/data-source';
 import { ExtendedRequest, ExtendedResponse } from '../types';
 
 export class AuthController {
-  private userRepository = AppDataSource.getRepository(User);
+  private userRepository = AppDataSource.getRepository(Auth); // Use Auth here
 
   public register = async (req: ExtendedRequest, res: ExtendedResponse): Promise<ExtendedResponse> => {
     const { name, email, password } = req.body;
