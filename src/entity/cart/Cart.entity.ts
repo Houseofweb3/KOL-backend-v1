@@ -1,0 +1,34 @@
+import {
+    Entity,
+    OneToOne,
+    OneToMany,
+    ManyToOne,
+    JoinColumn,
+    PrimaryGeneratedColumn
+} from 'typeorm';
+
+import { User } from '../auth';
+import { Checkout } from '../checkout';
+import { PackageCartItem } from './PackageCartItem.entity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
+import { InfluencerCartItem } from './InfluencerCartItem.entity';
+
+@Entity()
+export class Cart extends BaseModel {
+    
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
+
+    @ManyToOne(() => User, user => user.carts, { nullable: true })
+    user?: User;
+
+    @OneToMany(() => InfluencerCartItem, (item) => item.influencer, { cascade: true, onDelete: 'CASCADE' })
+    influencerCartItems!: InfluencerCartItem[];
+
+    @OneToMany(() => PackageCartItem, (item) => item.packageItem, { cascade: true, onDelete: 'CASCADE' })
+    packageCartItem!: PackageCartItem[];
+
+    @OneToOne(() => Checkout, checkout => checkout.cart, { nullable: true })
+    @JoinColumn()
+    checkout?: Checkout;
+}

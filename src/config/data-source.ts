@@ -14,7 +14,7 @@ import { InfluencerCart } from "../entity/cart/InfluencerCart.entity";
 import { InfluencerCartItem } from "../entity/cart/InfluencerCartItem.entity";
 import { PackageCart } from "../entity/cart/PackageCart.entity";
 import { PackageCartItem } from "../entity/cart/PackageCartItem.entity";
-import { CheckoutDetails } from "../entity/checkout/CheckoutDetails.entity";
+import { CheckoutDetails } from "../entity/checkout/Checkout.entity";
 import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer.entity";
 import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages.entity";
 import { UserOnboardingSelection } from "../entity/influencer";

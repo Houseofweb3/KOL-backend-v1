@@ -1,36 +1,48 @@
-import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import {
+    Entity,
+    Column,
+    PrimaryColumn,
+    OneToMany
+} from 'typeorm';
 
+import { Cart } from '../cart';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 import { UserOnboardingSelection } from '../onboarding/UserOnboardingSelection.entity';
-import { InfluencerCart } from '../cart/InfluencerCart.entity';
-import { PackageCart } from '../cart/PackageCart.entity';
+
+export enum UserType {
+    USER = 'user',
+    ADMIN = 'admin',
+}
 
 @Entity()
 export class User extends BaseModel {
-  @PrimaryColumn("")
-  id!: string;
+    @PrimaryColumn("uuid")
+    id!: string;
 
-  @Column({ unique: true })
-  email!: string;
+    @Column({ unique: true })
+    email!: string;
 
-  @Column({ nullable: false })
-  password?: string;
+    @Column()
+    password?: string;
 
-  @Column({ nullable: true })
-  fullname?: string;
+    @Column({ nullable: true })
+    fullname?: string;
 
-  // TODO: Add type of user (Completed)
-  @Column({ default: true })
-  status!: boolean;
+    // TODO: Add type of user ()
+    @Column({ default: true })
+    status!: boolean;
 
-  // Vaibhav established FK connections
-  @OneToMany(() => UserOnboardingSelection, userSelection => userSelection.user)
-  userSelections!: UserOnboardingSelection[];
+    @Column({
+        type: 'enum',
+        enum: UserType,
+        default: UserType.USER
+    })
+    userType!: UserType;
 
-  @OneToMany(() => InfluencerCart, influencerCarts => influencerCarts.user)
-  influencerCarts!: InfluencerCart[];
+    @OneToMany(() => UserOnboardingSelection, userSelection => userSelection.user)
+    userSelections!: UserOnboardingSelection[];
 
-  @OneToMany(() => PackageCart, packageCarts => packageCarts.user)
-  packageCarts!: PackageCart[];
+    @OneToMany(() => Cart, cart => cart.user)
+    carts!: Cart[];
 }
 
