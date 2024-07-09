@@ -2,8 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, CreateDa
 import { Admin } from '../auth/Admin.entity';
 import { Option } from './Option.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class Question {
+export class Question extends TimestampedEntity {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -19,12 +21,6 @@ export class Question {
 
   @Column()
   updatedBy!: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 
   @ManyToOne(() => Admin, admin => admin.questions)
   @JoinColumn({ name: 'admin_id' })

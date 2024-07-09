@@ -3,8 +3,10 @@ import { User } from '../auth/User.entity';
 import { Question } from '../questionaries/Question.entity';
 import { Option } from '../questionaries/Option.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class UserSelections {
+export class UserSelections extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -16,10 +18,4 @@ export class UserSelections {
 
   @ManyToOne(() => Option)
   selectedOption!: Option;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

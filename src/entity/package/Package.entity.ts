@@ -2,8 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColum
 import { Admin } from '../auth/Admin.entity';
 import { PackageItem } from './PackageItem.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class Package {
+export class Package extends TimestampedEntity{
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -26,12 +28,6 @@ export class Package {
 
   @Column()
   updatedBy!: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 
   @OneToMany(() => PackageItem, (packageItem) => packageItem.package)
   packageItems!: PackageItem[];

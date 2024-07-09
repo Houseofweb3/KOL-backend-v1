@@ -2,8 +2,10 @@ import { Entity, PrimaryGeneratedColumn, JoinColumn, ManyToOne, CreateDateColumn
 import { User } from '../auth/User.entity';
 import { InfluencerCartItem } from './InfluencerCartItem.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class InfluencerCart {
+export class InfluencerCart extends TimestampedEntity {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -15,9 +17,4 @@ export class InfluencerCart {
   @OneToMany(() => InfluencerCartItem, (item) => item.influencerCart, { cascade: true, onDelete: 'CASCADE' })
   influencerCartItems!: InfluencerCartItem[];
 
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

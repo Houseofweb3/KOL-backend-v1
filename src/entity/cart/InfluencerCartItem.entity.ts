@@ -2,8 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 't
 import { InfluencerCart } from './InfluencerCart.entity';
 import { InfluencerPR } from '../influencer/InfluencerPR.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class InfluencerCartItem {
+export class InfluencerCartItem extends TimestampedEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 

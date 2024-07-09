@@ -1,8 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, JoinColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { Package } from './Package.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class PackageItem {
+export class PackageItem extends TimestampedEntity {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -24,12 +26,6 @@ export class PackageItem {
 
   @Column()
   updatedBy!: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 
   @ManyToOne(() => Package, pkg => pkg.packageItems)
   @JoinColumn({ name: 'admin_id' })

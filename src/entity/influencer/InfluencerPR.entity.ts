@@ -2,9 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Admin } from '../auth/Admin.entity';
 import { InfluencerCartItem } from '../cart/InfluencerCartItem.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class InfluencerPR {
+export class InfluencerPR extends TimestampedEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -43,12 +44,6 @@ export class InfluencerPR {
 
     @Column()
     updatedBy!: string;
-
-    @CreateDateColumn()
-    createdAt!: Date;
-
-    @UpdateDateColumn()
-    updatedAt!: Date;
 
     @OneToMany(() => InfluencerCartItem, item => item.influencer)
     influencerCartItems!: InfluencerCartItem[];

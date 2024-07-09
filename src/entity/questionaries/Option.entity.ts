@@ -1,8 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
 import { Question } from './Question.entity';
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class Option {
+export class Option extends TimestampedEntity {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -22,10 +24,4 @@ export class Option {
 
   @Column()
   updatedBy!: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

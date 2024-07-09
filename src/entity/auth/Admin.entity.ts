@@ -1,10 +1,13 @@
-import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Question } from '../questionaries/Question.entity';
-import { Package } from '../package/Package.entity';
-import {InfluencerPR} from '../influencer/InfluencerPR.entity'
+import { Entity, Column, OneToMany, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from 'typeorm';
+
+// import { Question } from '../questionaries/Question.entity';
+// import { Package } from '../package/Package.entity';
+// import { InfluencerPR } from '../influencer/InfluencerPR.entity'
+
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
 
 @Entity()
-export class Admin {
+export class Admin extends TimestampedEntity {
   @PrimaryColumn()
   id!: string;
 
@@ -20,18 +23,16 @@ export class Admin {
   @Column({ default: 'active' })
   status!: string;
 
-  @CreateDateColumn()
-  createdAt!: Date;
 
-  @UpdateDateColumn()
-  updatedAt!: Date;
 
-  @OneToMany(() => Question, question => question.admin)
-  questions!: Question[];
 
-  @OneToMany(() => Package, pkg => pkg.admin)
-  package!: Package[];
 
-  @OneToMany(() => InfluencerPR, influencerPR => influencerPR.admin)
-  influencerPRs!: InfluencerPR[];
+  // @OneToMany(() => Question, question => question.admin)
+  // questions!: Question[];
+
+  // @OneToMany(() => Package, pkg => pkg.admin)
+  // package!: Package[];
+
+  // @OneToMany(() => InfluencerPR, influencerPR => influencerPR.admin)
+  // influencerPRs!: InfluencerPR[];
 }

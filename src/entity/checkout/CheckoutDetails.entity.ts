@@ -3,8 +3,10 @@ import { User } from "../auth/User.entity";
 import { UserCheckoutInfluencer } from "./UserCheckoutInfluencer.entity";
 import { UserCheckoutPackages } from "./UserCheckoutPackages.entity";
 
+import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+
 @Entity()
-export class CheckoutDetails {
+export class CheckoutDetails extends TimestampedEntity {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
