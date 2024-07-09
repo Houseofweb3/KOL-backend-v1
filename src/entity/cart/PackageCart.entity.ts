@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, JoinColumn, ManyToOne, CreateDateColumn, OneToMany,UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne,  OneToMany} from 'typeorm';
 import { User } from '../auth/User.entity';
 import { PackageCartItem } from './PackageCartItem.entity';
 

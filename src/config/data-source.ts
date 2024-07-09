@@ -17,6 +17,8 @@ import { PackageCartItem } from "../entity/cart/PackageCartItem.entity";
 import { CheckoutDetails } from "../entity/checkout/CheckoutDetails.entity";
 import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer.entity";
 import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages.entity";
+import { UserOnboardingSelection } from "../entity/influencer";
+import { Question, Option } from "../entity/onboarding";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -45,6 +47,9 @@ export const AppDataSource = new DataSource({
     CheckoutDetails,
     UserCheckoutInfluencer,
     UserCheckoutPackages,
+    UserOnboardingSelection,
+    Question,
+    Option,
   ],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],

@@ -7,7 +7,7 @@ import { PackageCart } from '../cart/PackageCart.entity';
 
 @Entity()
 export class User extends BaseModel {
-  @PrimaryColumn()
+  @PrimaryColumn("")
   id!: string;
 
   @Column({ unique: true })

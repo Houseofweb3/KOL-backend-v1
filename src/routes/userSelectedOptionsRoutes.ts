@@ -1,12 +1,12 @@
-import express from 'express';
-import handler from '../controllers/userSelectedOptionsController';
+// import express from 'express';
+// import handler from '../controllers/userSelectedOptionsController';
 
-const router = express.Router();
+// const router = express.Router();
 
-router.options('*', (req, res) => {
-  res.status(200).end();
-});
+// router.options('*', (req, res) => {
+//   res.status(200).end();
+// });
 
-router.post('/add', handler);
+// router.post('/add', handler);
 
-export default router;
+// export default router;

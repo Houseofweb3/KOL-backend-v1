@@ -1,8 +1,8 @@
-import express from 'express';
-import { handleUserSelectedNiche } from '../controllers/userSelectedNicheController';
+// import express from 'express';
+// import { handleUserSelectedNiche } from '../controllers/userSelectedNicheController';
 
-const router = express.Router();
+// const router = express.Router();
 
-router.post('/add', handleUserSelectedNiche);
+// router.post('/add', handleUserSelectedNiche);
 
-export default router;
+// export default router;
