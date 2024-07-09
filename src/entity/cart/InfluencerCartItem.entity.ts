@@ -2,10 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 't
 import { InfluencerCart } from './InfluencerCart.entity';
 import { InfluencerPR } from '../influencer/InfluencerPR.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class InfluencerCartItem extends TimestampedEntity {
+export class InfluencerCartItem extends BaseModel {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 

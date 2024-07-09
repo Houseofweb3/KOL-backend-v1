@@ -2,10 +2,10 @@ import { Entity, PrimaryGeneratedColumn, JoinColumn, ManyToOne, CreateDateColumn
 import { User } from '../auth/User.entity';
 import { PackageCartItem } from './PackageCartItem.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class PackageCart extends TimestampedEntity {
+export class PackageCart extends BaseModel {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;

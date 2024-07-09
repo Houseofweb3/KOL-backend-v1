@@ -2,10 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColum
 import { Admin } from '../auth/Admin.entity';
 import { PackageItem } from './PackageItem.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class Package extends TimestampedEntity{
+export class Package extends BaseModel{
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;

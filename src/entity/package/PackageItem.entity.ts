@@ -1,10 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, JoinColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { Package } from './Package.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class PackageItem extends TimestampedEntity {
+export class PackageItem extends BaseModel {
 
   @PrimaryGeneratedColumn("uuid")
   id!: string;

@@ -8,10 +8,10 @@ import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn, UpdateDateC
 // import { UserReferencePriority } from '../selectedInfluncer/UserReferencePriority.entity';
 // import { UserSelectedNiche } from '../selectedInfluncer/UserSelectedNiche.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class User extends TimestampedEntity {
+export class User extends BaseModel {
   @PrimaryColumn()
   id!: string;
 
@@ -26,12 +26,6 @@ export class User extends TimestampedEntity {
 
   @Column({ default: 'active' })
   status!: string;
-
-
-
-
-
-
 
   // @OneToMany(() => InfluencerCart, influencerCart => influencerCart.user)
   // influencerCarts!: InfluencerCart[];

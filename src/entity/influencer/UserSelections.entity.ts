@@ -3,10 +3,10 @@ import { User } from '../auth/User.entity';
 import { Question } from '../questionaries/Question.entity';
 import { Option } from '../questionaries/Option.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class UserSelections extends TimestampedEntity {
+export class UserSelections extends BaseModel {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

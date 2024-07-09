@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { StatusCodes, ReasonPhrases } from 'http-status-codes';
 
-import { Auth } from '../entity/auth/auth'; // Adjusted import
+import { Auth } from '../entity/auth/User'; // Adjusted import
 import { ENV } from '../config/env';
 import { AppDataSource } from '../config/data-source';
 import { ExtendedRequest, ExtendedResponse } from '../types';

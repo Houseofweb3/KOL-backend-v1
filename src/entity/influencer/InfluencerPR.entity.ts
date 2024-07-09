@@ -2,10 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Admin } from '../auth/Admin.entity';
 import { InfluencerCartItem } from '../cart/InfluencerCartItem.entity';
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class InfluencerPR extends TimestampedEntity {
+export class InfluencerPR extends BaseModel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 

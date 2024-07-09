@@ -2,10 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } f
 import { User } from "../auth/User.entity";
 import { CheckoutDetails } from "./CheckoutDetails.entity";
 
-import { TimestampedEntity } from '../../utils/baseEntities/TimestampedEntity';
+import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class UserCheckoutInfluencer extends TimestampedEntity {
+export class UserCheckoutInfluencer extends BaseModel {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
