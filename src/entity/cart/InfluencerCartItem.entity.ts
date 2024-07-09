@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { InfluencerCart } from './InfluencerCart.entity';
-import { InfluencerPR } from '../influencer/InfluencerPR.entity';
+import { InfluencerPR } from '../influencer/Influencer.entity';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 

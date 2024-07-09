@@ -1,16 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
-import { User } from '../auth/User.entity';
-import { InfluencerCartItem } from '../cart/InfluencerCartItem.entity';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
-export class InfluencerPR extends BaseModel {
+export class Influencer extends BaseModel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
-
-    @ManyToOne(() => Admin, admin => admin.influencerPRs)
-    admin: Admin | undefined;
 
     @Column()
     niche!: string;
@@ -36,9 +31,7 @@ export class InfluencerPR extends BaseModel {
     @Column('decimal')
     engagementRate!: number;
 
+    // TODO: Discuss this with Mohit
     @Column('jsonb', { nullable: true })
     additionalDetails!: Record<string, any>;
-
-    @OneToMany(() => InfluencerCartItem, item => item.influencer)
-    influencerCartItems!: InfluencerCartItem[];
 }

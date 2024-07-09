@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn , CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  PrimaryGeneratedColumn
+} from 'typeorm';
+
 import { User } from '../auth/User.entity';
 import { PackageItem } from './PackageItem.entity';
 
@@ -22,12 +30,6 @@ export class Package extends BaseModel{
 
   @Column('text', { array: true })
   text!: string[];
-
-  @Column()
-  createdBy!: string;
-
-  @Column()
-  updatedBy!: string;
 
   @OneToMany(() => PackageItem, (packageItem) => packageItem.package)
   packageItems!: PackageItem[];
