@@ -16,5 +16,5 @@ export class User extends BaseModel {
   @Column({ nullable: true })
   fullname?: string;
 
-  // TODO: Add type of user.S
+  // TODO: Add type of user
 }
