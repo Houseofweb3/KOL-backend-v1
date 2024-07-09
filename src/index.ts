@@ -8,7 +8,19 @@ import routes from './routes';
 import logger from './config/logger';
 import swaggerDocument from './swagger.json';
 import { AppDataSource } from './config/data-source';
+import userRoutes from './routes/v1/userRoutes'
 
+// import adminRoutes from './routes/adminRoutes';
+// import questionRoutes from './routes/questionRoutes';
+// import influncereRouter from './routes/influencerRoutes';
+// import packageRouter from './routes/packageRoutes';
+// import userRoutes from './routes/userRoutes';
+// import userSelectedNicheRoutes from './routes/userSelectedNicheRoutes';
+// import userSelectedOptionsRoutes from './routes/userSelectedOptionsRoutes';
+// import cartRouter from './routes/cartRoutes';
+// import checkoutRouter from './routes/checkoutRoutes';
+// import invoiceRouter from './routes/invoiceRoutes';
+// import searchRouter from './routes/searchRoutes';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -20,8 +32,16 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 
+// Middleware to parse JSON bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // To parse URL-encoded data
+
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
-app.use('/api', routes);
+// app.use('/api', routes);
+
+
+// user routes
+app.use('/api/v1/users', userRoutes);
 
 // Dummy API 
 app.get('/', (req: Request, res: Response) => {
