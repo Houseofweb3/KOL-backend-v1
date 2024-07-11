@@ -6,22 +6,22 @@ import logger from '../../config/logger';
 const userRepository = AppDataSource.getRepository(User);
 
 
-export const createUser = async (id: string, email: string, password?: string, fullname?: string) => {
+export const createUser = async (email: string, password?: string, fullname?: string, type?: string) => {
     try {
         // to check if a user with the given id or email already exists
         const existingUser = await AppDataSource.transaction(async (transactionalEntityManager) => {
             const user = await transactionalEntityManager.findOne(User, {
-                where: [{ id }, { email }],
+                where: [{ email }],
             });
 
             if (user) {
                 if (user.status) {
                     user.status = true;
                     await transactionalEntityManager.save(user);
-                    logger.info(`User reactivated successfully: ${id}`);
+                    logger.info(`User reactivated successfully: ${user.id}`);
                     return { user, message: 'User reactivated successfully' };
                 } else {
-                    logger.warn(`User already exists and is inactive: ${id}`);
+                    logger.warn(`User already exists and is inactive: ${user.id}`);
                     throw new Error('User already exists and is inactive');
                 }
             }
@@ -31,17 +31,17 @@ export const createUser = async (id: string, email: string, password?: string, f
 
             // create the entity to store in the db
             const newUser = transactionalEntityManager.create(User, {
-                id,
                 email,
                 password: hashedPassword,
                 fullname,
+                type,
                 status: true,
             });
 
             // save the entity in the db
             await transactionalEntityManager.save(newUser);
 
-            logger.info(`User created successfully: ${id}`);
+            logger.info(`User created successfully: ${newUser.id}`);
             return { user: newUser, message: 'User signup successfully' };
         });
 
