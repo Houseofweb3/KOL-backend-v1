@@ -1,21 +1,21 @@
 
 import { Request, Response } from 'express';
-import { createUser, getUserDetailsById } from '../../services/v1/userService';
+import { createUser, getUserDetailsById, deactivateUserById } from '../../services/v1/userService';
 import logger from '../../config/logger';
 
 
 // create a signp ser
 export const signup = async (req: Request, res: Response) => {
-  const { id, email, password, fullname } = req.body;
+  const { email, password, fullname, type } = req.body;
 
-  if (!id || !email || !password || !fullname) {
+  if (!email || !password || !fullname || !type) {
     logger.warn('Missing required fields in signup request');
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
-    const { user, message } = await createUser(id, email, password, fullname);
-    logger.info(`User created/updated successfully: ${id}`);
+    const { user, message } = await createUser(email, password, fullname, type);
+    logger.info(`User created/updated successfully: ${user?.id}`);
     return res.status(201).json({ user, message });
   } catch (error) {
     if (error instanceof Error) {
@@ -75,26 +75,26 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
 
 // Deactive the profile
-// export const deactivateUser = async (req: Request, res: Response) => {
-//   try {
-//     // Extract userId from the request body and validate
-//     const { userId } = req.body;
+export const deactivateUser = async (req: Request, res: Response) => {
+  try {
+    // Extract userId from the request body and validate
+    const { userId } = req.params;
 
-//     if (typeof userId !== 'string') {
-//       logger.warn('Invalid or missing userId in request body');
-//       return res.status(400).json({ error: 'Invalid or missing userId' });
-//     }
+    if (typeof userId !== 'string') {
+      logger.warn('Invalid or missing userId in request body');
+      return res.status(400).json({ error: 'Invalid or missing userId' });
+    }
 
-//     // Deactivate the user and handle related records
-//     await deactivateUserById(userId);
-//     logger.info(`User deactivated and related records deleted: ${userId}`);
-//     return res.status(200).json({ message: 'User deactivated successfully' });
-//   } catch (error: any) {
-//     // Log and handle known errors
-//     logger.error(`Error during user deactivation: ${error.message}`);
-//     if (error.message === 'User not found or already inactive') {
-//       return res.status(404).json({ error: error.message });
-//     }
-//     return res.status(500).json({ error: 'An unexpected error occurred' });
-//   }
-// };
+    // Deactivate the user and handle related records
+    await deactivateUserById(userId);
+    logger.info(`User deactivated and related records deleted: ${userId}`);
+    return res.status(200).json({ message: 'User deactivated successfully' });
+  } catch (error: any) {
+    // Log and handle known errors
+    logger.error(`Error during user deactivation: ${error.message}`);
+    if (error.message === 'User not found or already inactive') {
+      return res.status(404).json({ error: error.message });
+    }
+    return res.status(500).json({ error: 'An unexpected error occurred' });
+  }
+};

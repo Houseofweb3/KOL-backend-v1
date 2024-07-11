@@ -34,8 +34,11 @@ export class Influencer extends BaseModel {
     @Column('decimal')
     price!: number;
 
-    @Column('decimal')
-    engagementRate!: number;
+    @Column()
+    credibilityScore!: string;
+
+    @Column()
+    engagementRate!: string;
 
     @Column()
     investorType!: string;
