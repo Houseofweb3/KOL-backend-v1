@@ -1,7 +1,7 @@
 import {
     Entity,
     Column,
-    PrimaryColumn,
+    PrimaryGeneratedColumn,
     OneToMany
 } from 'typeorm';
 
@@ -16,7 +16,7 @@ export enum UserType {
 
 @Entity()
 export class User extends BaseModel {
-    @PrimaryColumn("uuid")
+    @PrimaryGeneratedColumn("uuid")
     id!: string;
 
     @Column({ unique: true })

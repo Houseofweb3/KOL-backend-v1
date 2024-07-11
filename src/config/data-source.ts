@@ -10,15 +10,14 @@ import { User } from "../entity/auth/User.entity";
 // import { UserReferencePriority } from "../entity/influencer/UserReferencePriority.entity";
 import { Package } from "../entity/package/Package.entity";
 import { PackageItem } from "../entity/package/PackageItem.entity";
-import { InfluencerCart } from "../entity/cart/InfluencerCart.entity";
+import { Cart } from "../entity/cart";
 import { InfluencerCartItem } from "../entity/cart/InfluencerCartItem.entity";
-import { PackageCart } from "../entity/cart/PackageCart.entity";
 import { PackageCartItem } from "../entity/cart/PackageCartItem.entity";
-import { CheckoutDetails } from "../entity/checkout/Checkout.entity";
-import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer.entity";
-import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages.entity";
-import { UserOnboardingSelection } from "../entity/influencer";
-import { Question, Option } from "../entity/onboarding";
+import { Checkout } from "../entity/checkout/Checkout.entity";
+// import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer.entity";
+// import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages.entity";
+import { Question, Option, UserOnboardingSelection, OnboardingQuestion } from "../entity/onboarding";
+import { Influencer } from "../entity/influencer";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -34,22 +33,22 @@ export const AppDataSource = new DataSource({
     // Question,
     // Option,
     User,
-    // InfluencerPR,
+    Influencer,
     // UserSelectedNiche,
     // UserSelections,
     // UserReferencePriority,
     Package,
     PackageItem,
-    InfluencerCart,
     InfluencerCartItem,
-    PackageCart,
+    Cart,
     PackageCartItem,
-    CheckoutDetails,
-    UserCheckoutInfluencer,
-    UserCheckoutPackages,
+    Checkout,
+    // UserCheckoutInfluencer,
+    // UserCheckoutPackages,
     UserOnboardingSelection,
     Question,
     Option,
+    OnboardingQuestion,
   ],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],
