@@ -11,9 +11,10 @@ export class InfluencerCartItem extends BaseModel {
     id!: string;
 
     @ManyToOne(() => Influencer, (influencer) => influencer.influencerCartItems)
+    @JoinColumn({ name: 'influencer_id' })
     influencer!: Influencer;
 
-    @ManyToOne(() => Cart, (cart) => cart.packageCartItem)
+    @ManyToOne(() => Cart, (cart) => cart.influencerCartItems)
     @JoinColumn({ name: 'cart_id' })
     cart!: Cart;
 }

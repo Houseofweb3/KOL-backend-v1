@@ -1,5 +1,4 @@
 import { Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
-
 import { Cart } from './Cart.entity';
 import { PackageItem } from '../package/PackageItem.entity';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
@@ -13,7 +12,7 @@ export class PackageCartItem extends BaseModel {
     @JoinColumn({ name: 'package_item_id' })
     packageItem!: PackageItem;
 
-    @ManyToOne(() => Cart, (cart) => cart.packageCartItem)
+    @ManyToOne(() => Cart, (cart) => cart.packageCartItems)
     @JoinColumn({ name: 'cart_id' })
     cart!: Cart;
 }

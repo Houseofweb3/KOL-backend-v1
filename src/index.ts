@@ -15,6 +15,9 @@ import userOnboardingSelectionRoutes from './routes/v1/userOnboardingSelectionRo
 import influencerRoutes from './routes/v1/InfluencerRoutes'
 import packageRoutes from './routes/v1/packageRoutes'
 import packageItemRoutes from './routes/v1/packageItemRoutes'
+import cartRoutes from './routes/v1/cartRoutes'
+import influencerCartItemRoutes from './routes/v1/influencerCartItemRoutes'
+import packageCartItemRoutes from './routes/v1/packageCartItemRoutes'
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -51,6 +54,12 @@ app.use('/api/v1/influencer', influencerRoutes)
 app.use('/api/v1/packages', packageRoutes)
 // Package Item Routes
 app.use('/api/v1/package-items', packageItemRoutes)
+// Cart Routes
+app.use('/api/v1/cart', cartRoutes)
+// influencer Cart Item Routes
+app.use('/api/v1/influencer-cart-item', influencerCartItemRoutes)
+// package Cart Item Routes
+app.use('/api/v1/package-cart-item', packageCartItemRoutes)
 
 
 // Dummy API 
