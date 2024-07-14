@@ -5,7 +5,7 @@ const router = express.Router();
 
 
 router.post('/signup', signup);
-router.get('/profile/:userId', getUserProfile);
+router.get('/profile/:userId?', getUserProfile);
 router.patch('/deactivate/:userId', deactivateUser);
 
 export default router;
