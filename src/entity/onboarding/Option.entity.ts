@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn
 } from 'typeorm';
 
-import { Question } from './Question.entity';
+import { Question } from './question.entity';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()

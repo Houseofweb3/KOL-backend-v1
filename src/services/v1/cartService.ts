@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/data-source';
-import { Cart } from '../../entity/cart/Cart.entity';
+import { Cart } from '../../entity/cart/cart.entity';
 import logger from '../../config/logger';
 
 const cartRepository = AppDataSource.getRepository(Cart);

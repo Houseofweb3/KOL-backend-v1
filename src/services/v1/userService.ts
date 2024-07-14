@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../../config/data-source'
-import { User } from '../../entity/auth/User.entity';
+import { User } from '../../entity/auth/user.entity';
 import logger from '../../config/logger';
 
 const userRepository = AppDataSource.getRepository(User);

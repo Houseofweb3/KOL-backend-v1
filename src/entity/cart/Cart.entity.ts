@@ -9,9 +9,9 @@ import {
 
 import { User } from '../auth';
 import { Checkout } from '../checkout';
-import { PackageCartItem } from './PackageCartItem.entity';
+import { PackageCartItem } from './packageCartItem.entity';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
-import { InfluencerCartItem } from './InfluencerCartItem.entity';
+import { InfluencerCartItem } from './influencerCartItem.entity';
 
 @Entity()
 export class Cart extends BaseModel {

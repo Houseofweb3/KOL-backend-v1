@@ -6,7 +6,7 @@ import {
 } from 'typeorm';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
-import { InfluencerCartItem } from '../cart/InfluencerCartItem.entity';
+import { InfluencerCartItem } from '../cart/influencerCartItem.entity';
 
 @Entity()
 export class Influencer extends BaseModel {

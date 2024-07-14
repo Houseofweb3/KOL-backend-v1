@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/data-source';
-import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
+import { PackageCartItem } from '../../entity/cart/packageCartItem.entity';
 import logger from '../../config/logger';
 
 const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem)

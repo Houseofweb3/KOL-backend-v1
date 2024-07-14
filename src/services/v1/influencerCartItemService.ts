@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/data-source';
-import { InfluencerCartItem } from '../../entity/cart/InfluencerCartItem.entity';
+import { InfluencerCartItem } from '../../entity/cart/influencerCartItem.entity';
 import logger from '../../config/logger';
 
 const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
