@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { createCart, deleteCart, getCarts } from '../../services/v1/cartService';
-import logger from '../../config/logger';
+import { createCart, deleteCart, getCarts } from '../../../services/v1/cartService';
+import logger from '../../../config/logger';
 
 // Create a new Cart
 export const createCartHandler = async (req: Request, res: Response) => {

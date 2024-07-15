@@ -15,28 +15,32 @@ export const signup = async (req: Request, res: Response) => {
 	const { email, password, fullname, type } = req.body;
 
 	if (!email || !password || !fullname || !type) {
+
 		logger.warn('Missing required fields in signup request');
 		return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
 	}
-
 	try {
-		const { user, message, token, refreshToken } = await createUser(email, password, fullname, type);
+		const {
+			user,
+			message,
+			token,
+			refreshToken
+		} = await createUser(email, password, fullname, type);
 
 		logger.info(`User created/updated successfully: ${user?.id}`);
 		return res.status(HttpStatus.CREATED).json({ user, message, accessToken: token, refreshToken });
 	} catch (error) {
 		if (error instanceof Error) {
-		if (error.message === 'User already exists and is inactive') {
-
-			logger.warn(`Signup attempt with existing inactive user: ${email}`);
-			return res.status(HttpStatus.CONFLICT).json({ error: error.message });
+			if (error.message === 'User already exists and is inactive') {
+				logger.warn(`Signup attempt with existing inactive user: ${email}`);
+				return res.status(HttpStatus.CONFLICT).json({ error: error.message });
+			} else {
+				logger.error(`Error during signup: ${error.message}`);
+				return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+			}
 		} else {
-			logger.error(`Error during signup: ${error.message}`);
-			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
-		}
-		} else {
-		logger.error('An unknown error occurred during signup');
-		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+			logger.error('An unknown error occurred during signup');
+			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
 		}
 	}
 };
@@ -63,25 +67,25 @@ export const login = async (req: Request, res: Response) => {
 		return res.status(HttpStatus.OK).json({ user, message, accessToken: token, refreshToken });
 	} catch (error) {
 		if (error instanceof Error) {
-		if (error.message === 'User not found') {
-			logger.warn(`Login attempt for non-existent user: ${email}`);
-			return res.status(HttpStatus.NOT_FOUND).json({ error: error.message });
-		} else if (error.message === 'User is inactive') {
-			logger.warn(`Login attempt for inactive user: ${email}`);
-			return res.status(HttpStatus.FORBIDDEN).json({ error: error.message });
-		} else if (error.message === 'Invalid password') {
-			logger.warn(`Invalid password attempt for email: ${email}`);
-			return res.status(HttpStatus.UNAUTHORIZED).json({ error: error.message });
+			if (error.message === 'User not found') {
+				logger.warn(`Login attempt for non-existent user: ${email}`);
+				return res.status(HttpStatus.NOT_FOUND).json({ error: error.message });
+			} else if (error.message === 'User is inactive') {
+				logger.warn(`Login attempt for inactive user: ${email}`);
+				return res.status(HttpStatus.FORBIDDEN).json({ error: error.message });
+			} else if (error.message === 'Invalid password') {
+				logger.warn(`Invalid password attempt for email: ${email}`);
+				return res.status(HttpStatus.UNAUTHORIZED).json({ error: error.message });
+			} else {
+				logger.error(`Error during login: ${error.message}`);
+				return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+			}
 		} else {
-			logger.error(`Error during login: ${error.message}`);
-			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
-		}
-		} else {
-		logger.error('An unknown error occurred during login');
-		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+			logger.error('An unknown error occurred during login');
+			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
 		}
 	}
-	};
+};
 
 // Refresh Token
 export const refreshTokenhandler = async (req: Request, res: Response) => {
@@ -104,22 +108,22 @@ export const refreshTokenhandler = async (req: Request, res: Response) => {
 
 	} catch (error) {
 		if (error instanceof Error) {
-		if (error.message === 'Refresh token is required') {
-			logger.warn('Refresh token missing in request');
-			return res.status(HttpStatus.BAD_REQUEST).json({ error: error.message });
-		} else if (error.message === 'Invalid refresh token') {
-			logger.warn('Invalid refresh token provided');
-			return res.status(HttpStatus.UNAUTHORIZED).json({ error: error.message });
-		} else {
-			logger.error(`Error during token refresh: ${error.message}`);
-			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
-		}
-		} else {
-		logger.error('An unknown error occurred during token refresh');
-		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+			if (error.message === 'Refresh token is required') {
+				logger.warn('Refresh token missing in request');
+				return res.status(HttpStatus.BAD_REQUEST).json({ error: error.message });
+			} else if (error.message === 'Invalid refresh token') {
+				logger.warn('Invalid refresh token provided');
+				return res.status(HttpStatus.UNAUTHORIZED).json({ error: error.message });
+			} else {
+				logger.error(`Error during token refresh: ${error.message}`);
+				return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+			}
+	    } else {
+			logger.error('An unknown error occurred during token refresh');
+			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
 		}
 	}
-	};
+};
 
 //get User profile information
 export const getUserProfile = async (req: Request, res: Response) => {
@@ -128,17 +132,16 @@ export const getUserProfile = async (req: Request, res: Response) => {
 		const { userId } = req.params;
 
 		if (typeof userId !== 'string') {
-		logger.warn('Invalid or missing userId query parameter');
-		return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Invalid or missing userId' });
+			logger.warn('Invalid or missing userId query parameter');
+			return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Invalid or missing userId' });
 		}
 
 		// Fetch user details by ID
 		const user = await getUserDetailsById(userId);
 
 		if (!user) {
-			
-		logger.warn(`User not found: ${userId}`);
-		return res.status(HttpStatus.NOT_FOUND).json({ error: 'User not found' });
+			logger.warn(`User not found: ${userId}`);
+			return res.status(HttpStatus.NOT_FOUND).json({ error: 'User not found' });
 		}
 
 		// Destructure only the required fields from the user object
@@ -147,17 +150,17 @@ export const getUserProfile = async (req: Request, res: Response) => {
 	} catch (error) {
 		if (error instanceof Error) {
 
-		// Handle unexpected errors
-		logger.error(`Error fetching user details: ${error.message}`);
-		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unexpected error occurred' });
+			// Handle unexpected errors
+			logger.error(`Error fetching user details: ${error.message}`);
+			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unexpected error occurred' });
 		} else {
 
-		// Handle cases where error is not an instance of Error
-		logger.error('An unknown error occurred while fetching user details');
-		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+			// Handle cases where error is not an instance of Error
+			logger.error('An unknown error occurred while fetching user details');
+			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
 		}
 	}
-	};
+};
 
 
 // Deactive the profile
@@ -169,7 +172,6 @@ export const deactivateUser = async (req: Request, res: Response) => {
 		if (typeof userId !== 'string') {
 
 			logger.warn('Invalid or missing userId in request body');
-
 			return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Invalid or missing userId' });
 		}
 
@@ -180,12 +182,13 @@ export const deactivateUser = async (req: Request, res: Response) => {
 
 		return res.status(HttpStatus.OK).json({ message: 'User deactivated successfully' });
 	} catch (error: any) {
+
 		// Log and handle known errors
 		logger.error(`Error during user deactivation: ${error.message}`);
 
 		if (error.message === 'User not found or already inactive') {
-		return res.status(HttpStatus.NOT_FOUND).json({ error: error.message });
+			return res.status(HttpStatus.NOT_FOUND).json({ error: error.message });
 		}
 		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unexpected error occurred' });
 	}
-	};
+};

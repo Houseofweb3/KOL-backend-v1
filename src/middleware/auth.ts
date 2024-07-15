@@ -101,8 +101,6 @@ export const refreshToken = (req: Request, res: Response) => {
     });
 };
 
-
-
 export const logout = (req: Request, res: Response) => {
     // Optionally, invalidate the refresh token here
     // This might involve removing the refresh token from a database or a blacklist

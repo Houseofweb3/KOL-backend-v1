@@ -3,7 +3,7 @@ import {
     createCartHandler,
     deleteCartHandler,
     getCartsHandler
-} from '../../controllers/v1/cartController';
+} from '../../controllers/v1/cart/cartController';
 
 const router = Router();
 
