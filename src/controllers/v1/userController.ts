@@ -14,9 +14,9 @@ export const signup = async (req: Request, res: Response) => {
   }
 
   try {
-    const { user, message, token } = await createUser(email, password, fullname, type);
+    const { user, message, token, refreshToken } = await createUser(email, password, fullname, type);
     logger.info(`User created/updated successfully: ${user?.id}`);
-    return res.status(201).json({ user, message, token });
+    return res.status(201).json({ user, message, accessToken: token, refreshToken });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'User already exists and is inactive') {
@@ -54,7 +54,7 @@ export const login = async (req: Request, res: Response) => {
     logger.info(`User logged in successfully: ${user.id}`);
 
     // Respond with user details and token
-    return res.status(200).json({ user, message, token, refreshToken });
+    return res.status(200).json({ user, message, accessToken: token, refreshToken });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'User not found') {
