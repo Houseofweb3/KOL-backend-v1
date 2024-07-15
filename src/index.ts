@@ -43,27 +43,27 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // v1 Routes
 //user auth routes
-app.use('/api/v1/auth', userRoutes);
+app.use('/api/v${ENV.VERSION}/auth', userRoutes);
 //questionRoutes
-app.use('/api/v1/questions', questionRoutes);
+app.use('/api/v${ENV.VERSION}/questions', questionRoutes);
 // optionRoutes
-app.use('/api/v1/options', optionRoutes);
+app.use('/api/v${ENV.VERSION}/options', optionRoutes);
 // onboarding-questions routes
-app.use('/api/v1/onboarding-questions', onboardingQuestionsRoutes);
+app.use('/api/v${ENV.VERSION}/onboarding-questions', onboardingQuestionsRoutes);
 //user-onboarding-selections routes 
-app.use('/api/v1/user-onboarding-selections', userOnboardingSelectionRoutes)
+app.use('/api/v${ENV.VERSION}/user-onboarding-selections', userOnboardingSelectionRoutes)
 // InfluencerRoutes
-app.use('/api/v1/influencer', influencerRoutes)
+app.use('/api/v${ENV.VERSION}/influencer', influencerRoutes)
 //package Routes
-app.use('/api/v1/packages', packageRoutes)
+app.use('/api/v${ENV.VERSION}/packages', packageRoutes)
 // Package Item Routes
-app.use('/api/v1/package-items', packageItemRoutes)
+app.use('/api/v${ENV.VERSION}/package-items', packageItemRoutes)
 // Cart Routes
-app.use('/api/v1/cart', cartRoutes)
+app.use('/api/v${ENV.VERSION}/cart', cartRoutes)
 // influencer Cart Item Routes
-app.use('/api/v1/influencer-cart-item', influencerCartItemRoutes)
+app.use('/api/v${ENV.VERSION}/influencer-cart-item', influencerCartItemRoutes)
 // package Cart Item Routes
-app.use('/api/v1/package-cart-item', packageCartItemRoutes)
+app.use('/api/v${ENV.VERSION}/package-cart-item', packageCartItemRoutes)
 
 
 // Dummy API 
