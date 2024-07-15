@@ -5,8 +5,8 @@ import {
   PrimaryGeneratedColumn
 } from 'typeorm';
 
-import { Option } from './option.entity';
-import { OnboardingQuestion } from './onboardingQuestion';
+import { Option } from './Option.entity';
+import { OnboardingQuestion } from './OnboardingQuestion';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 export enum QuestionType {

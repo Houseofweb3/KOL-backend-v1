@@ -7,13 +7,13 @@ import { Influencer } from "../entity/influencer";
 import { Package } from "../entity/package/Package.entity";
 import { Checkout } from "../entity/checkout/checkout.entity";
 import { PackageItem } from "../entity/package/PackageItem.entity";
-import { PackageCartItem } from "../entity/cart/packageCartItem.entity";
-import { InfluencerCartItem } from "../entity/cart/influencerCartItem.entity";
+import { PackageCartItem } from "../entity/cart";
+import { InfluencerCartItem } from "../entity/cart";
 import {
-    Option,
-    Question,
-    OnboardingQuestion,
-    UserOnboardingSelection
+  Option,
+  Question,
+  OnboardingQuestion,
+  UserOnboardingSelection
 } from "../entity/onboarding";
 
 export const AppDataSource = new DataSource({

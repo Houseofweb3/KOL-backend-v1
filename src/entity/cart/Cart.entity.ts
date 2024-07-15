@@ -9,9 +9,9 @@ import {
 
 import { User } from '../auth';
 import { Checkout } from '../checkout';
-import { PackageCartItem } from './packageCartItem.entity';
+import { PackageCartItem } from './PackageCartItem.entity';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
-import { InfluencerCartItem } from './influencerCartItem.entity';
+import { InfluencerCartItem } from './InfluencerCartItem.entity';
 
 @Entity()
 export class Cart extends BaseModel {
@@ -29,6 +29,5 @@ export class Cart extends BaseModel {
     packageCartItems!: PackageCartItem[];
 
     @OneToOne(() => Checkout, checkout => checkout.cart, { nullable: true })
-    @JoinColumn()
     checkout?: Checkout;
 }

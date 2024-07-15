@@ -1,6 +1,7 @@
 import { Package } from '../../entity/package';
 import { AppDataSource } from '../../config/data-source';
 import logger from '../../config/logger';
+import { ILike } from 'typeorm';
 
 // Repository initialization
 const packageRepository = AppDataSource.getRepository(Package);
@@ -33,21 +34,30 @@ export const getAllPackages = async (
   page: number = 1,
   limit: number = 10,
   sortField: string = 'header',
-  sortOrder: 'asc' | 'desc' = 'asc'
+  sortOrder: 'asc' | 'desc' = 'asc',
+  searchTerm: string = ''  // Added searchTerm parameter
 ) => {
   const validSortFields = ['header', 'cost'];
   const order: { [key: string]: 'asc' | 'desc' } = validSortFields.includes(sortField)
     ? { [sortField]: sortOrder }
     : { header: sortOrder };
 
+  // Construct the search criteria
+  const searchCriteria: { [key: string]: any } = searchTerm
+    ? {
+      header: ILike(`%${searchTerm}%`) 
+    }
+    : {};
+
   const [packages, total] = await packageRepository.findAndCount({
+    where: searchCriteria,  // Apply the search criteria
     order,
     take: limit,
     skip: (page - 1) * limit,
     relations: ['packageItems'],
   });
 
-  logger.info(`Fetched packages for page ${page}, limit ${limit}`);
+  logger.info(`Fetched packages for page ${page}, limit ${limit}, search term "${searchTerm}"`);
 
   return {
     packages,
@@ -59,6 +69,7 @@ export const getAllPackages = async (
     },
   };
 };
+
 
 export const updatePackageById = async (id: string, updateData: Partial<Package>): Promise<Package | null> => {
   try {

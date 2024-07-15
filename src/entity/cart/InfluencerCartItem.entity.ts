@@ -1,7 +1,7 @@
 import { Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Cart } from './cart.entity';
-import { Influencer } from '../influencer/influencer.entity';
+import { Cart } from './Cart.entity';
+import { Influencer } from '../influencer';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()

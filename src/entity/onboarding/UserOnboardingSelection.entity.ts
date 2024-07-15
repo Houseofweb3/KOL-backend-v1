@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
-import { Question } from './question.entity';
-import { Option } from './option.entity';
+import { Question } from './Question.entity';
+import { Option } from './Option.entity';
 import { User } from '../auth/user.entity'
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';

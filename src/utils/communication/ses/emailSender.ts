@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} pdfFilePath - Path to the PDF attachment
  * @returns {Promise} - Result of the email sending
  */
-export async function sendInvoiceEmail(user: any, pdfFilePath: string) {
+export async function sendInvoiceEmail(user: any, pdfFilePath: string): Promise<any> {
   // Check if username is null or undefined and replace it with a default value if necessary
   const username = user.fullname || "Valued Customer";
 

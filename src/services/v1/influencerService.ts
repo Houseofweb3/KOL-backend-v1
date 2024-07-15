@@ -5,12 +5,13 @@ import { Influencer } from '../../entity/influencer';
 import { User } from '../../entity/auth';
 import logger from '../../config/logger';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
+import { FindOptionsWhere, ILike } from 'typeorm';
 
 // Define default values for pagination and sorting
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const DEFAULT_SORT_FIELD = 'price';
-const DEFAULT_SORT_ORDER = 'asc';
+const DEFAULT_SORT_ORDER = 'ASC';
 
 interface CSVRow {
     Influencer: string;
@@ -142,26 +143,30 @@ export const getInfluencersWithHiddenPrices = async (
     page: number = DEFAULT_PAGE,
     limit: number = DEFAULT_LIMIT,
     sortField: string = DEFAULT_SORT_FIELD,
-    sortOrder: 'asc' | 'desc' = DEFAULT_SORT_ORDER
+    sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
+    searchTerm: string = ''
 ) => {
     const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
         ? { [sortField]: sortOrder }
         : { [DEFAULT_SORT_FIELD]: DEFAULT_SORT_ORDER };
 
-    const [influencers, total] = await influencerRepository.findAndCount({
-        where: {},
-        order,
-        take: limit,
-        skip: (page - 1) * limit,
-    });
+    // Use queryBuilder for more efficient queries
+    const query = influencerRepository.createQueryBuilder('influencer')
+        .select(['influencer.id', 'influencer.name', 'influencer.price', 'influencer.subscribers', 'influencer.categoryName', 'influencer.engagementRate'])  // Select only needed columns
+        .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` })
+        .orderBy(`influencer.${sortField}`, sortOrder)
+        .skip((page - 1) * limit)
+        .take(limit);
+
+    const [influencers, total] = await query.getManyAndCount();
 
     const influencersWithHiddenPrices = influencers.map(influencer => ({
         ...influencer,
         hiddenPrice: getHiddenPrice(influencer.price),
     }));
 
-    logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}`);
+    logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}, search term "${searchTerm}"`);
     return {
         influencers: influencersWithHiddenPrices,
         pagination: {
@@ -172,6 +177,8 @@ export const getInfluencersWithHiddenPrices = async (
         },
     };
 };
+
+
 
 
 const getHiddenPrice = (price: number): string => {
