@@ -2,11 +2,12 @@ import {
     Entity,
     Column,
     OneToMany,
-    PrimaryGeneratedColumn
+    PrimaryGeneratedColumn,
+    Index,
 } from 'typeorm';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
-import { InfluencerCartItem } from '../cart/influencerCartItem.entity';
+import { InfluencerCartItem } from '../cart';
 
 @Entity()
 export class Influencer extends BaseModel {
@@ -17,12 +18,15 @@ export class Influencer extends BaseModel {
     niche!: string;
 
     @Column()
+    @Index()  // Add an index to speed up search queries
     name!: string;
 
     @Column()
+    @Index()  // Add an index for sorting and filtering
     categoryName!: string;
 
     @Column('int')
+    @Index()  // Add an index for sorting
     subscribers!: number;
 
     @Column()
@@ -32,6 +36,7 @@ export class Influencer extends BaseModel {
     platform!: string;
 
     @Column('decimal')
+    @Index()  // Add an index for sorting
     price!: number;
 
     @Column()
@@ -46,3 +51,4 @@ export class Influencer extends BaseModel {
     @OneToMany(() => InfluencerCartItem, (item) => item.influencer)
     influencerCartItems!: InfluencerCartItem[];
 }
+

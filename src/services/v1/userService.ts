@@ -1,14 +1,23 @@
 import bcrypt from 'bcryptjs';
-import { AppDataSource } from '../../config/data-source'
+import { AppDataSource } from '../../config/data-source';
 import { User } from '../../entity/auth/user.entity';
 import logger from '../../config/logger';
+import { generateAccessToken, generateRefreshToken } from '../../middleware/auth';
+import jwt from 'jsonwebtoken';
+import { ENV } from '../../config/env';
+
+const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET;
 
 const userRepository = AppDataSource.getRepository(User);
 
+interface JwtPayload {
+    id: string;
+    type: any;
+}
 
 export const createUser = async (email: string, password?: string, fullname?: string, type?: string) => {
     try {
-        // to check if a user with the given id or email already exists
+        // to check if a user with the given email already exists
         const existingUser = await AppDataSource.transaction(async (transactionalEntityManager) => {
             const user = await transactionalEntityManager.findOne(User, {
                 where: [{ email }],
@@ -38,11 +47,15 @@ export const createUser = async (email: string, password?: string, fullname?: st
                 status: true,
             });
 
+            // Generate token and refresh token
+            const token = generateAccessToken({ id: newUser.id, type });
+            const refreshToken = generateRefreshToken({ id: newUser.id, type });
+
             // save the entity in the db
             await transactionalEntityManager.save(newUser);
 
             logger.info(`User created successfully: ${newUser.id}`);
-            return { user: newUser, message: 'User signup successfully' };
+            return { user: newUser, message: 'User signup successfully', token, refreshToken };
         });
 
         return existingUser;
@@ -57,6 +70,86 @@ export const createUser = async (email: string, password?: string, fullname?: st
         }
     }
 };
+
+// Login User
+export const loginUser = async (email: string, password: string) => {
+    try {
+        // Check if a user with the given email exists
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: [{ email }],
+        });
+
+        if (!user) {
+            logger.warn(`User not found with email: ${email}`);
+            throw new Error('User not found');
+        }
+
+        // Check if the user is active
+        if (!user.status) {
+            logger.warn(`User is inactive: ${user.id}`);
+            throw new Error('User is inactive');
+        }
+
+        // Ensure hashedPassword is defined before using it
+        const hashedPassword = user.password || '';
+        // Verify the password
+        const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+
+        if (!isPasswordValid) {
+            logger.warn(`Invalid password attempt for email: ${email}`);
+            throw new Error('Invalid password');
+        }
+
+        // Generate token and refresh token
+        const token = generateAccessToken({ id: user.id, type: user.userType });
+        const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
+
+        logger.info(`User logged in successfully: ${user.id}`);
+        return { user, message: 'Login successful', token, refreshToken };
+
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Error logging in user: ${error.message}`);
+            throw new Error(error.message);
+        } else {
+            logger.error('An unknown error occurred while logging in the user');
+            throw new Error('An unknown error occurred');
+        }
+    }
+};
+
+// Refresh User Token
+export const refreshTokenService = async (refreshToken: string) => {
+    try {
+        if (!refreshToken) {
+            throw new Error('Refresh token is required');
+        }
+
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, jwtRefreshSecret) as JwtPayload;
+
+        if (!decoded) {
+            throw new Error('Invalid refresh token');
+        }
+
+        // Generate a new access token
+        const newAccessToken = generateAccessToken({ id: decoded.id, type: decoded.type });
+
+        logger.info(`Refresh token processed successfully for user: ${decoded.id}`);
+        return { newAccessToken };
+
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Error refreshing token: ${error.message}`);
+            throw new Error(error.message);
+        } else {
+            logger.error('An unknown error occurred while refreshing the token');
+            throw new Error('An unknown error occurred');
+        }
+    }
+};
+
+
 
 
 

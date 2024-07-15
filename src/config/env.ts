@@ -15,6 +15,7 @@ interface Env {
   DB_PASSWORD: string;
   DB_DATABASE: string;
   JWT_SECRET: string;
+  REFRESH_JWT_SECRET: string;
   VERSION: number;
 }
 
@@ -27,6 +28,7 @@ export const ENV: Env = {
   DB_PASSWORD: process.env.DB_PASSWORD || '',
   DB_DATABASE: process.env.DB_DATABASE || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
+  REFRESH_JWT_SECRET: process.env.REFRESH_JWT_SECRET || '',
   VERSION: parseInt(process.env.VERSION || '1', 10)
 }
 

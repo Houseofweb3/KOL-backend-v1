@@ -1,6 +1,6 @@
 import { Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
-import { Cart } from './cart.entity';
-import { PackageItem } from '../package/PackageItem.entity';
+import { Cart } from './Cart.entity';
+import { PackageItem } from '../package';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()

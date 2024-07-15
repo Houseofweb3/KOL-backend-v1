@@ -6,7 +6,7 @@ import {
     PrimaryGeneratedColumn
 } from 'typeorm';
 
-import { Question } from './question.entity';
+import { Question } from './Question.entity';
 
 @Entity()
 export class OnboardingQuestion {

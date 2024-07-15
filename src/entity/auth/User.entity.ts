@@ -7,7 +7,7 @@ import {
 
 import { Cart } from '../cart';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
-import { UserOnboardingSelection } from '../onboarding/userOnboardingSelection.entity';
+import { UserOnboardingSelection } from '../onboarding/UserOnboardingSelection.entity';
 
 export enum UserType {
     USER = 'user',
