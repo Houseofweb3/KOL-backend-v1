@@ -1,8 +1,8 @@
 import {
     Entity,
     Column,
+    OneToMany,
     PrimaryGeneratedColumn,
-    OneToMany
 } from 'typeorm';
 
 import { Cart } from '../cart';
@@ -28,9 +28,8 @@ export class User extends BaseModel {
     @Column({ nullable: true })
     fullname?: string;
 
-    // TODO: Add type of user ()
-    @Column({ default: true })
-    status!: boolean;
+    @Column({ default: false })
+    is_deleted!: boolean;
 
     @Column({
         type: 'enum',
@@ -45,4 +44,3 @@ export class User extends BaseModel {
     @OneToMany(() => Cart, cart => cart.user)
     carts!: Cart[];
 }
-

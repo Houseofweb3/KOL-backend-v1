@@ -1,5 +1,8 @@
 import jwt from 'jsonwebtoken';
+import HttpStatus from 'http-status-codes';
+
 import { Response, Request, NextFunction } from 'express';
+
 import { ENV } from '../config/env';
 
 const jwtSecret = ENV.JWT_SECRET;
@@ -21,8 +24,9 @@ export const generateRefreshToken = ({ id, type }: JwtPayload): string => {
 export const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.split(' ')[1];
+
     if (!token) {
-        return res.status(401).json({
+        return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
             message: "Access token is not provided"
         });
@@ -30,18 +34,18 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
     jwt.verify(token, jwtSecret, (err, user) => {
         if (err) {
             if (err.name === 'TokenExpiredError') {
-                return res.status(401).json({
+                return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
                     message: "Access token has expired"
                 });
             }
             if (err.name === 'JsonWebTokenError') {
-                return res.status(401).json({
+                return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
                     message: "Access token is not valid"
                 });
             }
-            return res.status(500).json({
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal server error"
             });
@@ -54,7 +58,7 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
 export const refreshToken = (req: Request, res: Response) => {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-        return res.status(400).json({
+        return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
             message: "Refresh token is required"
         });
@@ -63,18 +67,18 @@ export const refreshToken = (req: Request, res: Response) => {
     jwt.verify(refreshToken, jwtRefreshSecret, (err: jwt.VerifyErrors | null, decoded: any) => {
         if (err) {
             if (err.name === 'TokenExpiredError') {
-                return res.status(401).json({
+                return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
                     message: "Refresh token has expired"
                 });
             }
             if (err.name === 'JsonWebTokenError') {
-                return res.status(401).json({
+                return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
                     message: "Refresh token is not valid"
                 });
             }
-            return res.status(500).json({
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: "Internal server error"
             });
@@ -83,7 +87,7 @@ export const refreshToken = (req: Request, res: Response) => {
         // Type assertion to JwtPayload
         const user = decoded as JwtPayload;
         if (!user) {
-            return res.status(401).json({
+            return res.status(HttpStatus.UNAUTHORIZED).json({
                 success: false,
                 message: "User not found"
             });

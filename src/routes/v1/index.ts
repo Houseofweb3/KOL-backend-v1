@@ -1,5 +1,5 @@
+export * from './auth';
 export * from './cart.routes';
-export * from './user.routes';
 export * from './option.routes';
 export * from './package.routes';
 export * from './question.routes';

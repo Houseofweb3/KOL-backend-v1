@@ -1,10 +1,11 @@
 import bcrypt from 'bcryptjs';
-import { AppDataSource } from '../../config/data-source';
-import { User } from '../../entity/auth/user.entity';
-import logger from '../../config/logger';
-import { generateAccessToken, generateRefreshToken } from '../../middleware/auth';
 import jwt from 'jsonwebtoken';
-import { ENV } from '../../config/env';
+
+import { ENV } from '../../../config/env';
+import logger from '../../../config/logger';
+import { User } from '../../../entity/auth/User.entity';
+import { AppDataSource } from '../../../config/data-source';
+import { generateAccessToken, generateRefreshToken } from '../../../middleware/auth';
 
 const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET;
 
@@ -17,17 +18,20 @@ interface JwtPayload {
 
 export const createUser = async (email: string, password?: string, fullname?: string, type?: string) => {
     try {
-        // to check if a user with the given email already exists
+        // Check if a user with the given email already exists
         const existingUser = await AppDataSource.transaction(async (transactionalEntityManager) => {
             const user = await transactionalEntityManager.findOne(User, {
                 where: [{ email }],
             });
 
             if (user) {
-                if (user.status) {
-                    user.status = true;
+                if (user.is_deleted) {
+                    user.is_deleted = false;
+
                     await transactionalEntityManager.save(user);
+
                     logger.info(`User reactivated successfully: ${user.id}`);
+
                     return { user, message: 'User reactivated successfully' };
                 } else {
                     logger.warn(`User already exists and is inactive: ${user.id}`);
@@ -63,37 +67,36 @@ export const createUser = async (email: string, password?: string, fullname?: st
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating user: ${error.message}`);
-            throw new Error(error.message);
+            throw new Error(`Error creating user: ${error.message}`);
         } else {
             logger.error('An unknown error occurred while creating the user');
-            throw new Error('An unknown error occurred');
+            throw new Error('An unknown error occurred while creating the user');
         }
     }
 };
 
+
 // Login User
 export const loginUser = async (email: string, password: string) => {
     try {
-        // Check if a user with the given email exists
+        // Find user by email
         const user = await AppDataSource.getRepository(User).findOne({
             where: [{ email }],
         });
-
+        // Check if user exists
         if (!user) {
             logger.warn(`User not found with email: ${email}`);
             throw new Error('User not found');
         }
 
         // Check if the user is active
-        if (!user.status) {
+        if (!user.is_deleted) {
             logger.warn(`User is inactive: ${user.id}`);
             throw new Error('User is inactive');
         }
 
-        // Ensure hashedPassword is defined before using it
-        const hashedPassword = user.password || '';
         // Verify the password
-        const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+        const isPasswordValid = await bcrypt.compare(password, user.password || '');
 
         if (!isPasswordValid) {
             logger.warn(`Invalid password attempt for email: ${email}`);
@@ -117,6 +120,7 @@ export const loginUser = async (email: string, password: string) => {
         }
     }
 };
+ 
 
 // Refresh User Token
 export const refreshTokenService = async (refreshToken: string) => {
@@ -150,10 +154,6 @@ export const refreshTokenService = async (refreshToken: string) => {
 };
 
 
-
-
-
-
 // get user details by id
 export const getUserDetailsById = async (id: string): Promise<User | null> => {
     try {
@@ -161,9 +161,9 @@ export const getUserDetailsById = async (id: string): Promise<User | null> => {
             id
         });
 
+        // If user is found, return User entity
         if (user) {
-            // return  User entity
-            return user
+            return user;
         }
 
         // Return null if the user is not found
@@ -185,14 +185,15 @@ export const deactivateUserById = async (id: string): Promise<void> => {
                 where: { id },
             });
 
-            if (!user || !user.status) {
+            if (!user || !user.is_deleted) {
                 throw new Error('User not found or already inactive');
             }
 
             // Deactivate the user
-            user.status = false;
+            user.is_deleted = false;
             await transactionalEntityManager.save(user);
 
+            logger.info(`User with id ${id} deactivated successfully`);
         });
     } catch (error) {
         logger.error(`Failed to deactivate user with id: ${id}`, error);
