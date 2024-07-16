@@ -90,7 +90,7 @@ export const loginUser = async (email: string, password: string) => {
         }
 
         // Check if the user is active
-        if (!user.is_deleted) {
+        if (user.is_deleted) {
             logger.warn(`User is inactive: ${user.id}`);
             throw new Error('User is inactive');
         }
