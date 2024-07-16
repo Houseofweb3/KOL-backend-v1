@@ -22,13 +22,12 @@ export class Cart extends BaseModel {
     @ManyToOne(() => User, user => user.carts, { nullable: true })
     user?: User;
 
-    @OneToMany(() => InfluencerCartItem, (item) => item.influencer, { cascade: true, onDelete: 'CASCADE' })
+    @OneToMany(() => InfluencerCartItem, (item) => item.cart, { cascade: true, onDelete: 'CASCADE' })
     influencerCartItems!: InfluencerCartItem[];
 
-    @OneToMany(() => PackageCartItem, (item) => item.packageItem, { cascade: true, onDelete: 'CASCADE' })
-    packageCartItem!: PackageCartItem[];
+    @OneToMany(() => PackageCartItem, (item) => item.cart, { cascade: true, onDelete: 'CASCADE' })
+    packageCartItems!: PackageCartItem[];
 
     @OneToOne(() => Checkout, checkout => checkout.cart, { nullable: true })
-    @JoinColumn()
     checkout?: Checkout;
 }

@@ -1,1 +1,1 @@
-export * from './Influencer.entity';
+export * from './influencer.entity';

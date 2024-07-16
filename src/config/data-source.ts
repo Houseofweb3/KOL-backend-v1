@@ -1,23 +1,20 @@
 import { DataSource } from "typeorm";
+
 import { ENV } from "./env";
-// import { Admin } from "../entity/auth/Admin.entity";
-// import { Question } from "../entity/questionaries/Question.entity";
-// import { Option } from "../entity/questionaries/Option.entity";
-import { User } from "../entity/auth/User.entity";
-// import { InfluencerPR } from "../entity/influencer/Influencer.entity";
-// import { UserSelectedNiche } from "../entity/influencer/UserSelectedNiche.entity";
-// import { UserSelections } from "../entity/onboarding/UserOnboardingSelection.entity";
-// import { UserReferencePriority } from "../entity/influencer/UserReferencePriority.entity";
-import { Package } from "../entity/package/Package.entity";
-import { PackageItem } from "../entity/package/PackageItem.entity";
 import { Cart } from "../entity/cart";
-import { InfluencerCartItem } from "../entity/cart/InfluencerCartItem.entity";
-import { PackageCartItem } from "../entity/cart/PackageCartItem.entity";
-import { Checkout } from "../entity/checkout/Checkout.entity";
-// import { UserCheckoutInfluencer } from "../entity/checkout/UserCheckoutInfluencer.entity";
-// import { UserCheckoutPackages } from "../entity/checkout/UserCheckoutPackages.entity";
-import { Question, Option, UserOnboardingSelection, OnboardingQuestion } from "../entity/onboarding";
+import { User } from "../entity/auth";
+import { Package } from "../entity/package";
+import { Checkout } from "../entity/checkout";
+import { PackageItem } from "../entity/package";
+import { PackageCartItem } from "../entity/cart";
 import { Influencer } from "../entity/influencer";
+import { InfluencerCartItem } from "../entity/cart";
+import {
+  Option,
+  Question,
+  OnboardingQuestion,
+  UserOnboardingSelection
+} from "../entity/onboarding";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -29,22 +26,14 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   logging: false,
   entities: [
-    // Admin,
-    // Question,
-    // Option,
     User,
     Influencer,
-    // UserSelectedNiche,
-    // UserSelections,
-    // UserReferencePriority,
     Package,
     PackageItem,
     InfluencerCartItem,
     Cart,
     PackageCartItem,
     Checkout,
-    // UserCheckoutInfluencer,
-    // UserCheckoutPackages,
     UserOnboardingSelection,
     Question,
     Option,

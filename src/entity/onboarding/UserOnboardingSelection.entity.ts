@@ -10,7 +10,6 @@ export class UserOnboardingSelection extends BaseModel {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  // TODO: Add foreign key to User module. (Completed)
   @ManyToOne(() => User, user => user.userSelections)
   user!: User;
 

@@ -53,12 +53,13 @@ export const getPackageByIdHandler = async (req: Request, res: Response) => {
 
 export const getAllPackagesHandler = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string, 10) || 1;
+    const search = req.query.search as string || "";
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const sortField = req.query.sortField as string || 'header';
     const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'asc';
 
     try {
-        const { packages, pagination } = await getAllPackages(page, limit, sortField, sortOrder);
+        const { packages, pagination } = await getAllPackages(page, limit, sortField, sortOrder, search);
         return res.status(200).json({ packages, pagination });
     } catch (error) {
         if (error instanceof Error) {

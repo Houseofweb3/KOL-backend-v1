@@ -1,20 +1,33 @@
 import 'reflect-metadata';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import express, { Application, Request, Response } from 'express';
 import { createServer, Server as HttpServer } from 'http';
+import express, {
+    Application,
+    Request,
+    Response
+} from 'express';
 
+import { ENV } from "./config/env";
 import logger from './config/logger';
 import swaggerDocument from './swagger.json';
+
 import { AppDataSource } from './config/data-source';
-import userRoutes from './routes/v1/userRoutes'
-import questionRoutes from './routes/v1/questionRoutes'
-import optionRoutes from './routes/v1/optionRoutes'
-import onboardingQuestionsRoutes from './routes/v1/onboardingQuestionsRoutes';
-import userOnboardingSelectionRoutes from './routes/v1/userOnboardingSelectionRoutes'
-import influencerRoutes from './routes/v1/InfluencerRoutes'
-import packageRoutes from './routes/v1/packageRoutes'
-import packageItemRoutes from './routes/v1/packageItemRoutes'
+import { verifyAccessToken } from './middleware/auth';
+
+// Importing routes
+import cartRoutes from './routes/v1/cart.routes';
+import optionRoutes from './routes/v1/option.routes';
+import userRoutes from './routes/v1/auth/user.routes';
+import packageRoutes from './routes/v1/package.routes';
+import checkoutRoutes from './routes/v1/checkoutRoutes';
+import questionRoutes from './routes/v1/question.routes';
+import influencerRoutes from './routes/v1/influencer.routes';
+import packageItemRoutes from './routes/v1/packageItem.routes';
+import packageCartItemRoutes from './routes/v1/packageCartItem.routes';
+import influencerCartItemRoutes from './routes/v1/influencerCartItem.routes';
+import onboardingQuestionsRoutes from './routes/v1/onboardingQuestions.routes';
+import userOnboardingSelectionRoutes from './routes/v1/userOnboardingSelection.routes';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -31,31 +44,37 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // To parse URL-encoded data
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
-// app.use('/api', routes);
-
 
 // v1 Routes
 //user auth routes
-app.use('/api/v1', userRoutes);
+app.use(`/api/v${ENV.VERSION}/auth`, userRoutes);
 //questionRoutes
-app.use('/api/v1/questions', questionRoutes);
+app.use(`/api/v${ENV.VERSION}/questions`, verifyAccessToken,  questionRoutes);
 // optionRoutes
-app.use('/api/v1/options', optionRoutes);
+app.use(`/api/v${ENV.VERSION}/options`, verifyAccessToken, optionRoutes);
 // onboarding-questions routes
-app.use('/api/v1/onboarding-questions', onboardingQuestionsRoutes);
+app.use(`/api/v${ENV.VERSION}/onboarding-questions`, verifyAccessToken, onboardingQuestionsRoutes);
 //user-onboarding-selections routes 
-app.use('/api/v1/user-onboarding-selections', userOnboardingSelectionRoutes)
+app.use(`/api/v${ENV.VERSION}/user-onboarding-selections`, verifyAccessToken,  userOnboardingSelectionRoutes)
 // InfluencerRoutes
-app.use('/api/v1/influencer', influencerRoutes)
+app.use(`/api/v${ENV.VERSION}/influencer`, verifyAccessToken, influencerRoutes)
 //package Routes
-app.use('/api/v1/packages', packageRoutes)
+app.use(`/api/v${ENV.VERSION}/packages`, verifyAccessToken, packageRoutes)
 // Package Item Routes
-app.use('/api/v1/package-items', packageItemRoutes)
+app.use(`/api/v${ENV.VERSION}/package-items`, verifyAccessToken, packageItemRoutes)
+// Cart Routes
+app.use(`/api/v${ENV.VERSION}/cart`, verifyAccessToken, cartRoutes)
+// influencer Cart Item Routes
+app.use(`/api/v${ENV.VERSION}/influencer-cart-item`, verifyAccessToken, influencerCartItemRoutes)
+// package Cart Item Routes
+app.use(`/api/v${ENV.VERSION}/package-cart-item`, verifyAccessToken, packageCartItemRoutes)
+// checkout Routes
+app.use(`/api/v${ENV.VERSION}/checkout`, verifyAccessToken, checkoutRoutes)
 
 
 // Dummy API 
 app.get('/', (req: Request, res: Response) => {
-    res.send('Hello World!');
+    res.send('It is working');
 });
 
 // Initialize TypeORM data source
