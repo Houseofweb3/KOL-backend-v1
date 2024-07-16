@@ -5,15 +5,15 @@ import logger from '../../config/logger';
 
 // Generate an Invoice
 export const generateInvoiceController = async (req: Request, res: Response) => {
-    const { userId, id } = req.body;
+    const { userId, cartId } = req.body;
 
-    if (!id || userId) {
+    if (!cartId || userId) {
         logger.warn('Missing required fields in generate Invoice');
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
-        const { data, filePath } = await fetchInvoiceDetails(id as string, userId as string);
+        const { data, filePath } = await fetchInvoiceDetails(cartId as string, userId as string);
         logger.info(`Influencer created successfully`);
         return res.status(201).json({ data, filePath });
     } catch (error) {

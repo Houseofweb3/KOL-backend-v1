@@ -6,6 +6,9 @@ import { convertHtmlToPdf } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
 import { getCarts } from './cartService';
+import { Cart } from '../../entity/cart';
+
+const cartRepository = AppDataSource.getRepository(Cart)
 
 
 function transformData(data: any) {
@@ -86,6 +89,9 @@ export const fetchInvoiceDetails = async (id: string, userId: string) => {
         // Delete the HTML and PDF files
         unlinkSync(htmlFilePath);
         unlinkSync(pdfFilePath);
+
+        // Delete the cart after the invoice is sent-----------------tobereviewed------
+        // await cartRepository.delete(id);
 
         return { data: transformCartData, filePath: pdfFilePath };  // Update with actual file path if needed
 
