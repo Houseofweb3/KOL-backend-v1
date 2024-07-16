@@ -28,6 +28,7 @@ import packageCartItemRoutes from './routes/v1/packageCartItem.routes';
 import influencerCartItemRoutes from './routes/v1/influencerCartItem.routes';
 import onboardingQuestionsRoutes from './routes/v1/onboardingQuestions.routes';
 import userOnboardingSelectionRoutes from './routes/v1/userOnboardingSelection.routes';
+import invoiceRoutes from './routes/v1/invoiceRoutes';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -49,13 +50,13 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
 //user auth routes
 app.use(`/api/v${ENV.VERSION}/auth`, userRoutes);
 //questionRoutes
-app.use(`/api/v${ENV.VERSION}/questions`, verifyAccessToken,  questionRoutes);
+app.use(`/api/v${ENV.VERSION}/questions`, verifyAccessToken, questionRoutes);
 // optionRoutes
 app.use(`/api/v${ENV.VERSION}/options`, verifyAccessToken, optionRoutes);
 // onboarding-questions routes
 app.use(`/api/v${ENV.VERSION}/onboarding-questions`, verifyAccessToken, onboardingQuestionsRoutes);
 //user-onboarding-selections routes 
-app.use(`/api/v${ENV.VERSION}/user-onboarding-selections`, verifyAccessToken,  userOnboardingSelectionRoutes)
+app.use(`/api/v${ENV.VERSION}/user-onboarding-selections`, verifyAccessToken, userOnboardingSelectionRoutes)
 // InfluencerRoutes
 app.use(`/api/v${ENV.VERSION}/influencer`, verifyAccessToken, influencerRoutes)
 //package Routes
@@ -70,6 +71,8 @@ app.use(`/api/v${ENV.VERSION}/influencer-cart-item`, verifyAccessToken, influenc
 app.use(`/api/v${ENV.VERSION}/package-cart-item`, verifyAccessToken, packageCartItemRoutes)
 // checkout Routes
 app.use(`/api/v${ENV.VERSION}/checkout`, verifyAccessToken, checkoutRoutes)
+// invoice Routes
+app.use(`/api/v${ENV.VERSION}/invoice`, invoiceRoutes)
 
 
 // Dummy API 

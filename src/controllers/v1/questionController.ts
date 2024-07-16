@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createQuestion, getQuestions } from '../../services/v1/questionService';
+import { createQuestion, getQuestions, deleteQuestion } from '../../services/v1/questionService';
 import { QuestionType } from '../../entity/onboarding';
 import logger from '../../config/logger';
 
@@ -55,6 +55,25 @@ export const getQuestionController = async (req: Request, res: Response) => {
         } else {
             logger.error('An unknown error occurred while fetching questions');
             return res.status(500).json({ error: 'An unknown error occurred while fetching questions' });
+        }
+    }
+};
+
+
+// Delete Question Handler
+
+export const deleteQuestionController = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        await deleteQuestion(id);
+        return res.status(200).json({ message: 'Question deleted successfully' });
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Error deleting Question: ${error.message}`);
+            return res.status(500).json({ error: error.message });
+        } else {
+            logger.error('An unknown error occurred during Question deletion');
+            return res.status(500).json({ error: 'An unknown error occurred' });
         }
     }
 };
