@@ -1,6 +1,6 @@
 import { AppDataSource } from '../../config/data-source';
 import ejs from 'ejs';
-import { writeFileSync } from 'fs';
+import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { convertHtmlToPdf } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
@@ -76,14 +76,19 @@ export const fetchInvoiceDetails = async (id: string, userId: string) => {
          
 // -------------------Fix this part- Start ---------------------------------------------------
         const fileName = `HOW3x ${transformCartData.checkoutDetails.firstName}_${transformCartData.checkoutDetails.lastName}`;
-        const htmlFilePath = join(__dirname, '../invoices', `${fileName}.html`);
+        const htmlFilePath = join(__dirname, '../../invoices', `${fileName}.html`);
         writeFileSync(htmlFilePath, html);
-        const pdfFilePath = join(__dirname, '../invoices', `${fileName}.pdf`);
+        const pdfFilePath = join(__dirname, '../../invoices', `${fileName}.pdf`);
         await convertHtmlToPdf(htmlFilePath, pdfFilePath);
         await sendInvoiceEmail(transformCartData.user, pdfFilePath);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
+        
+        // Delete the HTML and PDF files
+        unlinkSync(htmlFilePath);
+        unlinkSync(pdfFilePath);
 
         return { data: transformCartData, filePath: pdfFilePath };  // Update with actual file path if needed
+
 // -------------------Fix this part- End---------------------------------------------------
   
     } catch (error) {
