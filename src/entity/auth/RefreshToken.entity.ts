@@ -10,7 +10,7 @@ export class RefreshToken extends BaseModel {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column({ type: 'text', unique: true })
+    @Column({ type: 'varchar', length: 255, unique: true })
     token!: string;
 
     @Column({ type: 'timestamp' })

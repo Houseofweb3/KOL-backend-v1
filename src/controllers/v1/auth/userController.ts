@@ -1,6 +1,5 @@
 import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
-
 import logger from '../../../config/logger';
 import {
 	loginUser,
@@ -9,8 +8,7 @@ import {
 	deactivateUserById,
 	refreshTokenService
 } from '../../../services/v1/auth/user-service';
-
-
+import { ENV } from '../../../config/env';
 import { RefreshToken } from '../../../entity/auth';
 import { AppDataSource } from '../../../config/data-source';
 
@@ -140,8 +138,7 @@ export const refreshTokenhandler = async (req: Request, res: Response) => {
 };
 
 
-// LogOt
-
+// Logout
 export const logoutController = async (req: Request, res: Response) => {
 	const { refreshToken } = req.body;
 
@@ -153,11 +150,13 @@ export const logoutController = async (req: Request, res: Response) => {
 	}
 
 	try {
+		// Refresh Token expiration period
+		const tokenExpirationDays = ENV.REFRESH_TOKEN_EXPIRATION_DAYS;
 		const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
 		// Add the refresh token to the blacklist
 		const tokenEntry = refreshTokenRepository.create({
 			token: refreshToken,
-			expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+			expiresAt: new Date(Date.now() + tokenExpirationDays * 24 * 60 * 60 * 1000)
 		});
 
 		await refreshTokenRepository.save(tokenEntry);
