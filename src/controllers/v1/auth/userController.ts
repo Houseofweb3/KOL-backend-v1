@@ -3,12 +3,16 @@ import { Request, Response } from 'express';
 
 import logger from '../../../config/logger';
 import {
-  loginUser,
-  createUser,
-  getUserDetailsById,
-  deactivateUserById,
-  refreshTokenService
+	loginUser,
+	createUser,
+	getUserDetailsById,
+	deactivateUserById,
+	refreshTokenService
 } from '../../../services/v1/auth/user-service';
+
+
+import { RefreshToken } from '../../../entity/auth';
+import { AppDataSource } from '../../../config/data-source';
 
 // create a signp User
 export const signup = async (req: Request, res: Response) => {
@@ -98,6 +102,16 @@ export const refreshTokenhandler = async (req: Request, res: Response) => {
 	}
 
 	try {
+		const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
+		// Check if the refresh token is on the blacklist
+		const tokenEntry = await refreshTokenRepository.findOne({ where: { token: refreshToken } });
+
+		if (tokenEntry) {
+			return res.status(HttpStatus.UNAUTHORIZED).json({
+				success: false,
+				message: "Refresh token is invalid"
+			});
+		}
 		// Call the service function to handle the login logic
 		const { newAccessToken } = await refreshTokenService(refreshToken);
 
@@ -118,10 +132,45 @@ export const refreshTokenhandler = async (req: Request, res: Response) => {
 				logger.error(`Error during token refresh: ${error.message}`);
 				return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
 			}
-	    } else {
+		} else {
 			logger.error('An unknown error occurred during token refresh');
 			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
 		}
+	}
+};
+
+
+// LogOt
+
+export const logoutController = async (req: Request, res: Response) => {
+	const { refreshToken } = req.body;
+
+	if (!refreshToken) {
+		return res.status(HttpStatus.BAD_REQUEST).json({
+			success: false,
+			message: "Refresh token is required"
+		});
+	}
+
+	try {
+		const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
+		// Add the refresh token to the blacklist
+		const tokenEntry = refreshTokenRepository.create({
+			token: refreshToken,
+			expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+		});
+
+		await refreshTokenRepository.save(tokenEntry);
+
+		res.json({
+			success: true,
+			message: "Logged out successfully"
+		});
+	} catch (error) {
+		res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+			success: false,
+			message: "Internal server error"
+		});
 	}
 };
 

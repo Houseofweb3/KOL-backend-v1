@@ -175,6 +175,9 @@ export const getUserDetailsById = async (id: string): Promise<User | null> => {
 };
 
 
+
+
+
 // Deactivate the user provided the id
 export const deactivateUserById = async (id: string): Promise<void> => {
     try {
