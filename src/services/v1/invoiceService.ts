@@ -6,7 +6,9 @@ import { convertHtmlToPdf } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
 import { getCarts } from './cartService';
-
+import { Cart } from '../../entity/cart/Cart.entity';
+import { InfluencerCartItem } from '../../entity/cart/InfluencerCartItem.entity';
+import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
 
 function transformData(data: any) {
     // Extract the necessary data
@@ -53,50 +55,52 @@ function transformData(data: any) {
     };
 }
 
-
-
 export const fetchInvoiceDetails = async (id: string, userId: string) => {
+    const cartRepository = AppDataSource.getRepository(Cart);
+    const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
+    const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
+
     try {
         // Fetch cart data from the repository
         const cartData = await getCarts(userId as string, id as string);
 
         // Check for null cartData and transform it if available
-        if (!cartData) {
+        if (!cartData || cartData.length === 0) {
             throw new Error(`No cart data found for id: ${id}`);
         }
 
-
         const transformCartData = transformData(cartData[0]);
-
 
         // Perform your operations with transformCartData
         const html = await ejs.renderFile(join(__dirname, '../../templates/invoiceTemplate.ejs'), transformCartData);
         console.log("HTML: ", html);
 
-         
-// -------------------Fix this part- Start ---------------------------------------------------
-        const fileName = `HOW3x ${transformCartData.checkoutDetails.firstName}_${transformCartData.checkoutDetails.lastName}`;
+        const fileName = `HOW3x_${transformCartData.checkoutDetails.firstName}_${transformCartData.checkoutDetails.lastName}`;
         const htmlFilePath = join(__dirname, '../../invoices', `${fileName}.html`);
         writeFileSync(htmlFilePath, html);
         const pdfFilePath = join(__dirname, '../../invoices', `${fileName}.pdf`);
         await convertHtmlToPdf(htmlFilePath, pdfFilePath);
         await sendInvoiceEmail(transformCartData.user, pdfFilePath);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
-        
+
         // Delete the HTML and PDF files
         unlinkSync(htmlFilePath);
         unlinkSync(pdfFilePath);
 
-        return { data: transformCartData, filePath: pdfFilePath };  // Update with actual file path if needed
+        // Delete InfluencerCartItem, PackageCartItem and Cart
+        const cart = await cartRepository.findOne({ where: { id }, relations: ['influencerCartItems', 'packageCartItems'] });
+        if (cart) {
+            await influencerCartItemRepository.remove(cart.influencerCartItems);
+            await packageCartItemRepository.remove(cart.packageCartItems);
+            await cartRepository.remove(cart);
+        } else {
+            throw new Error('Cart not found');
+        }
 
-// -------------------Fix this part- End---------------------------------------------------
+        return { data: transformCartData, filePath: pdfFilePath };
   
     } catch (error) {
         logger.error(`Error fetching invoice details for id: ${id}`, error);
         throw new Error('Error fetching invoice details');
     }
 };
-
-
-
-
