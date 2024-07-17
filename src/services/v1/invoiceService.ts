@@ -3,7 +3,7 @@ import ejs from 'ejs';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { convertHtmlToPdf } from '../../utils/pdfGenerator';
-import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
+// import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
 import { getCarts } from './cartService';
 import { Cart } from '../../entity/cart/Cart.entity';
@@ -56,9 +56,9 @@ function transformData(data: any) {
 }
 
 export const fetchInvoiceDetails = async (id: string, userId: string) => {
-    const cartRepository = AppDataSource.getRepository(Cart);
-    const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
-    const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
+    // const cartRepository = AppDataSource.getRepository(Cart);
+    // const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
+    // const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
 
     try {
         // Fetch cart data from the repository
@@ -80,22 +80,22 @@ export const fetchInvoiceDetails = async (id: string, userId: string) => {
         writeFileSync(htmlFilePath, html);
         const pdfFilePath = join(__dirname, '../../invoices', `${fileName}.pdf`);
         await convertHtmlToPdf(htmlFilePath, pdfFilePath);
-        await sendInvoiceEmail(transformCartData.user, pdfFilePath);
+        // await sendInvoiceEmail(transformCartData.user, pdfFilePath);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         // Delete the HTML and PDF files
-        unlinkSync(htmlFilePath);
-        unlinkSync(pdfFilePath);
+        // unlinkSync(htmlFilePath);
+        // unlinkSync(pdfFilePath);
 
         // Delete InfluencerCartItem, PackageCartItem and Cart
-        const cart = await cartRepository.findOne({ where: { id }, relations: ['influencerCartItems', 'packageCartItems'] });
-        if (cart) {
-            await influencerCartItemRepository.remove(cart.influencerCartItems);
-            await packageCartItemRepository.remove(cart.packageCartItems);
-            await cartRepository.remove(cart);
-        } else {
-            throw new Error('Cart not found');
-        }
+        // const cart = await cartRepository.findOne({ where: { id }, relations: ['influencerCartItems', 'packageCartItems'] });
+        // if (cart) {
+        //     await influencerCartItemRepository.remove(cart.influencerCartItems);
+        //     await packageCartItemRepository.remove(cart.packageCartItems);
+        //     await cartRepository.remove(cart);
+        // } else {
+        //     throw new Error('Cart not found');
+        // }
 
         return { data: transformCartData, filePath: pdfFilePath };
   

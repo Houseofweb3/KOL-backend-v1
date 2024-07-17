@@ -50,27 +50,27 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
 //user auth routes
 app.use(`/api/v${ENV.VERSION}/auth`, userRoutes);
 //questionRoutes
-app.use(`/api/v${ENV.VERSION}/questions`, verifyAccessToken, questionRoutes);
+app.use(`/api/v${ENV.VERSION}/questions`,  questionRoutes); // verifyAccessToken
 // optionRoutes
-app.use(`/api/v${ENV.VERSION}/options`, verifyAccessToken, optionRoutes);
+app.use(`/api/v${ENV.VERSION}/options`,  optionRoutes);
 // onboarding-questions routes
-app.use(`/api/v${ENV.VERSION}/onboarding-questions`, verifyAccessToken, onboardingQuestionsRoutes);
+app.use(`/api/v${ENV.VERSION}/onboarding-questions`,  onboardingQuestionsRoutes);
 //user-onboarding-selections routes 
-app.use(`/api/v${ENV.VERSION}/user-onboarding-selections`, verifyAccessToken, userOnboardingSelectionRoutes)
+app.use(`/api/v${ENV.VERSION}/user-onboarding-selections`,  userOnboardingSelectionRoutes)
 // InfluencerRoutes
-app.use(`/api/v${ENV.VERSION}/influencer`, verifyAccessToken, influencerRoutes)
+app.use(`/api/v${ENV.VERSION}/influencer`, influencerRoutes)
 //package Routes
-app.use(`/api/v${ENV.VERSION}/packages`, verifyAccessToken, packageRoutes)
+app.use(`/api/v${ENV.VERSION}/packages`,  packageRoutes)
 // Package Item Routes
-app.use(`/api/v${ENV.VERSION}/package-items`, verifyAccessToken, packageItemRoutes)
+app.use(`/api/v${ENV.VERSION}/package-items`,  packageItemRoutes)
 // Cart Routes
-app.use(`/api/v${ENV.VERSION}/cart`, verifyAccessToken, cartRoutes)
+app.use(`/api/v${ENV.VERSION}/cart`,  cartRoutes)
 // influencer Cart Item Routes
-app.use(`/api/v${ENV.VERSION}/influencer-cart-item`, verifyAccessToken, influencerCartItemRoutes)
+app.use(`/api/v${ENV.VERSION}/influencer-cart-item`,  influencerCartItemRoutes)
 // package Cart Item Routes
-app.use(`/api/v${ENV.VERSION}/package-cart-item`, verifyAccessToken, packageCartItemRoutes)
+app.use(`/api/v${ENV.VERSION}/package-cart-item`,  packageCartItemRoutes)
 // checkout Routes
-app.use(`/api/v${ENV.VERSION}/checkout`, verifyAccessToken, checkoutRoutes)
+app.use(`/api/v${ENV.VERSION}/checkout`,  checkoutRoutes)
 // invoice Routes
 app.use(`/api/v${ENV.VERSION}/invoice`, invoiceRoutes)
 
