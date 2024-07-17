@@ -6,8 +6,9 @@ import {
   Index,
 } from 'typeorm';
 
-import { PackageItem } from './PackageItem.entity';
+import { PackageCartItem } from '../cart/PackageCartItem.entity';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
+import { PackageItem } from './PackageItem.entity';
 
 @Entity()
 export class Package extends BaseModel {
@@ -25,6 +26,9 @@ export class Package extends BaseModel {
 
   @Column('text', { array: true })
   guaranteedFeatures!: string[];
+
+  @OneToMany(() => PackageCartItem, (packageCartItem) => packageCartItem.package)
+  packageCartItems!: PackageCartItem[];
 
   @OneToMany(() => PackageItem, (packageItem) => packageItem.package)
   packageItems!: PackageItem[];
