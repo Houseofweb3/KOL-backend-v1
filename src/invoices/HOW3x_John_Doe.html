@@ -196,7 +196,7 @@
                 </p>
             </div>
 
-            <% if (showInfluencersList) { %>
+            
             <div class="py-16">
                 <div class="w-full h-fit border-[0.5px] border-gray-500 rounded-xl overflow-hidden">
                     <div class="w-full h-fit bg-[#4036F4] rounded-t-xl">
@@ -212,7 +212,7 @@
                                     </svg>
                                 </div>
 
-                                <div>SUBTOTAL $<%= influencersSubtotal %></div>
+                                <div>SUBTOTAL $1200.00</div>
                             </div>
                         </div>
                     </div>
@@ -224,26 +224,41 @@
                             <div class="w-[20%]">Item</div>
                             <div class="w-[20%]">Price</div>
                         </div>
-                        <% items.forEach(function(item) { %>
+                        
                         <div class="w-full py-6 px-3 font-[700] flex text-gray-700 bg-gray-200 border-t border-t-gray-600">
                             <div class="w-[60%]">
                                 <div class="w-full flex flex-col gap-2 font-[700] text-gray-700">
                                     <div>
-                                        <a href="<%= item.product.link %>" class="underline" target="_blank"><%= item.product.name %></a>
+                                        <a href="#" class="underline">Degen_hardy</a>
                                     </div>
-                                    <div><%= item.product.category_name %> | <%= item.product.geography %> | <%= item.product.subscribers %> Subscribers | <%= item.product.content_type %></div>
+                                    <div>Rtm | Usa | 44700 Subscribers | X</div>
                                 </div>
                             </div>
-                            <div class="w-[20%]">$<%= item.product.price.toFixed(2) %></div>
-                            <div class="w-[20%]">$<%= item.product.price.toFixed(2) %></div>
+                            <div class="w-[20%]">$1200</div>
+                            <div class="w-[20%]">$1200</div>
+
                         </div>
-                        <% }) %>
+                        
+                        <div class="w-full py-6 px-3 font-[700] flex text-gray-700 bg-gray-200 border-t border-t-gray-600">
+                            <div class="w-[60%]">
+                                <div class="w-full flex flex-col gap-2 font-[700] text-gray-700">
+                                    <div>
+                                        <a href="#" class="underline">Fintechchannels</a>
+                                    </div>
+                                    <div>N/a | N/a | 0 Subscribers | N/a</div>
+                                </div>
+                            </div>
+                            <div class="w-[20%]">$0</div>
+                            <div class="w-[20%]">$0</div>
+
+                        </div>
+                        
                     </div>
                 </div>
             </div>
-            <% } %>
+            
 
-            <% if (showPackagesList) { %>
+            
             <div class="py-16">
                 <div class="w-full h-fit border-[0.5px] border-gray-500 rounded-xl">
                     <div class="w-full h-fit bg-[#4036F4] rounded-t-xl">
@@ -259,7 +274,7 @@
                                     </svg>
                                 </div>
 
-                                <div>SUBTOTAL $<%= packagesSubtotal %></div>
+                                <div>SUBTOTAL $99.99</div>
                             </div>
                         </div>
                     </div>
@@ -269,49 +284,44 @@
                             <div class="w-[80%]">Description</div>
                             <div class="w-[20%]">Price</div>
                         </div>
-                        <% packages.forEach(function(pkg) { %>
+                        
                         <div class="w-full py-6 px-3 font-[700] flex text-gray-700 bg-gray-200 border-t border-t-gray-600">
                             <div class="w-[80%]">
                                 <div class="w-full flex flex-col gap-2 text-black font-[400]">
-                                    <div class="pb-5 font-[700] text-gray-700"><%= pkg.header %></div>
-                                    <% pkg.packages.forEach(function(packageItem) { %>
+                                    <div class="pb-5 font-[700] text-gray-700">newHeader</div>
+                                    
                                     <div>
-                                        <a href="<%= packageItem.link %>" class="underline" target="_blank"><%= packageItem.media %></a> | <%= packageItem.format %> | <%= packageItem.monthlyTraffic %>
+                                        <a href="https://example.com/packages/c1917ee9-ff6b-4846-985f-2e1bde6c9b7d" class="underline" target="_blank">Image URL</a> | Format Type | 5000
                                     </div>
-                                    <% }) %>
-                                    <div class="py-3 text-[1rem]">
-                                        <p><%= pkg.text1 %></p>
-                                        <p><%= pkg.text2 %></p>
-                                        <p><%= pkg.text3 %></p>
-                                        <p><%= pkg.text4 %></p>
-                                        <p><%= pkg.text5 %></p>
-                                        <p><%= pkg.text6 %></p>
-                                        <p><%= pkg.text7 %></p>
+                                    
+                                    <div>
+                                        <a href="https://example.com/packages/c1917ee9-ff6b-4846-985f-2e1bde6c9b7d" class="underline" target="_blank">Image URL 2</a> | Format Type 2 | 50002
                                     </div>
+                                    
                                 </div>
                             </div>
-                            <div class="w-[20%]">$<%= pkg.cost %></div>
+                            <div class="w-[20%]">$99.99</div>
                         </div>
-                        <% }) %>
+                        
                     </div>
                 </div>
             </div>
-            <% } %>
+            
 
             <div class="w-full flex justify-center">
                 <div class="w-[60%] h-fit bg-[#4036F4] rounded-xl flex flex-col gap-3 p-5 py-10">
                     <div class="text-white border-b-[0.4px] border-b-white py-3 flex justify-between">
                         <div>Total Excluding Tax</div>
-                        <div>$<%= totalExcludingTax %></div>
+                        <div>$1299.99</div>
                     </div>
 
                     <div class="text-white border-b-[0.4px] border-b-white flex py-3 justify-between">
                         <div>Management Fee: 25%</div>
-                        <div>$<%= managementFee %></div>
+                        <div>$325.00</div>
                     </div>
                     <div class="text-white border-b-[0.4px] text-[1.5rem] font-[700] border-b-white py-3 flex justify-between">
                         <div>Total</div>
-                        <div>$<%= total %></div>
+                        <div>$1624.99</div>
                     </div>
                 </div>
             </div>

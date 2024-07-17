@@ -5,25 +5,22 @@ import { join } from 'path';
 import { convertHtmlToPdf } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
-import { getCarts } from './cartService';
 import { Cart } from '../../entity/cart/Cart.entity';
 import { InfluencerCartItem } from '../../entity/cart/InfluencerCartItem.entity';
 import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
 
 function transformData(data: any) {
-    // Extract the necessary data
     const checkoutDetails = {
-        projectName: data.user.fullname,
+        projectName: data.user?.fullname || 'Unknown User',
         projectURL: `https://example.com/projects/${data.id}`,
-        firstName: data.user.fullname.split(' ')[0],
-        lastName: data.user.fullname.split(' ')[1] || '',
-        email: data.user.email,
-        link: `https://example.com/users/${data.user.id}`,
+        firstName: data.user?.fullname.split(' ')[0] || 'Unknown',
+        lastName: data.user?.fullname.split(' ')[1] || '',
+        email: data.user?.email || 'Unknown Email',
+        link: data.user ? `https://example.com/users/${data.user.id}` : '',
     };
 
-    const user = data.user;
+    const user = data.user || {};
 
-    // Map influencerCartItems to the format for the EJS template
     const influencerPRs = data.influencerCartItems.map((item: any) => ({
         name: item.influencer.name,
         category_name: item.influencer.categoryName,
@@ -33,74 +30,119 @@ function transformData(data: any) {
         price: item.influencer.price,
     }));
 
-    // Map packageCartItems to the format for the EJS template
     const packageHeaders = data.packageCartItems.map((item: any) => ({
-        header: item.packageItem.media,
-        cost: item.packageItem.price,
-        packages: [{
-            media: item.packageItem.media,
-            link: `https://example.com/packages/${item.id}`,
-            format: item.packageItem.format,
-            monthlyTraffic: item.packageItem.monthlyTraffic,
-            turnaroundTime: item.packageItem.turnAroundTime,
-        }],
+        header: item.package.header,
+        cost: item.package.cost,
+        packages: item.package.packageItems.map((pkgItem: any) => ({
+            media: pkgItem.media,
+            link: `https://example.com/packages/${item.package.id}`,
+            format: pkgItem.format,
+            monthlyTraffic: pkgItem.monthlyTraffic,
+            turnaroundTime: pkgItem.turnAroundTime,
+        })),
     }));
+
+    const influencerSubtotal = data.influencerCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.influencer.price), 0).toFixed(2);
+    const packageSubtotal = data.packageCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0).toFixed(2);
+    const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
+    const managementFee = (parseFloat(totalPrice) * 0.25).toFixed(2);
+    const totalPriceWithFee = (parseFloat(totalPrice) + parseFloat(managementFee)).toFixed(2);
 
     return {
         user,
         checkoutDetails,
         influencerPRs,
         packageHeaders,
-        subtotal: data.packageCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.packageItem.price), 0).toFixed(2),
+        influencerSubtotal,
+        packageSubtotal,
+        totalPrice,
+        managementFee,
+        totalPriceWithFee,
     };
 }
 
-export const fetchInvoiceDetails = async (id: string, userId: string) => {
+export const fetchInvoiceDetails = async (id: string, userId?: string) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
     const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
 
     try {
-        // Fetch cart data from the repository
-        const cartData = await getCarts(userId as string, id as string);
+        // Fetch cart by id
+        logger.info(`Fetching cart with id: ${id}`);
+        const cart = await cartRepository.findOne({ where: { id }, relations: ['user'] });
 
-        // Check for null cartData and transform it if available
-        if (!cartData || cartData.length === 0) {
-            throw new Error(`No cart data found for id: ${id}`);
+        if (!cart) {
+            throw new Error(`No cart found for id: ${id}`);
         }
+        logger.info(`Fetched cart: ${JSON.stringify(cart)}`);
 
-        const transformCartData = transformData(cartData[0]);
+        // Fetch related influencerCartItems and packageCartItems
+        logger.info(`Fetching influencerCartItems for cart id: ${id}`);
+        const influencerCartItems = await influencerCartItemRepository.find({ where: { cart: { id } }, relations: ['influencer'] });
+        logger.info(`Fetched influencerCartItems: ${JSON.stringify(influencerCartItems)}`);
 
-        // Perform your operations with transformCartData
+        logger.info(`Fetching packageCartItems for cart id: ${id}`);
+        const packageCartItems = await packageCartItemRepository.find({ where: { cart: { id } }, relations: ['package', 'package.packageItems'] });
+        logger.info(`Fetched packageCartItems: ${JSON.stringify(packageCartItems)}`);
+
+        const data = {
+            user: cart.user,  // Assuming Cart has a relation with User
+            id: cart.id,
+            influencerCartItems,
+            packageCartItems
+        };
+
+        const transformCartData = transformData(data);
+        logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
+
+        // Generate HTML from EJS template
         const html = await ejs.renderFile(join(__dirname, '../../templates/invoiceTemplate.ejs'), transformCartData);
-        console.log("HTML: ", html);
-
         const fileName = `HOW3x_${transformCartData.checkoutDetails.firstName}_${transformCartData.checkoutDetails.lastName}`;
         const htmlFilePath = join(__dirname, '../../invoices', `${fileName}.html`);
         writeFileSync(htmlFilePath, html);
+        logger.info(`Generated HTML file at: ${htmlFilePath}`);
+
+        // Convert HTML to PDF and send email
         const pdfFilePath = join(__dirname, '../../invoices', `${fileName}.pdf`);
         await convertHtmlToPdf(htmlFilePath, pdfFilePath);
+        logger.info(`Converted HTML to PDF at: ${pdfFilePath}`);
         await sendInvoiceEmail(transformCartData.user, pdfFilePath);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         // Delete the HTML and PDF files
         unlinkSync(htmlFilePath);
         unlinkSync(pdfFilePath);
+        logger.info(`Deleted temporary files`);
 
         // Delete InfluencerCartItem, PackageCartItem and Cart
-        const cart = await cartRepository.findOne({ where: { id }, relations: ['influencerCartItems', 'packageCartItems'] });
         if (cart) {
             await influencerCartItemRepository.remove(cart.influencerCartItems);
             await packageCartItemRepository.remove(cart.packageCartItems);
             await cartRepository.remove(cart);
+            logger.info(`Deleted cart and related items`);
         } else {
             throw new Error('Cart not found');
         }
 
-        return { data: transformCartData, filePath: pdfFilePath };
-  
+        return { 
+            data: transformCartData, 
+            filePath: pdfFilePath, 
+            influencerSubtotal: transformCartData.influencerSubtotal,
+            packageSubtotal: transformCartData.packageSubtotal,
+            totalPrice: transformCartData.totalPrice,
+            managementFee: transformCartData.managementFee,
+            totalPriceWithFee: transformCartData.totalPriceWithFee
+        };
+
     } catch (error) {
         logger.error(`Error fetching invoice details for id: ${id}`, error);
-        throw new Error('Error fetching invoice details');
+        if (error instanceof Error) {
+            logger.error(`Error message: ${error.message}`);
+            logger.error(`Error stack: ${error.stack}`);
+            throw new Error('Error fetching invoice details');
+        } else {
+            logger.error('Unknown error occurred while fetching invoice details');
+            throw new Error('Unknown error occurred while fetching invoice details');
+        }
     }
 };
