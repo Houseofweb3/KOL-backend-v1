@@ -153,7 +153,7 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Use queryBuilder for more efficient queries
     const query = influencerRepository.createQueryBuilder('influencer')
-        .select(['influencer.id', 'influencer.name', 'influencer.price', 'influencer.subscribers', 'influencer.categoryName', 'influencer.engagementRate'])  // Select only needed columns
+    .select(['influencer.id', 'influencer.name', 'influencer.price', 'influencer.subscribers', 'influencer.categoryName', 'influencer.engagementRate', 'influencer.niche', 'influencer.geography', 'influencer.platform'])  // Select only needed columns
         .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` })
         .orderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
@@ -162,7 +162,15 @@ export const getInfluencersWithHiddenPrices = async (
     const [influencers, total] = await query.getManyAndCount();
 
     const influencersWithHiddenPrices = influencers.map(influencer => ({
-        ...influencer,
+        id: influencer.id,
+        influencer: influencer.name,
+        followers: influencer.subscribers,
+        categoryName: influencer.categoryName,
+        engagementRate: influencer.engagementRate,
+        niche: influencer.niche,
+        geography: influencer.geography,
+        platform: influencer.platform,
+        price: influencer.price,
         hiddenPrice: getHiddenPrice(influencer.price),
     }));
 

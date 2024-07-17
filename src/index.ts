@@ -13,7 +13,7 @@ import logger from './config/logger';
 import swaggerDocument from './swagger.json';
 
 import { AppDataSource } from './config/data-source';
-import { verifyAccessToken } from './middleware/auth';
+// import { verifyAccessToken } from './middleware/auth';
 
 // Importing routes
 import cartRoutes from './routes/v1/cart.routes';
