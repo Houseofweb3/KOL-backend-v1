@@ -59,9 +59,7 @@ export const getQuestionController = async (req: Request, res: Response) => {
     }
 };
 
-
 // Delete Question Handler
-
 export const deleteQuestionController = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {

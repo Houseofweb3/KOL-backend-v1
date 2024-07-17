@@ -2,7 +2,7 @@ import { DataSource } from "typeorm";
 
 import { ENV } from "./env";
 import { Cart } from "../entity/cart";
-import { User } from "../entity/auth";
+import { User, RefreshToken } from "../entity/auth";
 import { Package } from "../entity/package";
 import { Checkout } from "../entity/checkout";
 import { PackageItem } from "../entity/package";
@@ -38,6 +38,7 @@ export const AppDataSource = new DataSource({
     Question,
     Option,
     OnboardingQuestion,
+    RefreshToken
   ],
   migrations: ["src/migration/**/*.ts"],
   subscribers: ["src/subscriber/**/*.ts"],

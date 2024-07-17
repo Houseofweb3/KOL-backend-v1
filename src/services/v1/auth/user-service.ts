@@ -90,7 +90,7 @@ export const loginUser = async (email: string, password: string) => {
         }
 
         // Check if the user is active
-        if (!user.is_deleted) {
+        if (user.is_deleted) {
             logger.warn(`User is inactive: ${user.id}`);
             throw new Error('User is inactive');
         }
@@ -173,6 +173,9 @@ export const getUserDetailsById = async (id: string): Promise<User | null> => {
         throw new Error('Failed to get user details');
     }
 };
+
+
+
 
 
 // Deactivate the user provided the id

@@ -17,6 +17,8 @@ interface Env {
   JWT_SECRET: string;
   REFRESH_JWT_SECRET: string;
   VERSION: number;
+  REFRESH_TOKEN_EXPIRATION_DAYS: number
+
 }
 
 export const ENV: Env = {
@@ -29,7 +31,9 @@ export const ENV: Env = {
   DB_DATABASE: process.env.DB_DATABASE || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
   REFRESH_JWT_SECRET: process.env.REFRESH_JWT_SECRET || '',
-  VERSION: parseInt(process.env.VERSION || '1', 10)
+  VERSION: parseInt(process.env.VERSION || '1', 10),
+  REFRESH_TOKEN_EXPIRATION_DAYS: parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "7", 10)
+
 }
 
 // Validate required variables
@@ -52,5 +56,5 @@ requiredVars.forEach((key) => {
 
 // Validate NODE_ENV
 if (ENV.NODE_ENV !== 'dev' && ENV.NODE_ENV !== 'prod') {
-    throw new Error(`Invalid value for NODE_ENV: ${ENV.NODE_ENV}. Allowed values are 'dev' or 'prod'.`);
+  throw new Error(`Invalid value for NODE_ENV: ${ENV.NODE_ENV}. Allowed values are 'dev' or 'prod'.`);
 }
