@@ -9,6 +9,7 @@ import {
 } from '../../services/v1/packageService';
 import logger from '../../config/logger';
 
+// Create Packge
 export const createPackageHandler = async (req: Request, res: Response) => {
     const { header, cost, guaranteedFeatures } = req.body;
 
@@ -31,6 +32,7 @@ export const createPackageHandler = async (req: Request, res: Response) => {
     }
 };
 
+// Create Package item
 export const getPackageByIdHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -52,6 +54,7 @@ export const getPackageByIdHandler = async (req: Request, res: Response) => {
     }
 };
 
+// Fetch all Package and respective Package Item
 export const getAllPackagesHandler = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string, 10) || 1;
     const search = req.query.search as string || "";
@@ -73,6 +76,7 @@ export const getAllPackagesHandler = async (req: Request, res: Response) => {
     }
 };
 
+// Update Package details
 export const updatePackageByIdHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
     const updateData = req.body;
@@ -94,6 +98,7 @@ export const updatePackageByIdHandler = async (req: Request, res: Response) => {
     }
 };
 
+// Delte Package
 export const deletePackageByIdHandler = async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -112,7 +117,7 @@ export const deletePackageByIdHandler = async (req: Request, res: Response) => {
     }
 };
 
-// New handler for CSV upload
+// Upload and save Package into database from cdv file
 export const parseAndSaveCSVHandler = async (req: Request, res: Response) => {
     if (!req.file) {
         return res.status(400).json({ error: 'Missing required file' });

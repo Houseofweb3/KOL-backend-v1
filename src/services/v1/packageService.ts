@@ -1,5 +1,4 @@
-import { Package } from '../../entity/package';
-import { PackageItem } from '../../entity/package/PackageItem.entity';
+import { Package, PackageItem } from '../../entity/package';
 import { AppDataSource } from '../../config/data-source';
 import logger from '../../config/logger';
 import { ILike } from 'typeorm';
@@ -100,71 +99,80 @@ export const deletePackageById = async (id: string): Promise<void> => {
   }
 };
 
-// New function to parse and save CSV
+// Parse and save CSV
 export const parseAndSaveCSV = async (filePath: string): Promise<void> => {
   const results: any[] = [];
 
-  try {
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on('data', (data) => results.push(data))
-      .on('end', async () => {
-        for (const row of results) {
-          const {
-            Header: header = 'N/A',
-            Cost: cost = 'N/A',
-            Text1,
-            Text2,
-            Text3,
-            Text4,
-            Text5,
-            Text6,
-            Text7,
-            Media: media = 'N/A',
-            Format: format = 'N/A',
-            'Monthly Traffic': monthlyTraffic = 'N/A',
-            'Turnaround time': turnaroundTime = 'N/A'
-          } = row;
+  return new Promise((resolve, reject) => {
+      fs.createReadStream(filePath)
+          .pipe(csv())
+          .on('data', (data) => results.push(data))
+          .on('end', async () => {
+              try {
+                  for (const row of results) {
+                      const {
+                          Header: header = 'N/A',
+                          Cost: cost = 'N/A',
+                          Text1,
+                          Text2,
+                          Text3,
+                          Text4,
+                          Text5,
+                          Text6,
+                          Text7,
+                          Media: media = 'N/A',
+                          Format: format = 'N/A',
+                          'Monthly Traffic': monthlyTraffic = 'N/A',
+                          'Turnaround time': turnaroundTime = 'N/A'
+                      } = row;
 
-          if (header === 'N/A' || cost === 'N/A') {
-            throw new Error('Header and cost are required fields.');
-          }
+                      if (header === 'N/A' || cost === 'N/A') {
+                          throw new Error('Header and cost are required fields.');
+                      }
 
-          const guaranteedFeatures = [
-            Text1, Text2, Text3, Text4, Text5, Text6, Text7
-          ].filter(Boolean); // Filter out undefined or null values
+                      const guaranteedFeatures = [
+                          Text1, Text2, Text3, Text4, Text5, Text6, Text7
+                      ].filter(Boolean); // Filter out undefined or null values
 
-          let existingPackage = await packageRepository.findOne({
-            where: { header: header },
+                      let existingPackage = await packageRepository.findOne({
+                          where: { header: header },
+                      });
+
+                      if (!existingPackage) {
+                          existingPackage = packageRepository.create({
+                              header,
+                              cost: parseFloat(cost),
+                              guaranteedFeatures,
+                          });
+                          await packageRepository.save(existingPackage);
+                          logger.info(`Package created successfully: ${existingPackage.id}`);
+                      } else {
+                          logger.info(`Package with header ${header} already exists.`);
+                      }
+
+                      const newPackageItem = packageItemRepository.create({
+                          media,
+                          format,
+                          monthlyTraffic,
+                          turnAroundTime: turnaroundTime,
+                          package: existingPackage,
+                      });
+
+                      await packageItemRepository.save(newPackageItem);
+
+                      logger.info(`Package item associated with header ${header} created successfully.`);
+                  }
+                  resolve();
+              logger.info(`Package details saved successfully`);
+
+              } catch (error) {
+                  logger.error('Failed to read and parse CSV file:', error);
+                  reject(new Error('Failed to read and parse CSV file'));
+              }
+          })
+          .on('error', (error) => {
+              logger.error('Error reading CSV file:', error);
+              reject(new Error('Error reading CSV file'));
           });
-
-          if (!existingPackage) {
-            existingPackage = packageRepository.create({
-              header,
-              cost: parseFloat(cost),
-              guaranteedFeatures,
-            });
-            await packageRepository.save(existingPackage);
-            logger.info(`Package created successfully: ${existingPackage.id}`);
-          } else {
-            logger.info(`Package with header ${header} already exists.`);
-          }
-
-          const newPackageItem = packageItemRepository.create({
-            media,
-            format,
-            monthlyTraffic,
-            turnAroundTime: turnaroundTime,
-            package: existingPackage,
-          });
-
-          await packageItemRepository.save(newPackageItem);
-
-          logger.info(`Package item associated with header ${header} created successfully.`);
-        }
-      });
-  } catch (error) {
-    logger.error('Failed to read and parse CSV file:', error);
-    throw new Error('Failed to read and parse CSV file');
-  }
+  });
 };
