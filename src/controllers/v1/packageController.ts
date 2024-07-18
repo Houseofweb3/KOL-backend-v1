@@ -8,9 +8,10 @@ import {
     parseAndSaveCSV
 } from '../../services/v1/packageService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Create Packge
 export const createPackageHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { header, cost, guaranteedFeatures } = req.body;
 
     if (!header || !cost || !Array.isArray(guaranteedFeatures)) {
@@ -34,6 +35,7 @@ export const createPackageHandler = async (req: Request, res: Response) => {
 
 // Create Package item
 export const getPackageByIdHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     try {
@@ -56,6 +58,7 @@ export const getPackageByIdHandler = async (req: Request, res: Response) => {
 
 // Fetch all Package and respective Package Item
 export const getAllPackagesHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const page = parseInt(req.query.page as string, 10) || 1;
     const search = req.query.search as string || "";
     const limit = parseInt(req.query.limit as string, 10) || 10;
@@ -78,6 +81,7 @@ export const getAllPackagesHandler = async (req: Request, res: Response) => {
 
 // Update Package details
 export const updatePackageByIdHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
     const updateData = req.body;
 
@@ -100,6 +104,7 @@ export const updatePackageByIdHandler = async (req: Request, res: Response) => {
 
 // Delte Package
 export const deletePackageByIdHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     try {
@@ -119,6 +124,7 @@ export const deletePackageByIdHandler = async (req: Request, res: Response) => {
 
 // Upload and save Package into database from cdv file
 export const parseAndSaveCSVHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     if (!req.file) {
         return res.status(400).json({ error: 'Missing required file' });
     }

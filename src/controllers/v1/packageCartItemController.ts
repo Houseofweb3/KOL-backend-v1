@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { createPackageCartItem, deletePackageCartItem, getPackageCartItems } from '../../services/v1/packageCartItemService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Create PackageCartItem
 export const createPackageCartItemHandler = async (req: Request, res: Response) => {
+
     const { packageItemId, cartId } = req.body;
 
     try {
