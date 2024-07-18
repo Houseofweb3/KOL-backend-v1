@@ -4,7 +4,8 @@ import {
     getPackageById,
     getAllPackages,
     updatePackageById,
-    deletePackageById
+    deletePackageById,
+    parseAndSaveCSV
 } from '../../services/v1/packageService';
 import logger from '../../config/logger';
 
@@ -108,5 +109,25 @@ export const deletePackageByIdHandler = async (req: Request, res: Response) => {
             return res.status(500).json({ error: 'An unknown error occurred' });
         }
 
+    }
+};
+
+// New handler for CSV upload
+export const parseAndSaveCSVHandler = async (req: Request, res: Response) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'Missing required file' });
+    }
+
+    try {
+        await parseAndSaveCSV(req.file.path);
+        return res.status(200).json({ message: 'CSV parsed and saved successfully' });
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error('Error parsing and saving CSV:', error);
+            return res.status(500).json({ error: error.message });
+        } else {
+            logger.error('An unknown error occurred during CSV parsing and saving');
+            return res.status(500).json({ error: 'An unknown error occurred' });
+        }
     }
 };
