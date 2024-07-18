@@ -5,9 +5,10 @@ import { join } from 'path';
 import { convertHtmlToPdf } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
-import { Cart } from '../../entity/cart/Cart.entity';
-import { InfluencerCartItem } from '../../entity/cart/InfluencerCartItem.entity';
-import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
+import { Cart, InfluencerCartItem, PackageCartItem } from '../../entity/cart';
+// import { InfluencerCartItem } from '../../entity/cart/InfluencerCartItem.entity';
+// import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
+import { Checkout } from '../../entity/checkout';
 
 function transformData(data: any) {
     const checkoutDetails = {
@@ -58,6 +59,8 @@ function transformData(data: any) {
         totalPrice,
         managementFee,
         totalPriceWithFee,
+        showInfluencersList: influencerPRs.length > 0,
+        showPackagesList: packageHeaders.length > 0
     };
 }
 
@@ -65,11 +68,12 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
     const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
+    const checkoutRepository = AppDataSource.getRepository(Checkout);
 
     try {
         // Fetch cart by id
         logger.info(`Fetching cart with id: ${id}`);
-        const cart = await cartRepository.findOne({ where: { id }, relations: ['user'] });
+        const cart = await cartRepository.findOne({ where: { id }, relations: ['user', 'influencerCartItems', 'packageCartItems', 'checkout'] });
 
         if (!cart) {
             throw new Error(`No cart found for id: ${id}`);
@@ -114,14 +118,24 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         unlinkSync(pdfFilePath);
         logger.info(`Deleted temporary files`);
 
-        // Delete InfluencerCartItem, PackageCartItem and Cart
-        if (cart) {
+        // Ensure the fetched entities are properly handled
+        if (cart && cart.influencerCartItems && cart.packageCartItems) {
+            // First, delete the related Checkout entity if it exists
+            if (cart.checkout) {
+                await checkoutRepository.remove(cart.checkout);
+                logger.info(`Deleted related checkout entity`);
+            }
+
+            // Delete related InfluencerCartItem and PackageCartItem entities
             await influencerCartItemRepository.remove(cart.influencerCartItems);
             await packageCartItemRepository.remove(cart.packageCartItems);
+            logger.info(`Deleted related influencerCartItems and packageCartItems`);
+
+            // Finally, delete the Cart entity
             await cartRepository.remove(cart);
-            logger.info(`Deleted cart and related items`);
+            logger.info(`Deleted cart entity`);
         } else {
-            throw new Error('Cart not found');
+            throw new Error('Cart or related items not found or not properly loaded');
         }
 
         return { 
