@@ -46,7 +46,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" . $USER@$HOST:/home/$USER/deploy
-          ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << EOF
             cd /home/$USER/deploy
             # Create .env file with correct variable expansion
             echo "NODE_ENV=${NODE_ENV}" > .env
