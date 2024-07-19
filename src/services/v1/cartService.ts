@@ -35,10 +35,11 @@ export const getCarts = async (userId?: string, id?: string): Promise<Cart[]> =>
     let queryBuilder = cartRepository.createQueryBuilder('cart')
       .leftJoinAndSelect('cart.user', 'user')
       .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
-      .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')  // Join related Influencer
-      .leftJoinAndSelect('cart.packageCartItems', 'packageCartItems')  // Ensure correct join
-      .leftJoinAndSelect('packageCartItems.packageItem', 'packageItem')  // Join related PackageItem
-      .leftJoinAndSelect('cart.checkout', 'checkout').where('cart.id = :id', { id })
+      .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')
+      .leftJoinAndSelect('cart.packageCartItems', 'packageCartItems')
+      .leftJoinAndSelect('packageCartItems.package', 'package')  // Correct relation name
+      .leftJoinAndSelect('package.packageItems', 'packageItems')  // Correct join for packageItems
+      .leftJoinAndSelect('cart.checkout', 'checkout');
 
     if (id) {
       queryBuilder = queryBuilder.where('cart.id = :id', { id });
@@ -54,5 +55,3 @@ export const getCarts = async (userId?: string, id?: string): Promise<Cart[]> =>
     throw new Error('Error fetching cart(s)');
   }
 };
-
-
