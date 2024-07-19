@@ -65,4 +65,18 @@ jobs:
             cat .env # Verify content
             npm install --production
             pm2 restart all || pm2 start dist/index.js --name KOL-backend-v1
+
+            # Install Nginx
+            sudo apt update
+            sudo apt install -y nginx
+
+            # Remove the default Nginx configuration
+            sudo rm /etc/nginx/sites-enabled/default
+
+            # Copy the new Nginx configuration
+            sudo cp /home/$USER/deploy/nginx/nginx.conf /etc/nginx/sites-available/my_app
+            sudo ln -s /etc/nginx/sites-available/my_app /etc/nginx/sites-enabled/
+
+            # Restart Nginx to apply changes
+            sudo systemctl restart nginx
           EOF
