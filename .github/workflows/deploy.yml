@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Use Node.js 20 or the version you need
+          node-version: '20'
 
       - name: Install dependencies
         run: npm install
@@ -29,12 +29,38 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
+          NODE_ENV: ${{ secrets.NODE_ENV }}
+          PORT: ${{ secrets.PORT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          REFRESH_JWT_SECRET: ${{ secrets.REFRESH_JWT_SECRET }}
+          VERSION: ${{ secrets.VERSION }}
+          REFRESH_TOKEN_EXPIRATION_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRATION_DAYS }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         run: |
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
           rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" . $USER@$HOST:/home/$USER/deploy
           ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             cd /home/$USER/deploy
+            export NODE_ENV=${NODE_ENV}
+            export PORT=${PORT}
+            export DB_HOST=${DB_HOST}
+            export DB_PORT=${DB_PORT}
+            export DB_USERNAME=${DB_USERNAME}
+            export DB_PASSWORD=${DB_PASSWORD}
+            export DB_DATABASE=${DB_DATABASE}
+            export JWT_SECRET=${JWT_SECRET}
+            export REFRESH_JWT_SECRET=${REFRESH_JWT_SECRET}
+            export VERSION=${VERSION}
+            export REFRESH_TOKEN_EXPIRATION_DAYS=${REFRESH_TOKEN_EXPIRATION_DAYS}
+            export EMAIL_USER=${EMAIL_USER}
+            export EMAIL_PASS=${EMAIL_PASS}
             npm install --production
             pm2 restart all || pm2 start dist/index.js --name KOL-backend-v1
           EOF
