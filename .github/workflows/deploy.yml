@@ -35,8 +35,6 @@ jobs:
           rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" . $USER@$HOST:/home/$USER/deploy
           ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             cd /home/$USER/deploy
-            export DATABASE_URL=$DATABASE_URL
-            export PORT=$PORT
             npm install --production
             pm2 restart all || pm2 start dist/index.js --name KOL-backend-v1
           EOF
