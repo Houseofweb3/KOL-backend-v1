@@ -5,6 +5,7 @@
     "scripts": {
         "clean": "rimraf ./dist",
         "build": "npm run clean && tsc -b",
+        "start:prod": "npm run build && node dist/index.js",
         "start": "node src",
         "local": "ts-node src",
         "local:watch": "nodemon src -e ts,json --exec 'npm run local'",
