@@ -35,10 +35,6 @@ export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string)
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('Waited for 1 second to ensure rendering.');
 
-    // Capture screenshot for debugging
-    await page.screenshot({ path: 'screenshot.png' });
-    console.log('Screenshot taken for debugging.');
-
     // Generate the PDF with zero padding
     await page.pdf({
       path: outputPath,
