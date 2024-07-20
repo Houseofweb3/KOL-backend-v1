@@ -5,7 +5,6 @@ import {
     getAllPackages,
     updatePackageById,
     deletePackageById,
-    parseAndSaveCSV
 } from '../../services/v1/packageService';
 import logger from '../../config/logger';
 import { setCorsHeaders } from '../../middleware/setcorsHeaders';
@@ -119,26 +118,5 @@ export const deletePackageByIdHandler = async (req: Request, res: Response) => {
             return res.status(500).json({ error: 'An unknown error occurred' });
         }
 
-    }
-};
-
-// Upload and save Package into database from cdv file
-export const parseAndSaveCSVHandler = async (req: Request, res: Response) => {
-    setCorsHeaders(req, res);
-    if (!req.file) {
-        return res.status(400).json({ error: 'Missing required file' });
-    }
-
-    try {
-        await parseAndSaveCSV(req.file.path);
-        return res.status(200).json({ message: 'CSV parsed and saved successfully' });
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error('Error parsing and saving CSV:', error);
-            return res.status(500).json({ error: error.message });
-        } else {
-            logger.error('An unknown error occurred during CSV parsing and saving');
-            return res.status(500).json({ error: 'An unknown error occurred' });
-        }
     }
 };
