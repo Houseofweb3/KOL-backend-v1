@@ -5,8 +5,7 @@ import {
   getPackageByIdHandler, 
   getAllPackagesHandler, 
   updatePackageByIdHandler, 
-  deletePackageByIdHandler ,
-  parseAndSaveCSVHandler
+  deletePackageByIdHandler
 } from '../../controllers/v1/packageController';
 
 const router = Router();
@@ -17,6 +16,5 @@ router.get('/:id', getPackageByIdHandler);
 router.get('/', getAllPackagesHandler);
 router.put('/:id', updatePackageByIdHandler);
 router.delete('/:id', deletePackageByIdHandler);
-router.post('/upload', upload.single('file'), parseAndSaveCSVHandler);
 
 export default router;
