@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createCart, deleteCart, getCarts } from '../../../services/v1/cartService';
+import { createOrGetCart, deleteCart, getCarts } from '../../../services/v1/cartService';
 import logger from '../../../config/logger';
 
 // Create a new Cart
@@ -7,17 +7,16 @@ export const createCartHandler = async (req: Request, res: Response) => {
     const { userId } = req.body;
 
     try {
-        const newCart = await createCart(userId);
-        return res.status(201).json(newCart);
+        const cart = await createOrGetCart(userId);
+        return res.status(201).json(cart);
     } catch (error) {
         if (error instanceof Error) {
-            logger.error(`Error creating cart: ${error}`);
+            logger.error(`Error creating or getting cart: ${error}`);
             return res.status(500).json({ error: error.message });
         } else {
-            logger.error('An unknown error occurred while creating influencer');
+            logger.error('An unknown error occurred while creating or getting cart');
             return res.status(500).json({ error: 'An unknown error occurred' });
         }
-
     }
 };
 
