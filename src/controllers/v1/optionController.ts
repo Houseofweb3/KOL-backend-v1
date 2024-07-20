@@ -7,8 +7,9 @@ import {
   deleteOption
 } from '../../services/v1/optionService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 export const createOptionController = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   const { text, questionId } = req.body;
 
   if (!text || !questionId) {
@@ -31,6 +32,7 @@ export const createOptionController = async (req: Request, res: Response) => {
 };
 
 export const getOptionController = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   const { id } = req.params;
 
   try {
@@ -48,6 +50,7 @@ export const getOptionController = async (req: Request, res: Response) => {
 };
 
 export const getAllOptionsController = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   try {
     const options = await getAllOptions();
     return res.status(200).json(options);
@@ -63,6 +66,7 @@ export const getAllOptionsController = async (req: Request, res: Response) => {
 };
 
 export const updateOptionController = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   const { id } = req.params;
   const { text } = req.body;
 
@@ -86,6 +90,7 @@ export const updateOptionController = async (req: Request, res: Response) => {
 };
 
 export const deleteOptionController = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   const { id } = req.params;
 
   try {

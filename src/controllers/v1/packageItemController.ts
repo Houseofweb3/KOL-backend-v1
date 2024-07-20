@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { createPackageItem, updatePackageItem, deletePackageItem, getPackageItems } from '../../services/v1/packageItemService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Create a new PackageItem
 export const createPackageItemHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { media, format, monthlyTraffic, turnAroundTime, packageId } = req.body;
 
     if (!media || !format || !monthlyTraffic || !turnAroundTime || !packageId) {

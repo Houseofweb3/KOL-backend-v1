@@ -5,8 +5,9 @@ import {
     getAllOnBoardingQuestions
 } from '../../services/v1/onboardingQuestionService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 export const createOnBoardingQuestionController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { isRequired, order, questionId } = req.body;
 
     if (!order || !questionId || !isRequired) {
@@ -29,6 +30,7 @@ export const createOnBoardingQuestionController = async (req: Request, res: Resp
 };
 
 export const getOnBoardingQuestionController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     try {
@@ -46,6 +48,7 @@ export const getOnBoardingQuestionController = async (req: Request, res: Respons
 };
 
 export const getAllOnBoardingQuestionsController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     try {
         const OnBoardingQuestions = await getAllOnBoardingQuestions();
         return res.status(200).json(OnBoardingQuestions);

@@ -1,24 +1,38 @@
 import { AppDataSource } from '../../config/data-source';
-import { PackageCartItem } from '../../entity/cart';
+import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
 import logger from '../../config/logger';
+import { Package } from '../../entity/package/Package.entity';
 
-const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem)
+const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
+const packageRepository = AppDataSource.getRepository(Package);
 
 // Create PackageCartItem
-export const createPackageCartItem = async (packageItemId: string, cartId: string): Promise<PackageCartItem> => {
+export const createPackageCartItem = async (packageId: string, cartId: string): Promise<PackageCartItem> => {
     try {
+        // Check if the package exists
+        const packageEntity = await packageRepository.findOneBy({ id: packageId });
+        if (!packageEntity) {
+            throw new Error(`Package with id ${packageId} not found`);
+        }
+
         const packageCartItem = new PackageCartItem();
-        packageCartItem.packageItem = { id: packageItemId } as any; 
+        packageCartItem.package = packageEntity;
         packageCartItem.cart = { id: cartId } as any;
 
         const newItem = await packageCartItemRepository.save(packageCartItem);
         logger.info(`Created new PackageCartItem with id ${newItem.id}`);
         return newItem;
     } catch (error) {
-        logger.error(`Error creating PackageCartItem: ${error}`);
-        throw new Error('Error creating PackageCartItem');
+        if (error instanceof Error) {
+            logger.error(`Error creating PackageCartItem: ${error.message}`);
+            throw new Error('Error creating PackageCartItem');
+        } else {
+            logger.error('Unknown error occurred while creating PackageCartItem');
+            throw new Error('Unknown error occurred while creating PackageCartItem');
+        }
     }
 };
+
 
 // Delete PackageCartItem
 export const deletePackageCartItem = async (id: string): Promise<void> => {
@@ -35,19 +49,24 @@ export const deletePackageCartItem = async (id: string): Promise<void> => {
 export const getPackageCartItems = async (cartId?: string): Promise<PackageCartItem[]> => {
     try {
         const queryBuilder = packageCartItemRepository.createQueryBuilder('packageCartItem')
-            .leftJoinAndSelect('packageCartItem.packageItem', 'packageItem')
+            .leftJoinAndSelect('packageCartItem.package', 'package')
+            .leftJoinAndSelect('package.packageItems', 'packageItem')
             .leftJoinAndSelect('packageCartItem.cart', 'cart');
 
         if (cartId) {
-            queryBuilder.where('cart.id = :cartId', { cartId });  
+            queryBuilder.where('cart.id = :cartId', { cartId });
         }
 
         const items = await queryBuilder.getMany();
         logger.info(`Fetched ${items.length} PackageCartItem(s)`);
         return items;
     } catch (error) {
-        logger.error(`Error fetching PackageCartItem(s): ${error}`);
-        throw new Error('Error fetching PackageCartItem(s)');
+        if (error instanceof Error) {
+            logger.error(`Error fetching PackageCartItem(s): ${error.message}`);
+            throw new Error('Error fetching PackageCartItem(s)');
+        } else {
+            logger.error('Unknown error occurred while fetching PackageCartItem(s)');
+            throw new Error('Unknown error occurred while fetching PackageCartItem(s)');
+        }
     }
 };
-

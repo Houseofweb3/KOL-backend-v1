@@ -1,1 +1,1 @@
-export * from './checkout.entity';
+export * from './Checkout.entity';

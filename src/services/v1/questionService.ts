@@ -55,3 +55,27 @@ export const getQuestions = async (id?: string): Promise<Question[]> => {
         }
     }
 };
+
+// Delete Question
+export const deleteQuestion = async (id: string) => {
+    try {
+        const option = await questionRepository.findOneBy({ id });
+        if (!option) {
+            throw new Error('Question not found');
+        }
+        await questionRepository.remove(option);
+        logger.info(`Question deleted successfully: ${id}`);
+        return { message: 'Question deleted successfully' };
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Error deleting Question: ${error.message}`);
+            throw new Error(error.message);
+        } else {
+            logger.error('An unknown error occurred during question creation');
+            throw new Error('An unknown error occurred during question creation');
+        }
+
+    }
+};
+
+
