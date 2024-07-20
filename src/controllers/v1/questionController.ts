@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { createQuestion, getQuestions, deleteQuestion } from '../../services/v1/questionService';
 import { QuestionType } from '../../entity/onboarding';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Create a new question
 export const createQuestionController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { text, type, description } = req.body;
 
     //check req fields
@@ -37,6 +38,7 @@ export const createQuestionController = async (req: Request, res: Response) => {
 
 // Fetch questions (all or by ID)
 export const getQuestionController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     try {
@@ -61,6 +63,7 @@ export const getQuestionController = async (req: Request, res: Response) => {
 
 // Delete Question Handler
 export const deleteQuestionController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
     try {
         await deleteQuestion(id);

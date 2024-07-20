@@ -4,8 +4,9 @@ import {
     getUserOnboardingSelectionsByUserId
 } from '../../services/v1/userOnboardingSelectionService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 export const createUserOnboardingSelectionController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { userId, questionId, selectedOptionId } = req.body;
 
     if (!userId || !questionId || !selectedOptionId) {
@@ -29,6 +30,7 @@ export const createUserOnboardingSelectionController = async (req: Request, res:
 };
 
 export const getUserOnboardingSelectionsByUserIdController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { userId } = req.params;
 
     try {

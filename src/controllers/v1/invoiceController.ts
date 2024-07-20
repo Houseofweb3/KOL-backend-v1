@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { fetchInvoiceDetails } from '../../services/v1/invoiceService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Generate an Invoice
 export const generateInvoiceController = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { userId, cartId } = req.body;
 
     if (!cartId) {

@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { uploadCSV, getInfluencersWithHiddenPrices, createInfluencer, deleteInfluencer } from '../../services/v1/influencerService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const DEFAULT_SORT_FIELD = 'price';
 const DEFAULT_SORT_ORDER: 'ASC' | 'DESC' = 'ASC';
 
 export const uploadCSVHandler = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   try {
     // const adminId = req.body.adminId;
 
@@ -37,6 +38,7 @@ export const uploadCSVHandler = async (req: Request, res: Response) => {
 
 
 export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   try {
     // Extract query parameters for pagination and sorting
     const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
@@ -66,6 +68,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
 
 // create inflencer
 export const createInfluencerHandler = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   const data = req.body;
 
   if (!data.name || !data.niche || !data.subscribers) {
@@ -90,6 +93,7 @@ export const createInfluencerHandler = async (req: Request, res: Response) => {
 
 //delete a inflencers
 export const deleteInfluencerHandler = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
   const { id } = req.params;
 
   try {

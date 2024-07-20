@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { createInfluencerCartItem, deleteInfluencerCartItem, getInfluencerCartItems } from '../../services/v1/influencerCartItemService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Create InfluencerCartItem
 export const createInfluencerCartItemHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
+
     const { influencerId, cartId } = req.body;
 
     try {
@@ -18,6 +20,7 @@ export const createInfluencerCartItemHandler = async (req: Request, res: Respons
 
 // Delete InfluencerCartItem
 export const deleteInfluencerCartItemHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     try {
@@ -32,6 +35,7 @@ export const deleteInfluencerCartItemHandler = async (req: Request, res: Respons
 
 // Fetch InfluencerCartItems
 export const getInfluencerCartItemsHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { cartId } = req.query;
 
     try {

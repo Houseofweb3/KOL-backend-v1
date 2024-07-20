@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { createCheckout, getCheckoutById, deleteCheckout } from '../../services/v1/checkoutService';
 import logger from '../../config/logger';
-
+import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { cartId, totalAmount } = req.body;
 
     if (!cartId || !totalAmount) {
@@ -27,6 +28,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
 
 // Get Checkout by ID
 export const getCheckoutHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     if (!id) {
@@ -53,6 +55,7 @@ export const getCheckoutHandler = async (req: Request, res: Response) => {
 
 // Delete a Checkout
 export const deleteCheckoutHandler = async (req: Request, res: Response) => {
+    setCorsHeaders(req, res);
     const { id } = req.params;
 
     if (!id) {
