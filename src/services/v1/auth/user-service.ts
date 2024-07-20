@@ -3,9 +3,10 @@ import jwt from 'jsonwebtoken';
 
 import { ENV } from '../../../config/env';
 import logger from '../../../config/logger';
-import { User } from '../../../entity/auth/User.entity';
+import { User, UserType } from '../../../entity/auth/User.entity';
 import { AppDataSource } from '../../../config/data-source';
 import { generateAccessToken, generateRefreshToken } from '../../../middleware/auth';
+import { create } from 'domain';
 
 const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET;
 
@@ -77,38 +78,52 @@ export const createUser = async (email: string, password?: string, fullname?: st
 
 
 // Login User
-export const loginUser = async (email: string, password: string) => {
+// TODO: recantor this later
+export const loginUser = async (email: string, password: string, fullname:string = '', type: string = UserType.USER) => {
     try {
         // Find user by email
-        const user = await AppDataSource.getRepository(User).findOne({
+        let user = await AppDataSource.getRepository(User).findOne({
             where: [{ email }],
         });
         // Check if user exists
         if (!user) {
-            logger.warn(`User not found with email: ${email}`);
-            throw new Error('User not found');
+            // logger.warn(`User not found with email: ${email}`);
+            // throw new Error('User not found');
+            await createUser(email, password, fullname, type);
         }
+        
+        user = await AppDataSource.getRepository(User).findOne({
+            where: [{ email }],
+        });
+        
+        if (user) {
+            // logger.warn(`User not found with email: ${email}`);
+            // throw new Error('User not found');
+            // Check if the user is active
+            if (user.is_deleted) {
+                logger.warn(`User is inactive: ${user.id}`);
+                throw new Error('User is inactive');
+            }
 
-        // Check if the user is active
-        if (user.is_deleted) {
-            logger.warn(`User is inactive: ${user.id}`);
-            throw new Error('User is inactive');
+            // Verify the password
+            const isPasswordValid = await bcrypt.compare(password, user.password || '');
+
+            if (!isPasswordValid) {
+                logger.warn(`Invalid password attempt for email: ${email}`);
+                throw new Error('Invalid password');
+            }
+
+            // Generate token and refresh token
+            const token = generateAccessToken({ id: user.id, type: user.userType });
+            const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
+
+            logger.info(`User logged in successfully: ${user.id}`);
+            return { user, message: 'Login successful', token, refreshToken };
         }
-
-        // Verify the password
-        const isPasswordValid = await bcrypt.compare(password, user.password || '');
-
-        if (!isPasswordValid) {
-            logger.warn(`Invalid password attempt for email: ${email}`);
-            throw new Error('Invalid password');
+        else {
+            logger.error('An unknown error occurred while logging in the user');
+            throw new Error('An unknown error occurred');
         }
-
-        // Generate token and refresh token
-        const token = generateAccessToken({ id: user.id, type: user.userType });
-        const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
-
-        logger.info(`User logged in successfully: ${user.id}`);
-        return { user, message: 'Login successful', token, refreshToken };
 
     } catch (error) {
         if (error instanceof Error) {
