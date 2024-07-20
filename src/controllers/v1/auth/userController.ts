@@ -50,7 +50,7 @@ export const signup = async (req: Request, res: Response) => {
 
 // Login User 
 export const login = async (req: Request, res: Response) => {
-	const { email, password } = req.body;
+	const { email, password, fullname, type } = req.body;
 
 	// Validate input fields
 	if (!email || !password) {
@@ -60,10 +60,10 @@ export const login = async (req: Request, res: Response) => {
 
 	try {
 		// Call the service function to handle the login logic
-		const { user, message, token, refreshToken } = await loginUser(email, password);
+		const { user, message, token, refreshToken } = await loginUser(email, password, fullname, type);
 
 		// Log successful login
-		logger.info(`User logged in successfully: ${user.id}`);
+		// logger.info(`User logged in successfully: ${user.id}`);
 
 		// Respond with user details and token
 		return res.status(HttpStatus.OK).json({ user, message, accessToken: token, refreshToken });
