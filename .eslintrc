@@ -6,4 +6,4 @@
       "node": true // Enabling Node.js global variables
     },
     "rules": {}
-  }
+}
