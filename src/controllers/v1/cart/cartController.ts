@@ -47,7 +47,7 @@ export const deleteCartHandler = async (req: Request, res: Response) => {
 
 
 export const getCartsHandler = async (req: Request, res: Response) => {
-  const { userId } = req.query;
+  const { userId } = req.params;
 
   try {
     const carts = await getCarts(userId as string);
