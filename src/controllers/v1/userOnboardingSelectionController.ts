@@ -15,8 +15,8 @@ export const createUserOnboardingSelectionController = async (req: Request, res:
     }
 
     try {
-        const { userOnboardingSelection, message } = await createUserOnboardingSelection(userId, questionId, selectedOptionId);
-        return res.status(201).json({ message, userOnboardingSelection });
+        const { message } = await createUserOnboardingSelection(userId, questionId, selectedOptionId);
+        return res.status(201).json({ message });
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error during user onboarding selection creation: ${error.message}`);
