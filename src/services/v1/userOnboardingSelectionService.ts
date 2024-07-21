@@ -6,7 +6,7 @@ import logger from '../../config/logger';
 
 const userOnboardingSelectionRepository = AppDataSource.getRepository(UserOnboardingSelection);
 
-export const createUserOnboardingSelection = async (userId: string, questionId: string, selectedOptionId: string) => {
+export const createUserOnboardingSelection = async (userId: string, questionId: string, selectedOptionId: Array<string>) => {
     try {
         // Find user by ID
         const user = await AppDataSource.getRepository(User).findOneBy({ id: userId });
@@ -20,22 +20,30 @@ export const createUserOnboardingSelection = async (userId: string, questionId: 
             throw new Error('Question not found');
         }
 
-        // Find selected option by ID
-        const selectedOption = await AppDataSource.getRepository(Option).findOneBy({ id: selectedOptionId });
-        if (!selectedOption) {
-            throw new Error('Selected option not found');
+        // Find selected option list
+        const selectedOptions = []
+        
+        for (const optionId of selectedOptionId) {
+            const option = await AppDataSource.getRepository(Option).findOneBy({ id: optionId });
+
+            if (!option) {
+                throw new Error('Selected option not found');
+            }
+
+            selectedOptions.push(option)
         }
+        for (const selectedOption of selectedOptions) {
+            // Create a new user onboarding selection
+            const newUserOnboardingSelection = userOnboardingSelectionRepository.create({
+                user,
+                question,
+                selectedOption
+            });
+            await userOnboardingSelectionRepository.save(newUserOnboardingSelection);
 
-        // Create a new user onboarding selection
-        const newUserOnboardingSelection = userOnboardingSelectionRepository.create({
-            user,
-            question,
-            selectedOption
-        });
-        await userOnboardingSelectionRepository.save(newUserOnboardingSelection);
-
-        logger.info(`User onboarding selection created successfully: ${newUserOnboardingSelection.id}`);
-        return { userOnboardingSelection: newUserOnboardingSelection, message: 'User onboarding selection created successfully' };
+            logger.info(`User onboarding selection created successfully: ${newUserOnboardingSelection.id}`);
+        }
+        return { message: 'User onboarding selection created successfully' };
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating user onboarding selection: ${error.message}`);
