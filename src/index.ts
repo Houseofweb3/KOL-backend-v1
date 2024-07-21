@@ -26,6 +26,7 @@ import influencerCartItemRoutes from './routes/v1/influencerCartItem.routes';
 import onboardingQuestionsRoutes from './routes/v1/onboardingQuestions.routes';
 import userOnboardingSelectionRoutes from './routes/v1/userOnboardingSelection.routes';
 import invoiceRoutes from './routes/v1/invoiceRoutes';
+import utilsRoutes from './routes/v1/utils/utils.routes';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -73,6 +74,9 @@ app.use(`/api/v${ENV.VERSION}/package-cart-item`, packageCartItemRoutes);
 app.use(`/api/v${ENV.VERSION}/checkout`, checkoutRoutes);
 // invoice Routes
 app.use(`/api/v${ENV.VERSION}/invoice`, invoiceRoutes);
+
+// utils Routes
+app.use(`/api/v${ENV.VERSION}/utils`, utilsRoutes);
 
 // Dummy API
 app.get('/', (req: Request, res: Response) => {

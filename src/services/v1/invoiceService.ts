@@ -2,12 +2,10 @@ import { AppDataSource } from '../../config/data-source';
 import ejs from 'ejs';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-// import { convertHtmlToPdf } from '../../utils/pdfGenerator';
+import { convertHtmlToPdf } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
 import { Cart, InfluencerCartItem, PackageCartItem } from '../../entity/cart';
-// import { InfluencerCartItem } from '../../entity/cart/InfluencerCartItem.entity';
-// import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
 import { Checkout } from '../../entity/checkout';
 
 function transformData(data: any) {
@@ -108,7 +106,7 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
 
         // Convert HTML to PDF and send email
         const pdfFilePath = join(__dirname, '../../invoices', `${fileName}.pdf`);
-        // await convertHtmlToPdf(htmlFilePath, pdfFilePath);
+        await convertHtmlToPdf(htmlFilePath, pdfFilePath);
         logger.info(`Converted HTML to PDF at: ${pdfFilePath}`);
         await sendInvoiceEmail(transformCartData.user, pdfFilePath);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
