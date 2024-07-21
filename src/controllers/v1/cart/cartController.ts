@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createOrGetCart, deleteCart, getCarts } from '../../../services/v1/cartService';
+import { createCart, deleteCart, getCarts } from '../../../services/v1/cartService';
 import logger from '../../../config/logger';
 
 // Create a new Cart
@@ -7,7 +7,7 @@ export const createCartHandler = async (req: Request, res: Response) => {
     const { userId } = req.body;
 
     try {
-        const cart = await createOrGetCart(userId);
+        const cart = await createCart(userId);
         return res.status(201).json(cart);
     } catch (error) {
         if (error instanceof Error) {
