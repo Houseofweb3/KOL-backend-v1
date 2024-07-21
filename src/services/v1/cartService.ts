@@ -44,7 +44,7 @@ export const deleteCart = async (id: string): Promise<void> => {
 };
 
 
-export const getCarts = async (userId?: string, id?: string): Promise<Cart[]> => {
+export const getCarts = async (userId?: string): Promise<Cart[]> => {
   try {
     let queryBuilder = cartRepository.createQueryBuilder('cart')
       .leftJoinAndSelect('cart.user', 'user')
@@ -55,11 +55,7 @@ export const getCarts = async (userId?: string, id?: string): Promise<Cart[]> =>
       .leftJoinAndSelect('package.packageItems', 'packageItems')  // Correct join for packageItems
       .leftJoinAndSelect('cart.checkout', 'checkout');
 
-    if (id) {
-      queryBuilder = queryBuilder.where('cart.id = :id', { id });
-    } else if (userId) {
-      queryBuilder = queryBuilder.where('cart.userId = :userId', { userId });
-    }
+    queryBuilder = queryBuilder.where('cart.userId = :userId', { userId });
 
     const carts = await queryBuilder.getMany();
     logger.info(`Fetched ${carts.length} cart(s)`);
