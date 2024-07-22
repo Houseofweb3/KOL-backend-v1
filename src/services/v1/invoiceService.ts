@@ -127,24 +127,24 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         // Ensure the fetched entities are properly handled
-        // if (cart && cart.influencerCartItems && cart.packageCartItems) {
-        //     // First, delete the related Checkout entity if it exists
-        //     if (cart.checkout) {
-        //         await checkoutRepository.remove(cart.checkout);
-        //         logger.info(`Deleted related checkout entity`);
-        //     }
+        if (cart && cart.influencerCartItems && cart.packageCartItems) {
+            // First, delete the related Checkout entity if it exists
+            if (cart.checkout) {
+                await checkoutRepository.remove(cart.checkout);
+                logger.info(`Deleted related checkout entity`);
+            }
 
-        //     // Delete related InfluencerCartItem and PackageCartItem entities
-        //     await influencerCartItemRepository.remove(cart.influencerCartItems);
-        //     await packageCartItemRepository.remove(cart.packageCartItems);
-        //     logger.info(`Deleted related influencerCartItems and packageCartItems`);
+            // Delete related InfluencerCartItem and PackageCartItem entities
+            await influencerCartItemRepository.remove(cart.influencerCartItems);
+            await packageCartItemRepository.remove(cart.packageCartItems);
+            logger.info(`Deleted related influencerCartItems and packageCartItems`);
 
-        //     // Finally, delete the Cart entity
-        //     await cartRepository.remove(cart);
-        //     logger.info(`Deleted cart entity`);
-        // } else {
-        //     throw new Error('Cart or related items not found or not properly loaded');
-        // }
+            // Finally, delete the Cart entity
+            await cartRepository.remove(cart);
+            logger.info(`Deleted cart entity`);
+        } else {
+            throw new Error('Cart or related items not found or not properly loaded');
+        }
 
         return {
             data: transformCartData,
