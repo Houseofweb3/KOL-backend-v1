@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { createCheckout, getCheckoutById, deleteCheckout } from '../../services/v1/checkoutService';
 import logger from '../../config/logger';
 import { setCorsHeaders } from '../../middleware/setcorsHeaders';
+import { fetchInvoiceDetails } from '../../services/v1/invoiceService';
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
@@ -14,7 +15,13 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
 
     try {
         const newCheckout = await createCheckout(cartId, totalAmount);
-        return res.status(201).json(newCheckout);
+        res.status(201).json(newCheckout);
+        
+        // Process invoice generation in the background
+        fetchInvoiceDetails(cartId as string)
+            .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
+            .catch((error) => logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`));
+
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating checkout: ${error}`);

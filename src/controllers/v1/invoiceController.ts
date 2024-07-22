@@ -13,9 +13,9 @@ export const generateInvoiceController = async (req: Request, res: Response) => 
     }
 
     try {
-        const { data, filePath } = await fetchInvoiceDetails(cartId as string, userId as string);
+        const { data } = await fetchInvoiceDetails(cartId as string, userId as string);
         logger.info('Invoice generated successfully');
-        return res.status(201).json({ data, filePath });
+        return res.status(201).json({ data });
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error generating invoice: ${error.message}`);

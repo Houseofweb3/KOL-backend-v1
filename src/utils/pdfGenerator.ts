@@ -50,3 +50,56 @@ export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string)
     console.error("Error converting HTML file to PDF:", error);
   }
 };
+
+
+// Function to convert HTML to PDF buffer
+export const convertHtmlToPdfBuffer = async (html: string): Promise<Buffer> => {
+  try {
+    // Create a browser instance
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      timeout: 60000 // Increase the timeout to 60 seconds
+    });
+
+    // Create a new page
+    const page = await browser.newPage();
+    console.log('Browser instance and new page created.');
+
+    // Log console messages
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+
+    // Set viewport size
+    await page.setViewport({ width: 1200, height: 800 });
+
+    // Set HTML content
+    await page.setContent(html, { waitUntil: 'networkidle2', timeout: 60000 });
+    console.log('HTML content set on the page.');
+
+    // To reflect CSS used for screens instead of print
+    await page.emulateMediaType('screen');
+
+    // Wait for a short period to ensure rendering
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Waited for 1 second to ensure rendering.');
+
+    // Generate the PDF buffer
+    const pdfBuffer = await page.pdf({
+      margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+      printBackground: true,
+      format: 'A4',
+    });
+
+    // Close the browser instance
+    await browser.close();
+    console.log('PDF buffer generated successfully.');
+
+    return pdfBuffer; 
+  } catch (error) {
+    console.error('Error converting HTML to PDF buffer:', error);
+    throw error;
+  }
+};
+
+
+module.exports = { convertHtmlToPdfBuffer };

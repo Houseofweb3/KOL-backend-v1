@@ -2,6 +2,7 @@ import { AppDataSource } from '../../config/data-source';
 import { Checkout } from '../../entity/checkout';
 import { Cart } from '../../entity/cart';
 import logger from '../../config/logger';
+import { fetchInvoiceDetails } from './invoiceService';
 
 const checkoutRepository = AppDataSource.getRepository(Checkout);
 const cartRepository = AppDataSource.getRepository(Cart);
@@ -14,9 +15,7 @@ export const createCheckout = async (cartId: string, totalAmount: number): Promi
         if (!cart) {
             throw new Error('Cart not found');
         }
-
         const newCheckout = checkoutRepository.create({ cart, totalAmount });
-
         await checkoutRepository.save(newCheckout);
         logger.info(`Created new checkout with id ${newCheckout.id}`);
         return newCheckout;
