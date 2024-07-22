@@ -1,8 +1,7 @@
 import { AppDataSource } from '../../config/data-source';
-import ejs, { renderFile } from 'ejs';
-import { writeFileSync, unlinkSync } from 'fs';
+import { renderFile } from 'ejs';
 import { join } from 'path';
-import { convertHtmlToPdf, convertHtmlToPdfBuffer } from '../../utils/pdfGenerator';
+import { convertHtmlToPdfBuffer } from '../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
 import logger from '../../config/logger';
 import { Cart, InfluencerCartItem, PackageCartItem } from '../../entity/cart';
@@ -66,7 +65,6 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
     const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
-    const checkoutRepository = AppDataSource.getRepository(Checkout);
 
     try {
         // Fetch cart by id
@@ -97,23 +95,6 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         const transformCartData = transformData(data);
         logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
-        // // Generate HTML from EJS template
-        // const html = await ejs.renderFile(join(__dirname, '../../templates/invoiceTemplate.ejs'), transformCartData);
-        // const fileName = `HOW3x_${transformCartData.checkoutDetails.firstName}_${transformCartData.checkoutDetails.lastName}`;
-        // const htmlFilePath = join(__dirname, '../../invoices', `${fileName}.html`);
-        // writeFileSync(htmlFilePath, html);
-        // logger.info(`Generated HTML file at: ${htmlFilePath}`);
-
-        // // Convert HTML to PDF and send email
-        // const pdfFilePath = join(__dirname, '../../invoices', `${fileName}.pdf`);
-        // await convertHtmlToPdf(htmlFilePath, pdfFilePath);
-        // logger.info(`Converted HTML to PDF at: ${pdfFilePath}`);
-        // await sendInvoiceEmail(transformCartData.user, pdfFilePath);
-        // logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
-
-        // // Delete the HTML and PDF files
-        // unlinkSync(htmlFilePath);
-        // unlinkSync(pdfFilePath);
         // Generate HTML from EJS template
         const html = await renderFile(join(__dirname, '../../templates/invoiceTemplate.ejs'), transformCartData);
 
@@ -126,33 +107,9 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         await sendInvoiceEmail(transformCartData.user, pdfBuffer);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
-        // Ensure the fetched entities are properly handled
-        if (cart && cart.influencerCartItems && cart.packageCartItems) {
-            // First, delete the related Checkout entity if it exists
-            if (cart.checkout) {
-                await checkoutRepository.remove(cart.checkout);
-                logger.info(`Deleted related checkout entity`);
-            }
-
-            // Delete related InfluencerCartItem and PackageCartItem entities
-            await influencerCartItemRepository.remove(cart.influencerCartItems);
-            await packageCartItemRepository.remove(cart.packageCartItems);
-            logger.info(`Deleted related influencerCartItems and packageCartItems`);
-
-            // Finally, delete the Cart entity
-            await cartRepository.remove(cart);
-            logger.info(`Deleted cart entity`);
-        } else {
-            throw new Error('Cart or related items not found or not properly loaded');
-        }
 
         return {
             data: transformCartData,
-            // influencerSubtotal: transformCartData.influencerSubtotal,
-            // packageSubtotal: transformCartData.packageSubtotal,
-            // totalPrice: transformCartData.totalPrice,
-            // managementFee: transformCartData.managementFee,
-            // totalPriceWithFee: transformCartData.totalPriceWithFee
         };
 
     } catch (error) {

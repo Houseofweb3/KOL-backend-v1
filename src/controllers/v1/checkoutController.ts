@@ -3,6 +3,8 @@ import { createCheckout, getCheckoutById, deleteCheckout } from '../../services/
 import logger from '../../config/logger';
 import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 import { fetchInvoiceDetails } from '../../services/v1/invoiceService';
+import HttpStatus from 'http-status-codes';
+
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
@@ -10,12 +12,12 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
 
     if (!cartId || !totalAmount) {
         logger.warn('Missing required fields: cartId and/or totalAmount');
-        return res.status(400).json({ error: 'Missing required fields: cartId and/or totalAmount' });
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields: cartId and/or totalAmount' });
     }
 
     try {
         const newCheckout = await createCheckout(cartId, totalAmount);
-        res.status(201).json(newCheckout);
+        res.status(HttpStatus.CREATED).json(newCheckout);
         
         // Process invoice generation in the background
         fetchInvoiceDetails(cartId as string)
@@ -25,10 +27,10 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating checkout: ${error}`);
-            return res.status(500).json({ error: error.message });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
             logger.error('An unknown error occurred while creating checkout');
-            return res.status(500).json({ error: 'An unknown error occurred' });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
         }
     }
 };
