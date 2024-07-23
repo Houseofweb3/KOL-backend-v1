@@ -152,8 +152,8 @@ jobs:
             sudo rm /etc/nginx/sites-enabled/default
 
             # Copy the new Nginx configuration
-            sudo cp /home/$USER/deploy/nginx/nginx.conf /etc/nginx/sites-available/my_app
-            sudo ln -s /etc/nginx/sites-available/my_app /etc/nginx/sites-enabled/
+            sudo cp /home/$USER/deploy/nginx/nginx-test.conf /etc/nginx/sites-available/my_app_test
+            sudo ln -s /etc/nginx/sites-available/my_app_test /etc/nginx/sites-enabled/
 
             # Restart Nginx to apply changes
             sudo systemctl restart nginx
