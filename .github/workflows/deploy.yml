@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - dev
+      - test-deployment
 
 jobs:
-  deploy:
+  deploy-dev:
+    if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +26,7 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Deploy to EC2
+      - name: Deploy to EC2 (Dev)
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           HOST: ${{ secrets.EC2_HOST }}
@@ -76,6 +78,82 @@ jobs:
             # Copy the new Nginx configuration
             sudo cp /home/$USER/deploy/nginx/nginx.conf /etc/nginx/sites-available/my_app
             sudo ln -s /etc/nginx/sites-available/my_app /etc/nginx/sites-enabled/
+
+            # Restart Nginx to apply changes
+            sudo systemctl restart nginx
+          EOF
+
+  deploy-test:
+    if: github.ref == 'refs/heads/test-deployment'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to EC2 (Test)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_TEST_SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.EC2_TEST_HOST }}
+          USER: ${{ secrets.EC2_TEST_USER }}
+          NODE_ENV: ${{ secrets.NODE_ENV }}
+          PORT: ${{ secrets.PORT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          REFRESH_JWT_SECRET: ${{ secrets.REFRESH_JWT_SECRET }}
+          VERSION: ${{ secrets.VERSION }}
+          REFRESH_TOKEN_EXPIRATION_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRATION_DAYS }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" . $USER@$HOST:/home/$USER/deploy
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << EOF
+            cd /home/$USER/deploy
+            # Create .env file with correct variable expansion
+            echo "NODE_ENV=${NODE_ENV}" > .env
+            echo "PORT=${PORT}" >> .env
+            echo "DB_HOST=${DB_HOST}" >> .env
+            echo "DB_PORT=${DB_PORT}" >> .env
+            echo "DB_USERNAME=${DB_USERNAME}" >> .env
+            echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
+            echo "DB_DATABASE=${DB_DATABASE}" >> .env
+            echo "JWT_SECRET=${JWT_SECRET}" >> .env
+            echo "REFRESH_JWT_SECRET=${REFRESH_JWT_SECRET}" >> .env
+            echo "VERSION=${VERSION}" >> .env
+            echo "REFRESH_TOKEN_EXPIRATION_DAYS=${REFRESH_TOKEN_EXPIRATION_DAYS}" >> .env
+            echo "EMAIL_USER=${EMAIL_USER}" >> .env
+            echo "EMAIL_PASS=${EMAIL_PASS}" >> .env
+            cat .env # Verify content
+            npm install --production
+            pm2 restart all || pm2 start dist/index.js --name KOL-backend-v1
+
+            # Install Nginx
+            sudo apt update
+            sudo apt install -y nginx
+
+            # Remove the default Nginx configuration
+            sudo rm /etc/nginx/sites-enabled/default
+
+            # Copy the new Nginx configuration
+            sudo cp /home/$USER/deploy/nginx/nginx-test.conf /etc/nginx/sites-available/my_app_test
+            sudo ln -s /etc/nginx/sites-available/my_app_test /etc/nginx/sites-enabled/
 
             # Restart Nginx to apply changes
             sudo systemctl restart nginx

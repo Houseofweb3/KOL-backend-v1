@@ -6,16 +6,16 @@ import {
     getUserProfile,
     deactivateUser,
     refreshTokenhandler,
-    logoutController
+    logoutController,
 } from '../../../controllers/v1/auth/userController';
 
 const router = express.Router();
 
 router.post('/login', login);
 router.post('/signup', signup);
-router.post('/logout', verifyAccessToken, logoutController);
+router.post('/logout', logoutController);
 router.post('/refresh-token', refreshTokenhandler);
-router.get('/profile/:userId?', verifyAccessToken, getUserProfile);
+router.get('/profile/:userId?', getUserProfile);
 router.patch('/deactivate/:userId', verifyAccessToken, deactivateUser);
 
 export default router;

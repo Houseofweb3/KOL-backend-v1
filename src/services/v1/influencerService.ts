@@ -144,23 +144,35 @@ export const getInfluencersWithHiddenPrices = async (
     limit: number = DEFAULT_LIMIT,
     sortField: string = DEFAULT_SORT_FIELD,
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
-    searchTerm: string = ''
+    searchTerm: string = '',
+    filters: Record<string, any> = {}
 ) => {
     const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
         ? { [sortField]: sortOrder }
         : { [DEFAULT_SORT_FIELD]: DEFAULT_SORT_ORDER };
 
-    // Use queryBuilder for more efficient queries
+    // Create QueryBuilder instance
     const query = influencerRepository.createQueryBuilder('influencer')
-    .select(['influencer.id', 'influencer.name', 'influencer.price', 'influencer.subscribers', 'influencer.categoryName', 'influencer.engagementRate', 'influencer.niche', 'influencer.geography', 'influencer.platform'])  // Select only needed columns
-        .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` })
+        .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` });
+
+    // Apply filters
+    Object.keys(filters).forEach(key => {
+        if (filters[key]) {
+            query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
+        }
+    });
+
+    // Apply sorting and pagination
+    query
         .orderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
         .take(limit);
 
+    // Execute query and get results
     const [influencers, total] = await query.getManyAndCount();
 
+    // Map results with hidden prices
     const influencersWithHiddenPrices = influencers.map(influencer => ({
         id: influencer.id,
         influencer: influencer.name,
@@ -168,6 +180,7 @@ export const getInfluencersWithHiddenPrices = async (
         categoryName: influencer.categoryName,
         engagementRate: influencer.engagementRate,
         niche: influencer.niche,
+        credibilityScore: influencer.credibilityScore,
         geography: influencer.geography,
         platform: influencer.platform,
         price: influencer.price,
@@ -184,6 +197,44 @@ export const getInfluencersWithHiddenPrices = async (
             totalPages: Math.ceil(total / limit),
         },
     };
+};
+
+
+
+export const getFilterOptions = async () => {
+    try {
+        const influencerRepository = AppDataSource.getRepository(Influencer);
+
+        // Fetch unique values for influencer filters
+        const credibilityScores = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.credibilityScore)', 'credibilityScore')
+            .getRawMany();
+
+        const engagementRates = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.engagementRate)', 'engagementRate')
+            .getRawMany();
+
+        const niches = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.niche)', 'niche')
+            .getRawMany();
+
+        const locations = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.geography)', 'geography')
+            .getRawMany();
+
+        return {
+            credibilityScores: credibilityScores.map(row => row.credibilityScore).filter(el => el !== 'N/a'),
+            engagementRates: engagementRates.map(row => row.engagementRate).filter(el => el !== 'N/a'),
+            niches: niches.map(row => row.niche).filter(el => el !== 'N/a'),
+            locations: locations.map(row => row.geography).filter(el => el !== 'N/a'),
+        };
+    } catch (error: any) {
+        throw new Error(`Error fetching filter options: ${error.message}`);
+    }
 };
 
 
