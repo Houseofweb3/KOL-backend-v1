@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
     createUserOnboardingSelectionController,
     getUserOnboardingSelectionsByUserIdController
-} from '../../controllers/v1/userOnboardingSelectionController';
+} from '../../controllers/v1/onboarding';
 
 const router = Router();
 

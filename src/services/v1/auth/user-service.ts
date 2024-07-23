@@ -27,6 +27,7 @@ export const createUser = async (email: string, password?: string, fullname?: st
             });
 
             if (user) {
+                // TODO: this can be replaced with deletedAt
                 if (user.is_deleted) {
                     user.is_deleted = false;
 
@@ -79,7 +80,7 @@ export const createUser = async (email: string, password?: string, fullname?: st
 
 
 // Login User
-// TODO: recantor this later
+// TODO: refactor this later
 export const loginUser = async (email: string, password: string, fullname: string = '', type: string = UserType.USER) => {
     try {
         // Find user by email

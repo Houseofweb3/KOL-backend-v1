@@ -1,11 +1,11 @@
-import { AppDataSource } from '../../config/data-source';
-import { renderFile } from 'ejs';
 import { join } from 'path';
-import { convertHtmlToPdfBuffer } from '../../utils/pdfGenerator';
-import { sendInvoiceEmail } from '../../utils/communication/ses/emailSender';
-import logger from '../../config/logger';
-import { Cart, InfluencerCartItem, PackageCartItem } from '../../entity/cart';
-import { Checkout } from '../../entity/checkout';
+import { renderFile } from 'ejs';
+
+import logger from '../../../config/logger';
+import { AppDataSource } from '../../../config/data-source';
+import { convertHtmlToPdfBuffer } from '../../../utils/pdfGenerator';
+import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
+import { Cart, InfluencerCartItem, PackageCartItem } from '../../../entity/cart';
 
 function transformData(data: any) {
     const checkoutDetails = {
@@ -78,6 +78,7 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
 
         // Fetch related influencerCartItems and packageCartItems
         logger.info(`Fetching influencerCartItems for cart id: ${id}`);
+        
         const influencerCartItems = await influencerCartItemRepository.find({ where: { cart: { id } }, relations: ['influencer'] });
         logger.info(`Fetched influencerCartItems: ${JSON.stringify(influencerCartItems)}`);
 
@@ -100,7 +101,7 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
 
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
-        console.log("generated html: ", pdfBuffer)
+        logger.info("generated html: ", pdfBuffer)
 
 
         // Send the PDF buffer as an email attachment
@@ -114,11 +115,13 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
 
     } catch (error) {
         logger.error(`Error fetching invoice details for id: ${id}`, error);
+
         if (error instanceof Error) {
             logger.error(`Error message: ${error.message}`);
             logger.error(`Error stack: ${error.stack}`);
             throw new Error('Error fetching invoice details');
         } else {
+            // TODO: is there a better way to store the text that we are logging and using in exception?
             logger.error('Unknown error occurred while fetching invoice details');
             throw new Error('Unknown error occurred while fetching invoice details');
         }

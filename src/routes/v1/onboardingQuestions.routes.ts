@@ -3,7 +3,7 @@ import {
     createOnBoardingQuestionController,
     getOnBoardingQuestionController,
     getAllOnBoardingQuestionsController
-} from '../../controllers/v1/onboardingQuestionController';
+} from '../../controllers/v1/onboarding';
 
 const router = Router();
 
