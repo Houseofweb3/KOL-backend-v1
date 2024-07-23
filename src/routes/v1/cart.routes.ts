@@ -11,9 +11,12 @@ const router = Router();
 router.post('/', createCartHandler);
 
 // Delete a Cart
+router.get('/getCart', getCartsHandler);
+
+// Delete a Cart
 router.delete('/:id', deleteCartHandler);
 
-// Get a Cart by ID or get all Carts
-router.get('/', getCartsHandler);
+// // Get a Cart by ID or get all Carts
+// router.get('/', getCartsHandler);
 
 export default router;
