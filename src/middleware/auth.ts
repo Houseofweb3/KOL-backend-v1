@@ -21,6 +21,7 @@ export const generateRefreshToken = ({ id, type }: JwtPayload): string => {
     return jwt.sign({ id, type }, jwtRefreshSecret, { expiresIn: '7d' }); // Refresh token valid for 7 days
 };
 
+// TODO: This needs to be added in a lot of APIs. Do it carefully.
 export const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.split(' ')[1];

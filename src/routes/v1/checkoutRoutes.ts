@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
     createCheckoutHandler,
-} from '../../controllers/v1/checkoutController';
+} from '../../controllers/v1/checkout';
 
 
 const router = Router();

@@ -4,7 +4,6 @@ import logger from '../../../config/logger';
 import {
 	loginUser,
 	createUser,
-	getUserDetailsById,
 	deactivateUserById,
 	refreshTokenService,
 	getUserDetailsAndOrderHistoryById
@@ -48,6 +47,7 @@ export const signup = async (req: Request, res: Response) => {
 	}
 };
 
+// TODO: revert the changes made i nlogin API.
 
 // Login User 
 export const login = async (req: Request, res: Response) => {

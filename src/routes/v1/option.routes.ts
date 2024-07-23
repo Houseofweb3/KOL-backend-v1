@@ -5,7 +5,7 @@ import {
   getAllOptionsController,
   updateOptionController,
   deleteOptionController
-} from '../../controllers/v1/optionController';
+} from '../../controllers/v1/onboarding';
 
 const router = Router();
 
