@@ -10,17 +10,15 @@ const DEFAULT_SORT_ORDER: 'ASC' | 'DESC' = 'ASC';
 export const uploadCSVHandler = async (req: Request, res: Response) => {
   setCorsHeaders(req, res);
   try {
-    // const adminId = req.body.adminId;
-
     if (!req.file) {
       logger.warn('No file uploaded for CSV processing');
-      return res.status(400).json({ message: 'No file uploaded' });
+      return res.status(HttpStatus.BAD_REQUEST).json({ message: 'No file uploaded' });
     }
 
     const { insertedRows, skippedRows, skippedReasons } = await uploadCSV(req.file.path);
     logger.info(`CSV uploaded. Inserted: ${insertedRows}, Skipped: ${skippedRows}`);
 
-    return res.status(200).json({
+    return res.status(HttpStatus.OK).json({
       message: 'Data saved successfully 👍',
       insertedRows,
       skippedRows,
@@ -29,9 +27,9 @@ export const uploadCSVHandler = async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error uploading CSV:', error);
     if (error instanceof Error) {
-      return res.status(500).json({ message: 'Error saving data', error: error.message });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error saving data', error: error.message });
     } else {
-      return res.status(500).json({ message: 'Unexpected error', error: String(error) });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Unexpected error', error: String(error) });
     }
   }
 };
@@ -43,11 +41,11 @@ export const getFilterOptionsController = async (req: Request, res: Response) =>
   } catch (error) {
     if (error instanceof Error) {
       logger.error('Error fetching influencers with hidden prices:', error);
-      return res.status(500).json({ message: 'Error fetching data', error: error.message });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
     }
     else {
       logger.error('An unknown error occurred during OnBoardingQuestion creation');
-      return res.status(500).json({ error: 'An unknown error occurred' });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
     }
   }
 };
@@ -76,18 +74,18 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
     const { influencers, pagination } = await getInfluencersWithHiddenPrices(page, limit, sortField, sortOrder, search, filter);
     logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
 
-    return res.status(200).json({
+    return res.status(HttpStatus.OK).json({
       pagination,
       influencers,
     });
   } catch (error) {
     if (error instanceof Error) {
       logger.error('Error fetching influencers with hidden prices:', error);
-      return res.status(500).json({ message: 'Error fetching data', error: error.message });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
     }
     else {
       logger.error('An unknown error occurred during OnBoardingQuestion creation');
-      return res.status(500).json({ error: 'An unknown error occurred' });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
     }
   }
 };
@@ -99,20 +97,20 @@ export const createInfluencerHandler = async (req: Request, res: Response) => {
 
   if (!data.name || !data.niche || !data.subscribers) {
     logger.warn('Missing required fields in create influencer request');
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
   }
 
   try {
     const { influencer, message } = await createInfluencer(data);
     logger.info(`Influencer created successfully: ${influencer.id}`);
-    return res.status(201).json({ influencer, message });
+    return res.status(HttpStatus.CREATED).json({ influencer, message });
   } catch (error) {
     if (error instanceof Error) {
       logger.error(`Error creating influencer: ${error.message}`);
-      return res.status(500).json({ error: error.message });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
     } else {
       logger.error('An unknown error occurred while creating influencer');
-      return res.status(500).json({ error: 'An unknown error occurred' });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
     }
   }
 };
@@ -124,15 +122,14 @@ export const deleteInfluencerHandler = async (req: Request, res: Response) => {
 
   try {
     const { message } = await deleteInfluencer(id);
-    return res.status(200).json({ message });
+    return res.status(HttpStatus.OK).json({ message });
   } catch (error) {
     if (error instanceof Error) {
       logger.error(`Error deleting influencer: ${error.message}`);
-      return res.status(500).json({ error: error.message });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
     } else {
       logger.error('An unknown error occurred while deleting influencer');
-      return res.status(500).json({ error: 'An unknown error occurred' });
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
     }
   }
 };
-
