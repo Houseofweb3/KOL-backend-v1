@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { ENV } from '../../../config/env';
 import logger from '../../../config/logger';
 import { User, UserType } from '../../../entity/auth/User.entity';
+import { Cart } from '../../../entity/cart';
 import { AppDataSource } from '../../../config/data-source';
 import { generateAccessToken, generateRefreshToken } from '../../../middleware/auth';
 import { create } from 'domain';
@@ -79,7 +80,7 @@ export const createUser = async (email: string, password?: string, fullname?: st
 
 // Login User
 // TODO: recantor this later
-export const loginUser = async (email: string, password: string, fullname:string = '', type: string = UserType.USER) => {
+export const loginUser = async (email: string, password: string, fullname: string = '', type: string = UserType.USER) => {
     try {
         // Find user by email
         let user = await AppDataSource.getRepository(User).findOne({
@@ -91,11 +92,11 @@ export const loginUser = async (email: string, password: string, fullname:string
             // throw new Error('User not found');
             await createUser(email, password, fullname, type);
         }
-        
+
         user = await AppDataSource.getRepository(User).findOne({
             where: [{ email }],
         });
-        
+
         if (user) {
             // logger.warn(`User not found with email: ${email}`);
             // throw new Error('User not found');
@@ -135,7 +136,7 @@ export const loginUser = async (email: string, password: string, fullname:string
         }
     }
 };
- 
+
 
 // Refresh User Token
 export const refreshTokenService = async (refreshToken: string) => {
@@ -188,6 +189,87 @@ export const getUserDetailsById = async (id: string): Promise<User | null> => {
         throw new Error('Failed to get user details');
     }
 };
+
+
+
+
+export const getUserDetailsAndOrderHistoryById = async (userId: string): Promise<{ user: User | null, checkoutHistory: any[] }> => {
+    try {
+        const cartRepository = AppDataSource.getRepository(Cart);
+
+        // Fetch the user
+        const user = await userRepository.findOne({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            return { user: null, checkoutHistory: [] };
+        }
+
+        // Fetch the user's carts with all related data
+        const carts = await cartRepository.createQueryBuilder('cart')
+            .leftJoinAndSelect('cart.user', 'user')
+            .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
+            .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')
+            .leftJoinAndSelect('cart.packageCartItems', 'packageCartItems')
+            .leftJoinAndSelect('packageCartItems.package', 'package')
+            .leftJoinAndSelect('package.packageItems', 'packageItems')  // Join for packageItems
+            .leftJoinAndSelect('cart.checkout', 'checkout')
+            .where('cart.userId = :userId', { userId })
+            .andWhere('checkout.id IS NOT NULL')
+            .getMany();
+
+        // Map the results to the desired format
+        const checkoutHistory = carts.map(cart => ({
+            cartId: cart.id,
+            checkout: {
+                createdAt: cart.checkout?.createdAt,
+                updatedAt: cart.checkout?.updatedAt,
+                id: cart.checkout?.id,
+                totalAmount: cart.checkout?.totalAmount
+            },
+            influencerCartItems: cart.influencerCartItems.map(item => ({
+                id: item.id,
+                influencer: {
+                    id: item.influencer.id,
+                    name: item.influencer.name,
+                    niche: item.influencer.niche,
+                    categoryName: item.influencer.categoryName,
+                    subscribers: item.influencer.subscribers,
+                    geography: item.influencer.geography,
+                    platform: item.influencer.platform,
+                    price: item.influencer.price,
+                    credibilityScore: item.influencer.credibilityScore,
+                    engagementRate: item.influencer.engagementRate,
+                    investorType: item.influencer.investorType
+                }
+            })),
+            packageCartItems: cart.packageCartItems.map(item => ({
+                id: item.id,
+                package: {
+                    id: item.package.id,
+                    header: item.package.header,
+                    cost: item.package.cost,
+                    guaranteedFeatures: item.package.guaranteedFeatures,
+                    packageItems: item.package.packageItems.map(pkgItem => ({
+                        id: pkgItem.id,
+                        media: pkgItem.media,
+                        format: pkgItem.format,
+                        monthlyTraffic: pkgItem.monthlyTraffic,
+                        turnAroundTime: pkgItem.turnAroundTime
+                    }))
+                }
+            }))
+        }));
+
+        return { user, checkoutHistory };
+    } catch (error) {
+        logger.error(`Failed to get user details and order history for user id: ${userId}`, error);
+        throw new Error('Failed to get user details and order history');
+    }
+};
+
+
 
 
 

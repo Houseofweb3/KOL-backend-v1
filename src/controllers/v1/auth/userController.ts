@@ -6,7 +6,8 @@ import {
 	createUser,
 	getUserDetailsById,
 	deactivateUserById,
-	refreshTokenService
+	refreshTokenService,
+	getUserDetailsAndOrderHistoryById
 } from '../../../services/v1/auth/user-service';
 import { ENV } from '../../../config/env';
 import { RefreshToken } from '../../../entity/auth';
@@ -185,7 +186,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 		}
 
 		// Fetch user details by ID
-		const user = await getUserDetailsById(userId);
+		const {user, checkoutHistory} = await getUserDetailsAndOrderHistoryById(userId);
 
 		if (!user) {
 			logger.warn(`User not found: ${userId}`);
@@ -194,7 +195,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
 		// Destructure only the required fields from the user object
 		const { email, fullname } = user;
-		return res.status(HttpStatus.OK).json({ email, fullname });
+		return res.status(HttpStatus.OK).json({ user, checkoutHistory });
 	} catch (error) {
 		if (error instanceof Error) {
 
@@ -209,6 +210,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 		}
 	}
 };
+
 
 
 // Deactive the profile

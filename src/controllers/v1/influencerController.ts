@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { uploadCSV, getInfluencersWithHiddenPrices, createInfluencer, deleteInfluencer } from '../../services/v1/influencerService';
+import { uploadCSV, getInfluencersWithHiddenPrices, createInfluencer, deleteInfluencer, getFilterOptions } from '../../services/v1/influencerService';
 import logger from '../../config/logger';
 import { setCorsHeaders } from '../../middleware/setcorsHeaders';
 const DEFAULT_PAGE = 1;
@@ -36,6 +36,21 @@ export const uploadCSVHandler = async (req: Request, res: Response) => {
   }
 };
 
+export const getFilterOptionsController = async (req: Request, res: Response) => {
+  try {
+    const filterOptions = await getFilterOptions();
+    res.json(filterOptions);
+  } catch (error) {
+    if (error instanceof Error) {
+      logger.error('Error fetching influencers with hidden prices:', error);
+      return res.status(500).json({ message: 'Error fetching data', error: error.message });
+    }
+    else {
+      logger.error('An unknown error occurred during OnBoardingQuestion creation');
+      return res.status(500).json({ error: 'An unknown error occurred' });
+    }
+  }
+};
 
 export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: Response) => {
   setCorsHeaders(req, res);
@@ -47,7 +62,18 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
     const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
     const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
 
-    const { influencers, pagination } = await getInfluencersWithHiddenPrices(page, limit, sortField, sortOrder, search);
+    let filter: object = {};
+    
+    // Parse the filter query parameter safely
+    try {
+      filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
+    } catch (error) {
+      logger.error('Error parsing filter query parameter:', error);
+      // Optionally return an error response or default to an empty filter
+      filter = {};
+    }
+
+    const { influencers, pagination } = await getInfluencersWithHiddenPrices(page, limit, sortField, sortOrder, search, filter);
     logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
 
     return res.status(200).json({
