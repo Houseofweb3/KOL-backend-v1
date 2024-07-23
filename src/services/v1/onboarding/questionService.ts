@@ -1,6 +1,6 @@
-import { AppDataSource } from '../../config/data-source';
-import { Question, QuestionType } from '../../entity/onboarding';
-import logger from '../../config/logger';
+import logger from '../../../config/logger';
+import { AppDataSource } from '../../../config/data-source';
+import { Question, QuestionType } from '../../../entity/onboarding';
 
 const questionRepository = AppDataSource.getRepository(Question);
 
@@ -74,8 +74,5 @@ export const deleteQuestion = async (id: string) => {
             logger.error('An unknown error occurred during question creation');
             throw new Error('An unknown error occurred during question creation');
         }
-
     }
 };
-
-

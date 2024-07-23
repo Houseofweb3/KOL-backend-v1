@@ -1,9 +1,14 @@
-import { Request, Response } from 'express';
-import { createCheckout, getCheckoutById, deleteCheckout } from '../../services/v1/checkoutService';
-import logger from '../../config/logger';
-import { setCorsHeaders } from '../../middleware/setcorsHeaders';
-import { fetchInvoiceDetails } from '../../services/v1/invoiceService';
 import HttpStatus from 'http-status-codes';
+import { Request, Response } from 'express';
+
+import logger from '../../../config/logger';
+import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
+import { fetchInvoiceDetails } from '../../../services/v1/payment';
+import {
+    createCheckout,
+    getCheckoutById,
+    deleteCheckout
+} from '../../../services/v1/checkoutService';
 
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {

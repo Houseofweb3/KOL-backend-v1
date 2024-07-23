@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { generateInvoiceController } from '../../controllers/v1/invoiceController';
+import { generateInvoiceController } from '../../../controllers/v1/payment';
 
 const router = Router();
 
-// generate an invoice
 router.post('/generate', generateInvoiceController);
 
 export default router;

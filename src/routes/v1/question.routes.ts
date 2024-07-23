@@ -1,5 +1,9 @@
 import express from 'express';
-import { createQuestionController, getQuestionController, deleteQuestionController } from '../../controllers/v1/questionController';
+import {
+    createQuestionController,
+    getQuestionController,
+    deleteQuestionController
+} from '../../controllers/v1/onboarding/questionController';
 
 const router = express.Router();
 
