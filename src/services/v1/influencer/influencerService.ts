@@ -1,11 +1,9 @@
 import fs from 'fs';
 import csv from 'csv-parser';
-import { AppDataSource } from '../../config/data-source';
-import { Influencer } from '../../entity/influencer';
-import { User } from '../../entity/auth';
-import logger from '../../config/logger';
+import logger from '../../../config/logger';
+import { Influencer } from '../../../entity/influencer';
+import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
-import { FindOptionsWhere, ILike } from 'typeorm';
 
 // Define default values for pagination and sorting
 const DEFAULT_PAGE = 1;
@@ -34,9 +32,7 @@ interface CSVRow {
     InvestorType: string;
 }
 
-const userRepository = AppDataSource.getRepository(User);
 const influencerRepository = AppDataSource.getRepository(Influencer);
-
 
 export const uploadCSV = async (filePath: string) => {
 
@@ -45,7 +41,6 @@ export const uploadCSV = async (filePath: string) => {
     let skippedReasons: { [key: string]: number } = {};
 
     try {
-
         const readStream = fs.createReadStream(filePath).pipe(csv());
 
         for await (const row of readStream) {
@@ -81,14 +76,8 @@ export const uploadCSV = async (filePath: string) => {
                     platform: capitalizedRow.Platform,
                     credibilityScore: capitalizedRow.CredibilityScore,
                     engagementRate: capitalizedRow.EngagementRate,
-                    //   engagement_type: capitalizedRow.EngagementType,
-                    //   collab_velocity: capitalizedRow.CollabVelocity,
-                    //   content_type: capitalizedRow.ContentType,
-                    //   motive: capitalizedRow.Motive,
-                    //   packages: capitalizedRow.Package,
                     investorType: capitalizedRow.InvestorType,
-                    price: capitalizedRow.PriceOfPackage // need to discss
-                    //   link: capitalizedRow.Link,
+                    price: capitalizedRow.PriceOfPackage
                 },
             });
 
@@ -200,7 +189,6 @@ export const getInfluencersWithHiddenPrices = async (
 };
 
 
-
 export const getFilterOptions = async () => {
     try {
         const influencerRepository = AppDataSource.getRepository(Influencer);
@@ -237,9 +225,6 @@ export const getFilterOptions = async () => {
     }
 };
 
-
-
-
 const getHiddenPrice = (price: number): string => {
     if (price <= 1000) return '$';
     if (price > 1000 && price <= 2000) return '$$';
@@ -248,7 +233,7 @@ const getHiddenPrice = (price: number): string => {
     return '';
 };
 
-// create inflencers
+
 export const createInfluencer = async (data: Partial<Influencer>) => {
     try {
         const newInfluencer = influencerRepository.create(data);
@@ -268,7 +253,6 @@ export const createInfluencer = async (data: Partial<Influencer>) => {
 }
 
 
-// Delete inflencers
 export const deleteInfluencer = async (id: string) => {
     try {
         const influencer = await influencerRepository.findOneBy({ id });

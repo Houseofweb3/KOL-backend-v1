@@ -13,22 +13,20 @@ import { AppDataSource } from './config/data-source';
 import corsMiddleware from './middleware/cors';
 
 // Importing routes
-import cartRoutes from './routes/v1/cart.routes';
-import optionRoutes from './routes/v1/option.routes';
-import userRoutes from './routes/v1/auth/user.routes';
-import packageRoutes from './routes/v1/package.routes';
-import checkoutRoutes from './routes/v1/checkoutRoutes';
-import questionRoutes from './routes/v1/question.routes';
-import utilsRoutes from './routes/v1/utils/utils.routes';
-import influencerRoutes from './routes/v1/influencer.routes';
-import invoiceRoutes from './routes/v1/payment/invoiceRoutes';
-import packageItemRoutes from './routes/v1/packageItem.routes';
-import packageCartItemRoutes from './routes/v1/packageCartItem.routes';
-import influencerCartItemRoutes from './routes/v1/influencerCartItem.routes';
-import onboardingQuestionsRoutes from './routes/v1/onboardingQuestions.routes';
-import userOnboardingSelectionRoutes from './routes/v1/userOnboardingSelection.routes';
-
-
+import { cartRoutes } from './routes';
+import { optionRoutes } from './routes';
+import { userRoutes } from './routes';
+import { packageRoutes } from './routes';
+import { checkoutRoutes } from './routes';
+import { questionRoutes } from './routes';
+import { utilsRoutes } from './routes';
+import { influencerRoutes } from './routes';
+import { invoiceRoutes } from './routes';
+import { packageItemRoutes } from './routes';
+import { packageCartItemRoutes } from './routes';;
+import { influencerCartItemRoutes } from './routes';
+import { onboardingQuestionsRoutes } from './routes';
+import { userOnboardingSelectionRoutes } from './routes';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;

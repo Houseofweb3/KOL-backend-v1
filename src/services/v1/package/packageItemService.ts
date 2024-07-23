@@ -1,9 +1,9 @@
-import { AppDataSource } from '../../config/data-source';
-import { PackageItem } from '../../entity/package';
-import logger from '../../config/logger';
-
+import logger from '../../../config/logger';
+import { PackageItem } from '../../../entity/package';
+import { AppDataSource } from '../../../config/data-source';
 
 const packageItemRepository = AppDataSource.getRepository(PackageItem);
+
 // Create a new PackageItem
 export const createPackageItem = async (
   media: string, 

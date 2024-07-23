@@ -6,7 +6,7 @@ import {
   getAllPackagesHandler, 
   updatePackageByIdHandler, 
   deletePackageByIdHandler
-} from '../../controllers/v1/packageController';
+} from '../../../controllers/v1/package';
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -17,4 +17,4 @@ router.get('/', getAllPackagesHandler);
 router.put('/:id', updatePackageByIdHandler);
 router.delete('/:id', deletePackageByIdHandler);
 
-export default router;
+export { router as packageRoutes };

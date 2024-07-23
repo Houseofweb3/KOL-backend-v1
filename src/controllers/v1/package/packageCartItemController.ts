@@ -1,7 +1,13 @@
+import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
-import { createPackageCartItem, deletePackageCartItem, getPackageCartItems } from '../../services/v1/packageCartItemService';
-import logger from '../../config/logger';
-import { setCorsHeaders } from '../../middleware/setcorsHeaders';
+
+import logger from '../../../config/logger';
+import {
+    createPackageCartItem,
+    deletePackageCartItem,
+    getPackageCartItems
+} from '../../../services/v1/package/packageCartItemService';
+
 // Create PackageCartItem
 export const createPackageCartItemHandler = async (req: Request, res: Response) => {
 
@@ -10,10 +16,10 @@ export const createPackageCartItemHandler = async (req: Request, res: Response) 
     try {
         const newItem = await createPackageCartItem(packageItemId, cartId);
         logger.info(`Created PackageCartItem with id ${newItem.id}`);
-        return res.status(201).json(newItem);
+        return res.status(HttpStatus.CREATED).json(newItem);
     } catch (error: any) {
         logger.error(`Error creating PackageCartItem: ${error.message}`);
-        return res.status(500).json({ message: 'Error creating PackageCartItem', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error creating PackageCartItem', error: error.message });
     }
 };
 
@@ -24,10 +30,10 @@ export const deletePackageCartItemHandler = async (req: Request, res: Response) 
     try {
         await deletePackageCartItem(id);
         logger.info(`Deleted PackageCartItem with id ${id}`);
-        return res.status(200).json({ message: 'PackageCartItem deleted successfully' });
+        return res.status(HttpStatus.OK).json({ message: 'PackageCartItem deleted successfully' });
     } catch (error: any) {
         logger.error(`Error deleting PackageCartItem: ${error.message}`);
-        return res.status(500).json({ message: 'Error deleting PackageCartItem', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error deleting PackageCartItem', error: error.message });
     }
 };
 
@@ -38,9 +44,9 @@ export const getPackageCartItemsHandler = async (req: Request, res: Response) =>
     try {
         const items = await getPackageCartItems(cartId as string);
         logger.info(`Fetched ${items.length} PackageCartItem(s)`);
-        return res.status(200).json(items);
+        return res.status(HttpStatus.OK).json(items);
     } catch (error: any) {
         logger.error(`Error fetching PackageCartItem(s): ${error.message}`);
-        return res.status(500).json({ message: 'Error fetching PackageCartItem(s)', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching PackageCartItem(s)', error: error.message });
     }
 };

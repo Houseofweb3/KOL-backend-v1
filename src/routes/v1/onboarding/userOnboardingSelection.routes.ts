@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
     createUserOnboardingSelectionController,
     getUserOnboardingSelectionsByUserIdController
-} from '../../controllers/v1/onboarding';
+} from '../../../controllers/v1/onboarding';
 
 const router = Router();
 
@@ -12,4 +12,4 @@ router.post('/', createUserOnboardingSelectionController);
 // Get all user onboarding selections for a specific user under a specific question
 router.get('/:userId', getUserOnboardingSelectionsByUserIdController);
 
-export default router;
+export { router as userOnboardingSelectionRoutes };

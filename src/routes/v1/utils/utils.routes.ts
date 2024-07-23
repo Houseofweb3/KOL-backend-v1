@@ -7,4 +7,4 @@ const router = express.Router();
 
 router.get('/healthCheck', healthCheck);
 
-export default router;
+export { router as utilsRoutes };

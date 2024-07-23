@@ -18,4 +18,4 @@ router.post('/refresh-token', refreshTokenhandler);
 router.get('/profile/:userId?', getUserProfile);
 router.patch('/deactivate/:userId', verifyAccessToken, deactivateUser);
 
-export default router;
+export { router as userRoutes };

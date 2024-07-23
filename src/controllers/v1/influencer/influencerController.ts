@@ -1,15 +1,15 @@
 import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 
-import logger from '../../config/logger';
-import { setCorsHeaders } from '../../middleware/setcorsHeaders';
+import logger from '../../../config/logger';
+import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
 import {
   uploadCSV,
   createInfluencer,
   deleteInfluencer,
   getFilterOptions,
   getInfluencersWithHiddenPrices
-} from '../../services/v1/influencerService';
+} from '../../../services/v1/influencer/influencerService';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;

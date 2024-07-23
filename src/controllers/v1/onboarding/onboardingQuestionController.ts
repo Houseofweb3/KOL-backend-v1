@@ -7,7 +7,7 @@ import {
     createOnBoardingQuestion,
     getOnBoardingQuestionById,
     getAllOnBoardingQuestions
-} from '../../../services/v1/onboardingQuestionService';
+} from '../../../services/v1/onboarding';
 
 // TODO: Check if prettier and eslint are working or not
 
