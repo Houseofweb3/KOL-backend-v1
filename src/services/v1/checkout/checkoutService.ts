@@ -15,6 +15,7 @@ export const createCheckout = async (cartId: string, totalAmount: number): Promi
             throw new Error('Cart not found');
         }
         const newCheckout = checkoutRepository.create({ cart, totalAmount });
+
         await checkoutRepository.save(newCheckout);
         logger.info(`Created new checkout with id ${newCheckout.id}`);
         return newCheckout;
@@ -28,6 +29,7 @@ export const createCheckout = async (cartId: string, totalAmount: number): Promi
 export const getCheckoutById = async (id: string): Promise<Checkout | null> => {
     try {
         const checkout = await checkoutRepository.findOne({ where: { id }, relations: ['cart'] });
+        
         return checkout;
     } catch (error) {
         logger.error(`Error fetching checkout with id ${id}: ${error}`);
