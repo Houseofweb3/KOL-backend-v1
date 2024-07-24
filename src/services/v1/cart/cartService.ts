@@ -40,7 +40,7 @@ export const deleteCart = async (id: string): Promise<void> => {
   }
 };
 
-export const getCarts = async (userId?: string): Promise<Cart[]> => {
+export const getCarts = async (userId?: string): Promise<any[]> => {
   try {
     let queryBuilder = cartRepository.createQueryBuilder('cart')
       .leftJoinAndSelect('cart.user', 'user')
@@ -54,8 +54,25 @@ export const getCarts = async (userId?: string): Promise<Cart[]> => {
     queryBuilder = queryBuilder.where('cart.userId = :userId', { userId });
 
     const carts = await queryBuilder.getMany();
-    logger.info(`Fetched ${carts.length} cart(s)`);
-    return carts;
+
+    // Transform the response
+    const transformedCarts = carts.map(cart => {
+      cart.influencerCartItems = cart.influencerCartItems.map(item => {
+        if (item.influencer) {
+          // Use optional chaining and TypeScript assertions
+          (item.influencer as any).influencer = item.influencer.name;
+          delete (item.influencer as any).name;
+
+          (item.influencer as any).followers = item.influencer.subscribers;
+          delete (item.influencer as any).subscribers;
+        }
+        return item;
+      });
+      return cart;
+    });
+
+    logger.info(`Fetched ${transformedCarts.length} cart(s)`);
+    return transformedCarts;
   } catch (error) {
     logger.error(`Error fetching cart(s): ${error}`);
     throw new Error('Error fetching cart(s)');
