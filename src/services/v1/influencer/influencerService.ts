@@ -12,7 +12,7 @@ const DEFAULT_SORT_FIELD = 'price';
 const DEFAULT_SORT_ORDER = 'ASC';
 
 
-// range formation for sbscribers 
+// range formation for subscribers 
 const categorizeFollowers = (count: any) => {
     if (count <= 10) return '1-10';
     if (count <= 100) return '11-100';
@@ -23,7 +23,7 @@ const categorizeFollowers = (count: any) => {
     return '1,000,001+';
 };
 
-// Range condition to fetch the sbcriber list
+// Range condition to fetch the subcriber list
 const getFollowerRangeCondition = (range: string) => {
     switch (range) {
         case '1-10':
@@ -78,7 +78,7 @@ export const uploadCSV = async (filePath: string) => {
         const readStream = fs.createReadStream(filePath).pipe(csv());
 
         for await (const row of readStream) {
-            console.log("Processing row:", row);
+            logger.info("Processing row:", row);
 
             const capitalizedRow: CSVRow = {
                 Influencer: capitalizeWords(row.Influencer || "N/A"),
@@ -268,7 +268,7 @@ export const getFilterOptions = async () => {
 
         const followerRanges = subscribers.map(row => {
             const range = categorizeFollowers(row.subscribers);
-            console.log(`Follower count: ${row.subscribers}, categorized as: ${range}`);
+            logger.info(`Follower count: ${row.subscribers}, categorized as: ${range}`);
             return range;
         });
 
