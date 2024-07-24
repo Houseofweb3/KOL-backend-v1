@@ -11,6 +11,8 @@ const DEFAULT_LIMIT = 10;
 const DEFAULT_SORT_FIELD = 'price';
 const DEFAULT_SORT_ORDER = 'ASC';
 
+
+// range formation for sbscribers 
 const categorizeFollowers = (count: any) => {
     if (count <= 10) return '1-10';
     if (count <= 100) return '11-100';
@@ -20,6 +22,29 @@ const categorizeFollowers = (count: any) => {
     if (count <= 1000000) return '100,001-1,000,000';
     return '1,000,001+';
 };
+
+// Range condition to fetch the sbcriber list
+const getFollowerRangeCondition = (range: string) => {
+    switch (range) {
+        case '1-10':
+            return 'influencer.subscribers BETWEEN 1 AND 10';
+        case '11-100':
+            return 'influencer.subscribers BETWEEN 11 AND 100';
+        case '101-1,000':
+            return 'influencer.subscribers BETWEEN 101 AND 1000';
+        case '1,001-10,000':
+            return 'influencer.subscribers BETWEEN 1001 AND 10000';
+        case '10,001-100,000':
+            return 'influencer.subscribers BETWEEN 10001 AND 100000';
+        case '100,001-1,000,000':
+            return 'influencer.subscribers BETWEEN 100001 AND 1000000';
+        case '1,000,001+':
+            return 'influencer.subscribers > 1000000';
+        default:
+            return '';
+    }
+};
+
 interface CSVRow {
     Influencer: string;
     Link: string;
@@ -143,7 +168,8 @@ export const getInfluencersWithHiddenPrices = async (
     sortField: string = DEFAULT_SORT_FIELD,
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
     searchTerm: string = '',
-    filters: Record<string, any> = {}
+    filters: Record<string, any> = {},
+    followerRange: string | ""
 ) => {
     const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
@@ -166,6 +192,14 @@ export const getInfluencersWithHiddenPrices = async (
         .orderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
         .take(limit);
+
+    // Apply follower range filter
+    if (followerRange) {
+        const rangeCondition = getFollowerRangeCondition(followerRange);
+        if (rangeCondition) {
+            query.andWhere(rangeCondition);
+        }
+    }
 
     // Execute query and get results
     const [influencers, total] = await query.getManyAndCount();
