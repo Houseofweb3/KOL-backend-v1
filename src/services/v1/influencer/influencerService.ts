@@ -214,11 +214,17 @@ export const getFilterOptions = async () => {
             .select('DISTINCT(influencer.geography)', 'geography')
             .getRawMany();
 
+        const platforms = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.platform)', 'platform')
+            .getRawMany();
+
         return {
-            credibilityScores: credibilityScores.map(row => row.credibilityScore).filter(el => el !== 'N/a'),
-            engagementRates: engagementRates.map(row => row.engagementRate).filter(el => el !== 'N/a'),
-            niches: niches.map(row => row.niche).filter(el => el !== 'N/a'),
-            locations: locations.map(row => row.geography).filter(el => el !== 'N/a'),
+            credibilityScores: credibilityScores.map(row => row.credibilityScore).filter(el => el !== 'N/a' && el !== null),
+            engagementRates: engagementRates.map(row => row.engagementRate).filter(el => el !== 'N/a' && el !== null),
+            niches: niches.map(row => row.niche).filter(el => el !== 'N/a' && el !== null),
+            locations: locations.map(row => row.geography).filter(el => el !== 'N/a' && el !== null),
+            platforms: platforms.map(row => row.platform).filter(el => el !== 'N/a' && el !== null),
         };
     } catch (error: any) {
         throw new Error(`Error fetching filter options: ${error.message}`);
