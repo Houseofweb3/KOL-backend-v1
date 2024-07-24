@@ -11,6 +11,15 @@ const DEFAULT_LIMIT = 10;
 const DEFAULT_SORT_FIELD = 'price';
 const DEFAULT_SORT_ORDER = 'ASC';
 
+const categorizeFollowers = (count: any) => {
+    if (count <= 10) return '1-10';
+    if (count <= 100) return '11-100';
+    if (count <= 1000) return '101-1,000';
+    if (count <= 10000) return '1,001-10,000';
+    if (count <= 100000) return '10,001-100,000';
+    if (count <= 1000000) return '100,001-1,000,000';
+    return '1,000,001+';
+};
 interface CSVRow {
     Influencer: string;
     Link: string;
@@ -218,6 +227,16 @@ export const getFilterOptions = async () => {
             .createQueryBuilder('influencer')
             .select('DISTINCT(influencer.platform)', 'platform')
             .getRawMany();
+        const subscribers = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.subscribers)', 'subscribers')
+            .getRawMany();
+
+        const followerRanges = subscribers.map(row => {
+            const range = categorizeFollowers(row.subscribers);
+            console.log(`Follower count: ${row.subscribers}, categorized as: ${range}`);
+            return range;
+        });
 
         return {
             credibilityScores: credibilityScores.map(row => row.credibilityScore).filter(el => el !== 'N/a' && el !== null),
@@ -225,6 +244,10 @@ export const getFilterOptions = async () => {
             niches: niches.map(row => row.niche).filter(el => el !== 'N/a' && el !== null),
             locations: locations.map(row => row.geography).filter(el => el !== 'N/a' && el !== null),
             platforms: platforms.map(row => row.platform).filter(el => el !== 'N/a' && el !== null),
+            followerRanges: Array.from(new Set(followerRanges)).sort((a, b) => {
+                const rangeOrder = ['1-10', '11-100', '101-1,000', '1,001-10,000', '10,001-100,000', '100,001-1,000,000', '1,000,001+'];
+                return rangeOrder.indexOf(a) - rangeOrder.indexOf(b);
+            })
         };
     } catch (error: any) {
         throw new Error(`Error fetching filter options: ${error.message}`);
