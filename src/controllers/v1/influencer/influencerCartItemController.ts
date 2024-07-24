@@ -1,7 +1,13 @@
+import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
-import { createInfluencerCartItem, deleteInfluencerCartItem, getInfluencerCartItems } from '../../services/v1/influencerCartItemService';
-import logger from '../../config/logger';
-import { setCorsHeaders } from '../../middleware/setcorsHeaders';
+import logger from '../../../config/logger';
+import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
+import {
+    createInfluencerCartItem,
+    deleteInfluencerCartItem,
+    getInfluencerCartItems
+} from '../../../services/v1/influencer';
+
 // Create InfluencerCartItem
 export const createInfluencerCartItemHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
@@ -11,10 +17,10 @@ export const createInfluencerCartItemHandler = async (req: Request, res: Respons
     try {
         const newItem = await createInfluencerCartItem(influencerId, cartId);
         logger.info(`Created InfluencerCartItem with id ${newItem.id}`);
-        return res.status(201).json(newItem);
+        return res.status(HttpStatus.CREATED).json(newItem);
     } catch (error: any) {
         logger.error(`Error creating InfluencerCartItem: ${error.message}`);
-        return res.status(500).json({ message: 'Error creating InfluencerCartItem', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error creating InfluencerCartItem', error: error.message });
     }
 };
 
@@ -26,10 +32,10 @@ export const deleteInfluencerCartItemHandler = async (req: Request, res: Respons
     try {
         await deleteInfluencerCartItem(id);
         logger.info(`Deleted InfluencerCartItem with id ${id}`);
-        return res.status(200).json({ message: 'InfluencerCartItem deleted successfully' });
+        return res.status(HttpStatus.OK).json({ message: 'InfluencerCartItem deleted successfully' });
     } catch (error: any) {
         logger.error(`Error deleting InfluencerCartItem: ${error.message}`);
-        return res.status(500).json({ message: 'Error deleting InfluencerCartItem', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error deleting InfluencerCartItem', error: error.message });
     }
 };
 
@@ -41,9 +47,9 @@ export const getInfluencerCartItemsHandler = async (req: Request, res: Response)
     try {
         const items = await getInfluencerCartItems(cartId as string);
         logger.info(`Fetched ${items.length} InfluencerCartItem(s)`);
-        return res.status(200).json(items);
+        return res.status(HttpStatus.OK).json(items);
     } catch (error: any) {
         logger.error(`Error fetching InfluencerCartItem(s): ${error.message}`);
-        return res.status(500).json({ message: 'Error fetching InfluencerCartItem(s)', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching InfluencerCartItem(s)', error: error.message });
     }
 };

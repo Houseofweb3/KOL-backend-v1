@@ -1,9 +1,9 @@
-import { AppDataSource } from '../../config/data-source';
-import { InfluencerCartItem } from '../../entity/cart';
-import logger from '../../config/logger';
+import logger from '../../../config/logger';
+import { InfluencerCartItem } from '../../../entity/cart';
+import { AppDataSource } from '../../../config/data-source';
 
 const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
-// Create InfluencerCartItem
+
 export const createInfluencerCartItem = async (influencerId: string, cartId: string): Promise<InfluencerCartItem> => {
     try {
         const influencerCartItem = new InfluencerCartItem();
@@ -19,7 +19,6 @@ export const createInfluencerCartItem = async (influencerId: string, cartId: str
     }
 };
 
-// Delete InfluencerCartItem
 export const deleteInfluencerCartItem = async (id: string): Promise<void> => {
     try {
         await influencerCartItemRepository.delete(id);
@@ -30,7 +29,6 @@ export const deleteInfluencerCartItem = async (id: string): Promise<void> => {
     }
 };
 
-// Fetch InfluencerCartItems
 export const getInfluencerCartItems = async (cartId?: string): Promise<InfluencerCartItem[]> => {
     try {
         const queryBuilder = influencerCartItemRepository.createQueryBuilder('influencerCartItem')
@@ -49,4 +47,3 @@ export const getInfluencerCartItems = async (cartId?: string): Promise<Influence
         throw new Error('Error fetching InfluencerCartItem(s)');
     }
 };
-

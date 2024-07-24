@@ -1,7 +1,7 @@
-import { AppDataSource } from '../../config/data-source';
-import { Cart } from '../../entity/cart';
-import logger from '../../config/logger';
-import { updateTimestamp } from '../../utils/updateTimestamp';
+import { Cart } from '../../../entity/cart';
+import logger from '../../../config/logger';
+import { AppDataSource } from '../../../config/data-source';
+import { updateTimestamp } from '../../../utils/updateTimestamp';
 
 const cartRepository = AppDataSource.getRepository(Cart);
 
@@ -9,7 +9,7 @@ const cartRepository = AppDataSource.getRepository(Cart);
 export const createCart = async (userId?: string): Promise<Cart> => {
   try {
     let cart: Cart | null = null;
-
+    // TODO: Remove the access code if required
     // if (userId) {
     //   // cart = await cartRepository.findOneBy({ user: { id: userId } });
 
@@ -30,9 +30,6 @@ export const createCart = async (userId?: string): Promise<Cart> => {
   }
 };
 
-
-
-// Delete a Cart
 export const deleteCart = async (id: string): Promise<void> => {
   try {
     await cartRepository.delete({ id });
@@ -42,7 +39,6 @@ export const deleteCart = async (id: string): Promise<void> => {
     throw new Error('Error deleting cart');
   }
 };
-
 
 export const getCarts = async (userId?: string): Promise<Cart[]> => {
   try {

@@ -9,7 +9,7 @@ import {
   getAllOptions,
   updateOption,
   deleteOption
-} from '../../../services/v1/optionService';
+} from '../../../services/v1/onboarding';
 
 // TODO: Look at the way we are importing files in the project. I think there can be better way than the 
 // relative path

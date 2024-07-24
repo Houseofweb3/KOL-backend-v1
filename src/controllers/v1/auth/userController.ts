@@ -154,6 +154,7 @@ export const logoutController = async (req: Request, res: Response) => {
 		// Refresh Token expiration period
 		const tokenExpirationDays = ENV.REFRESH_TOKEN_EXPIRATION_DAYS;
 		const refreshTokenRepository = AppDataSource.getRepository(RefreshToken);
+		
 		// Add the refresh token to the blacklist
 		const tokenEntry = refreshTokenRepository.create({
 			token: refreshToken,

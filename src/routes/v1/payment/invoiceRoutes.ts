@@ -5,4 +5,4 @@ const router = Router();
 
 router.post('/generate', generateInvoiceController);
 
-export default router;
+export { router as invoiceRoutes };

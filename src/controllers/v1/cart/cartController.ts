@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createCart, deleteCart, getCarts } from '../../../services/v1/cartService';
+import { createCart, deleteCart, getCarts } from '../../../services/v1/cart';
 import logger from '../../../config/logger';
 
 // Create a new Cart
