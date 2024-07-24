@@ -2,7 +2,8 @@ import fs from 'fs';
 import puppeteer from 'puppeteer';
 
 import logger from '../config/logger';
-
+// TODO: implement factory method
+// TODO: CHeck the email that is being used.
 export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string) => {
 	try {
 		// Read the HTML content from the file
