@@ -6,7 +6,7 @@ import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
 import {
     createUserOnboardingSelection,
     getUserOnboardingSelectionsByUserId
-} from '../../../services/v1/userOnboardingSelectionService';
+} from '../../../services/v1/onboarding';
 
 export const createUserOnboardingSelectionController = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);

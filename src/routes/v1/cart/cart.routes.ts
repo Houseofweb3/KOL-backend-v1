@@ -3,7 +3,7 @@ import {
     createCartHandler,
     deleteCartHandler,
     getCartsHandler
-} from '../../controllers/v1/cart/cartController';
+} from '../../../controllers/v1/cart/';
 
 const router = Router();
 
@@ -16,7 +16,8 @@ router.get('/getCart', getCartsHandler);
 // Delete a Cart
 router.delete('/:id', deleteCartHandler);
 
+// TODO: Remove this later.
 // // Get a Cart by ID or get all Carts
 // router.get('/', getCartsHandler);
 
-export default router;
+export { router as cartRoutes };

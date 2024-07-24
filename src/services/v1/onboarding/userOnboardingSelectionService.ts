@@ -1,8 +1,8 @@
-import { AppDataSource } from '../../config/data-source';
-import { UserOnboardingSelection } from '../../entity/onboarding';
-import { User } from '../../entity/auth';
-import { Question, Option } from '../../entity/onboarding';
-import logger from '../../config/logger';
+import { User } from '../../../entity/auth';
+import logger from '../../../config/logger';
+import { Question, Option } from '../../../entity/onboarding';
+import { AppDataSource } from '../../../config/data-source';
+import { UserOnboardingSelection } from '../../../entity/onboarding';
 
 const userOnboardingSelectionRepository = AppDataSource.getRepository(UserOnboardingSelection);
 

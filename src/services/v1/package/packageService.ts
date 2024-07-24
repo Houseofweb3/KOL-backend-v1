@@ -1,11 +1,10 @@
-import { Package, PackageItem } from '../../entity/package';
-import { AppDataSource } from '../../config/data-source';
-import logger from '../../config/logger';
 import { ILike } from 'typeorm';
+import logger from '../../../config/logger';
+import { Package, PackageItem } from '../../../entity/package';
+import { AppDataSource } from '../../../config/data-source';
 
 // Repository initialization
 const packageRepository = AppDataSource.getRepository(Package);
-const packageItemRepository = AppDataSource.getRepository(PackageItem);
 
 export const createPackage = async (header: string, cost: number, guaranteedFeatures: string[]): Promise<Package> => {
   try {

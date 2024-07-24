@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { uploadCSVHandler, getInfluencersWithHiddenPricesHandler, createInfluencerHandler, deleteInfluencerHandler,
     getFilterOptionsController
- } from '../../controllers/v1/influencerController';
+ } from '../../../controllers/v1/influencer/influencerController';
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -14,4 +14,4 @@ router.get('/filter-options', getFilterOptionsController)
 router.post('/', createInfluencerHandler)
 router.delete('/:id', deleteInfluencerHandler)
 
-export default router;
+export { router as influencerRoutes };

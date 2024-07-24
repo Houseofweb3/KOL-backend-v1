@@ -1,7 +1,7 @@
-import { AppDataSource } from '../../config/data-source';
-import { PackageCartItem } from '../../entity/cart/PackageCartItem.entity';
-import logger from '../../config/logger';
-import { Package } from '../../entity/package/Package.entity';
+import logger from '../../../config/logger';
+import { AppDataSource } from '../../../config/data-source';
+import { Package } from '../../../entity/package/Package.entity';
+import { PackageCartItem } from '../../../entity/cart/PackageCartItem.entity';
 
 const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
 const packageRepository = AppDataSource.getRepository(Package);
@@ -16,10 +16,12 @@ export const createPackageCartItem = async (packageId: string, cartId: string): 
         }
 
         const packageCartItem = new PackageCartItem();
+
         packageCartItem.package = packageEntity;
         packageCartItem.cart = { id: cartId } as any;
 
         const newItem = await packageCartItemRepository.save(packageCartItem);
+
         logger.info(`Created new PackageCartItem with id ${newItem.id}`);
         return newItem;
     } catch (error) {
@@ -34,7 +36,6 @@ export const createPackageCartItem = async (packageId: string, cartId: string): 
 };
 
 
-// Delete PackageCartItem
 export const deletePackageCartItem = async (id: string): Promise<void> => {
     try {
         await packageCartItemRepository.delete(id);
@@ -45,7 +46,7 @@ export const deletePackageCartItem = async (id: string): Promise<void> => {
     }
 };
 
-// Fetch PackageCartItems
+
 export const getPackageCartItems = async (cartId?: string): Promise<PackageCartItem[]> => {
     try {
         const queryBuilder = packageCartItemRepository.createQueryBuilder('packageCartItem')

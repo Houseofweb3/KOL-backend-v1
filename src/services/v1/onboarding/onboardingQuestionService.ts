@@ -1,6 +1,6 @@
-import { AppDataSource } from '../../config/data-source';
-import { OnboardingQuestion, Question } from '../../entity/onboarding';
-import logger from '../../config/logger';
+import logger from '../../../config/logger';
+import { AppDataSource } from '../../../config/data-source';
+import { OnboardingQuestion, Question } from '../../../entity/onboarding';
 
 const onboardingQuestionRepository = AppDataSource.getRepository(OnboardingQuestion);
 

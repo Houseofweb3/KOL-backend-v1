@@ -1,3 +1,4 @@
+import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import {
     createPackage,
@@ -5,9 +6,10 @@ import {
     getAllPackages,
     updatePackageById,
     deletePackageById,
-} from '../../services/v1/packageService';
-import logger from '../../config/logger';
-import { setCorsHeaders } from '../../middleware/setcorsHeaders';
+} from '../../../services/v1/package';
+import logger from '../../../config/logger';
+import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
+
 // Create Packge
 export const createPackageHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);

@@ -8,7 +8,7 @@ import {
     createCheckout,
     getCheckoutById,
     deleteCheckout
-} from '../../../services/v1/checkoutService';
+} from '../../../services/v1/checkout';
 
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {

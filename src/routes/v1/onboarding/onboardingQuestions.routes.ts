@@ -3,7 +3,7 @@ import {
     createOnBoardingQuestionController,
     getOnBoardingQuestionController,
     getAllOnBoardingQuestionsController
-} from '../../controllers/v1/onboarding';
+} from '../../../controllers/v1/onboarding';
 
 const router = Router();
 
@@ -11,4 +11,4 @@ router.post('/', createOnBoardingQuestionController);
 router.get('/:id', getOnBoardingQuestionController);
 router.get('/', getAllOnBoardingQuestionsController);
 
-export default router;
+export { router as onboardingQuestionsRoutes };

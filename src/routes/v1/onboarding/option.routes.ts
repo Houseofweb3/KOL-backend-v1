@@ -5,7 +5,7 @@ import {
   getAllOptionsController,
   updateOptionController,
   deleteOptionController
-} from '../../controllers/v1/onboarding';
+} from '../../../controllers/v1/onboarding';
 
 const router = Router();
 
@@ -15,4 +15,4 @@ router.get('/', getAllOptionsController);
 router.put('/:id', updateOptionController);
 router.delete('/:id', deleteOptionController);
 
-export default router;
+export { router as optionRoutes };

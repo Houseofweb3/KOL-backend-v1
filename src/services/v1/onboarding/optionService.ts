@@ -1,6 +1,6 @@
-import { AppDataSource } from '../../config/data-source';
-import { Option, Question } from '../../entity/onboarding';
-import logger from '../../config/logger';
+import logger from '../../../config/logger';
+import { AppDataSource } from '../../../config/data-source';
+import { Option, Question } from '../../../entity/onboarding';
 
 const optionRepository = AppDataSource.getRepository(Option);
 
