@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
-import { createCart, deleteCart, getCarts } from '../../../services/v1/cart';
-import logger from '../../../config/logger';
 import HttpStatus from 'http-status-codes';
+import { Request, Response } from 'express';
+import logger from '../../../config/logger';
+import { createCart, deleteCart, getCarts } from '../../../services/v1/cart';
+
 
 // Create a new Cart
 export const createCartHandler = async (req: Request, res: Response) => {
@@ -42,7 +43,6 @@ export const deleteCartHandler = async (req: Request, res: Response) => {
             logger.error('An unknown error occurred while creating influencer');
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
         }
-
     }
 };
 

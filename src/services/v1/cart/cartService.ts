@@ -22,6 +22,7 @@ export const createCart = async (userId?: string): Promise<Cart> => {
 
     const newCart = cartRepository.create({ user: userId ? { id: userId } : undefined });
     const savedCart = await updateTimestamp(cartRepository, newCart);
+
     logger.info(`Created new cart with id ${savedCart.id}`);
     return savedCart;
   } catch (error) {
