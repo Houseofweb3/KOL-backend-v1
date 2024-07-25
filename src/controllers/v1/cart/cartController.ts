@@ -47,15 +47,22 @@ export const deleteCartHandler = async (req: Request, res: Response) => {
 
 
 export const getCartsHandler = async (req: Request, res: Response) => {
-  const { userId } = req.query;
+    const { userId, page = 1, limit = 10, sortField = 'createdAt', sortOrder = 'DESC' } = req.query;
 
-  try {
-    const carts = await getCarts(userId as string);
-    logger.info(`Fetched ${carts.length} cart(s) for user ${userId || 'N/A'}`);
-    return res.status(200).json(carts);
-  } catch (error: any) {
-    logger.error(`Error fetching cart(s): ${error.message}`);
-    return res.status(500).json({ message: 'Error fetching cart(s)', error: error.message });
-  }
+    try {
+        const cartsResponse = await getCarts(
+            userId as string,
+            parseInt(page as string, 10),
+            parseInt(limit as string, 10),
+            sortField as string,
+            sortOrder as 'ASC' | 'DESC'
+        );
+
+        logger.info(`Fetched ${cartsResponse.length} cart(s) for user ${userId || 'N/A'}`);
+        return res.status(200).json(cartsResponse);
+    } catch (error: any) {
+        logger.error(`Error fetching cart(s): ${error.message}`);
+        return res.status(500).json({ message: 'Error fetching cart(s)', error: error.message });
+    }
 };
 
