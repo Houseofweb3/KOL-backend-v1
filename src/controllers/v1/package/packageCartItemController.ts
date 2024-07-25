@@ -11,10 +11,10 @@ import {
 // Create PackageCartItem
 export const createPackageCartItemHandler = async (req: Request, res: Response) => {
 
-    const { packageItemId, cartId } = req.body;
+    const { packageId, cartId } = req.body;
 
     try {
-        const newItem = await createPackageCartItem(packageItemId, cartId);
+        const newItem = await createPackageCartItem(packageId, cartId);
         logger.info(`Created PackageCartItem with id ${newItem.id}`);
         return res.status(HttpStatus.CREATED).json(newItem);
     } catch (error: any) {
