@@ -4,6 +4,7 @@ import logger from '../../../config/logger';
 import { Influencer } from '../../../entity/influencer';
 import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
+import { get } from 'http';
 
 // Define default values for pagination and sorting
 const DEFAULT_PAGE = 1;
@@ -40,6 +41,21 @@ const getFollowerRangeCondition = (range: string) => {
             return 'influencer.subscribers BETWEEN 100001 AND 1000000';
         case '1,000,001+':
             return 'influencer.subscribers > 1000000';
+        default:
+            return '';
+    }
+};
+
+const getPriceRangeCondition = (range: string) => {
+    switch (range) {
+        case '$':
+            return 'influencer.price <= 1000';
+        case '$$':
+            return 'influencer.price > 1000 AND influencer.price <= 2000';
+        case '$$$':
+            return 'influencer.price > 2000 AND influencer.price <= 3000';
+        case '$$$$':
+            return 'influencer.price > 3000';
         default:
             return '';
     }
@@ -169,7 +185,8 @@ export const getInfluencersWithHiddenPrices = async (
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
     searchTerm: string = '',
     filters: Record<string, any> = {},
-    followerRange: string | ""
+    followerRange: string | "",
+    priceRange: string | "",
 ) => {
     const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
@@ -198,6 +215,14 @@ export const getInfluencersWithHiddenPrices = async (
         const rangeCondition = getFollowerRangeCondition(followerRange);
         if (rangeCondition) {
             query.andWhere(rangeCondition);
+        }
+    }
+
+    // Apply price range filter
+    if (priceRange) {
+        const priceCondition = getPriceRangeCondition(priceRange);
+        if (priceCondition) {
+            query.andWhere(priceCondition);
         }
     }
 
@@ -265,6 +290,12 @@ export const getFilterOptions = async () => {
             .createQueryBuilder('influencer')
             .select('DISTINCT(influencer.subscribers)', 'subscribers')
             .getRawMany();
+        const prices = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.price)', 'price')
+            .getRawMany();
+
+        const hiddenPrices = prices.map(row => getHiddenPrice(row.price)).filter(price => price);
 
         const followerRanges = subscribers.map(row => {
             const range = categorizeFollowers(row.subscribers);
@@ -280,6 +311,10 @@ export const getFilterOptions = async () => {
             platforms: platforms.map(row => row.platform).filter(el => el !== 'N/a' && el !== null),
             followerRanges: Array.from(new Set(followerRanges)).sort((a, b) => {
                 const rangeOrder = ['1-10', '11-100', '101-1,000', '1,001-10,000', '10,001-100,000', '100,001-1,000,000', '1,000,001+'];
+                return rangeOrder.indexOf(a) - rangeOrder.indexOf(b);
+            }),
+            hiddenPrices: Array.from(new Set(hiddenPrices)).sort((a, b) => {
+                const rangeOrder = ['$', '$$', '$$$', '$$$$'];
                 return rangeOrder.indexOf(a) - rangeOrder.indexOf(b);
             })
         };

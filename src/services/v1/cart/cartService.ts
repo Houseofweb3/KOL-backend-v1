@@ -41,26 +41,42 @@ export const deleteCart = async (id: string): Promise<void> => {
   }
 };
 
-export const getCarts = async (userId?: string): Promise<any[]> => {
+export const getCarts = async (
+  userId?: string,
+  page: number = 1,
+  limit: number = 10,
+  sortField: string = 'createdAt',
+  sortOrder: 'ASC' | 'DESC' = 'DESC'
+): Promise<any[]> => {
   try {
+    const validSortFields = ['createdAt', 'updatedAt']; // Adjust valid sort fields as needed
+    const order: { [key: string]: 'ASC' | 'DESC' } = validSortFields.includes(sortField)
+      ? { [sortField]: sortOrder }
+      : { createdAt: sortOrder };
+
     let queryBuilder = cartRepository.createQueryBuilder('cart')
       .leftJoinAndSelect('cart.user', 'user')
       .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
       .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')
       .leftJoinAndSelect('cart.packageCartItems', 'packageCartItems')
-      .leftJoinAndSelect('packageCartItems.package', 'package')  // Correct relation name
-      .leftJoinAndSelect('package.packageItems', 'packageItems')  // Correct join for packageItems
+      .leftJoinAndSelect('packageCartItems.package', 'package')
+      .leftJoinAndSelect('package.packageItems', 'packageItems')
       .leftJoinAndSelect('cart.checkout', 'checkout');
 
     queryBuilder = queryBuilder.where('cart.userId = :userId', { userId });
 
-    const carts = await queryBuilder.getMany();
+    // Apply sorting and pagination
+    queryBuilder = queryBuilder
+      .orderBy(`cart.${sortField}`, sortOrder)
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [carts, total] = await queryBuilder.getManyAndCount();
 
     // Transform the response
     const transformedCarts = carts.map(cart => {
       cart.influencerCartItems = cart.influencerCartItems.map(item => {
         if (item.influencer) {
-          // Use optional chaining and TypeScript assertions
           (item.influencer as any).influencer = item.influencer.name;
           delete (item.influencer as any).name;
 
@@ -72,8 +88,9 @@ export const getCarts = async (userId?: string): Promise<any[]> => {
       return cart;
     });
 
-    logger.info(`Fetched ${transformedCarts.length} cart(s)`);
-    return transformedCarts;
+    logger.info(`Fetched ${transformedCarts.length} cart(s) for page ${page}, limit ${limit}`);
+
+    return transformedCarts
   } catch (error) {
     logger.error(`Error fetching cart(s): ${error}`);
     throw new Error('Error fetching cart(s)');
