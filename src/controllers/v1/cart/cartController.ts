@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { createCart, deleteCart, getCarts } from '../../../services/v1/cart';
 import logger from '../../../config/logger';
+import HttpStatus from 'http-status-codes';
 
 // Create a new Cart
 export const createCartHandler = async (req: Request, res: Response) => {
@@ -8,14 +9,14 @@ export const createCartHandler = async (req: Request, res: Response) => {
 
     try {
         const cart = await createCart(userId);
-        return res.status(201).json(cart);
+        return res.status(HttpStatus.CREATED).json(cart);
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating or getting cart: ${error}`);
-            return res.status(500).json({ error: error.message });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
             logger.error('An unknown error occurred while creating or getting cart');
-            return res.status(500).json({ error: 'An unknown error occurred' });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
         }
     }
 };
@@ -27,19 +28,19 @@ export const deleteCartHandler = async (req: Request, res: Response) => {
 
     if (!id) {
         logger.warn('Missing ID for deleting cart');
-        return res.status(400).json({ error: 'Missing ID' });
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing ID' });
     }
 
     try {
         await deleteCart(id);
-        return res.status(204).send();
+        return res.status(HttpStatus.NO_CONTENT).send();
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error deleting cart with id ${id}: ${error}`);
-            return res.status(500).json({ error: error.message });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
             logger.error('An unknown error occurred while creating influencer');
-            return res.status(500).json({ error: 'An unknown error occurred' });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
         }
 
     }
@@ -59,10 +60,10 @@ export const getCartsHandler = async (req: Request, res: Response) => {
         );
 
         logger.info(`Fetched ${cartsResponse.length} cart(s) for user ${userId || 'N/A'}`);
-        return res.status(200).json(cartsResponse);
+        return res.status(HttpStatus.OK).json(cartsResponse);
     } catch (error: any) {
         logger.error(`Error fetching cart(s): ${error.message}`);
-        return res.status(500).json({ message: 'Error fetching cart(s)', error: error.message });
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching cart(s)', error: error.message });
     }
 };
 
