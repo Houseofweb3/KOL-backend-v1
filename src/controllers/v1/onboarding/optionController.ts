@@ -15,24 +15,24 @@ import {
 // relative path
 export const createOptionController = async (req: Request, res: Response) => {
   setCorsHeaders(req, res);
-  const { text, questionId } = req.body;
+  const { text, questionId, investorType } = req.body;
 
   if (!text || !questionId) {
-    logger.warn('Missing required fields in create option request');
-    return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
+      logger.warn('Missing required fields in create option request');
+      return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
   }
 
   try {
-    const { option, message } = await createOption(text, questionId);
-    return res.status(HttpStatus.CREATED).json({ option, message });
+      const result = await createOption(text, questionId, investorType);
+      return res.status(HttpStatus.CREATED).json(result);
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error(`Error during option creation: ${error.message}`);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
-    } else {
-      logger.error('An unknown error occurred during option creation');
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
-    }
+      if (error instanceof Error) {
+          logger.error(`Error in createOptionController: ${error.message}`);
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+      } else {
+          logger.error('An unknown error occurred in createOptionController');
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+      }
   }
 };
 

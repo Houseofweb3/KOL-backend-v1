@@ -71,15 +71,26 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
     const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
     const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
 
-    let filter: object = {};
-    
-    // Parse the filter query parameter safely
+    let filter: Record<string, any> = {};
+
+    // Parse the filter query parameters safely
     try {
       filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
     } catch (error) {
       logger.error('Error parsing filter query parameter:', error);
       // Optionally return an error response or default to an empty filter
       filter = {};
+    }
+
+    // Ensure filters for platform, niche, and engagementRate can handle multiple values
+    if (req.query.platform) {
+      filter.platform = Array.isArray(req.query.platform) ? req.query.platform : [req.query.platform];
+    }
+    if (req.query.niche) {
+      filter.niche = Array.isArray(req.query.niche) ? req.query.niche : [req.query.niche];
+    }
+    if (req.query.engagementRate) {
+      filter.engagementRate = Array.isArray(req.query.engagementRate) ? req.query.engagementRate : [req.query.engagementRate];
     }
 
     const { influencers, pagination } = await getInfluencersWithHiddenPrices(page, limit, sortField, sortOrder, search, filter, followerRange, priceRange);
@@ -93,13 +104,13 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
     if (error instanceof Error) {
       logger.error('Error fetching influencers with hidden prices:', error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
-    }
-    else {
+    } else {
       logger.error('An unknown error occurred during OnBoardingQuestion creation');
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
     }
   }
 };
+
 
 // create inflencer
 export const createInfluencerHandler = async (req: Request, res: Response) => {

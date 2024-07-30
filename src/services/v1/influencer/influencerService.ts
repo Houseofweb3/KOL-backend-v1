@@ -80,6 +80,7 @@ interface CSVRow {
     Niche: string;
     Followers: number;
     InvestorType: string;
+    Blockchain?: string;
 }
 
 const influencerRepository = AppDataSource.getRepository(Influencer);
@@ -115,6 +116,7 @@ export const uploadCSV = async (filePath: string) => {
                 Niche: capitalizeWords(row.Niche || "N/A"),
                 Followers: parseInt(row.Followers || 0),
                 InvestorType: capitalizeWords(row['Investor Type'] || "N/A"),
+                Blockchain: row.Blockchain || null,
             };
 
             const existingProduct = await influencerRepository.findOne({
@@ -127,7 +129,8 @@ export const uploadCSV = async (filePath: string) => {
                     credibilityScore: capitalizedRow.CredibilityScore,
                     engagementRate: capitalizedRow.EngagementRate,
                     investorType: capitalizedRow.InvestorType,
-                    price: capitalizedRow.PriceOfPackage
+                    price: capitalizedRow.PriceOfPackage,
+                    blockchain: capitalizedRow.Blockchain
                 },
             });
 
@@ -153,6 +156,7 @@ export const uploadCSV = async (filePath: string) => {
                 credibilityScore: capitalizedRow.CredibilityScore,
                 engagementRate: capitalizedRow.EngagementRate,
                 investorType: capitalizedRow.InvestorType,
+                blockchain: capitalizedRow.Blockchain,
             }
             // logger.info("dataToInsert: ", dataToInsert)
             const newInfluencerPR = influencerRepository.create(dataToInsert);
@@ -199,14 +203,23 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Apply filters
     Object.keys(filters).forEach(key => {
-        if (filters[key]) {
+        if (Array.isArray(filters[key])) {
+            query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
+        } else if (filters[key]) {
             query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
         }
     });
 
     // Apply sorting and pagination
     query
-        .orderBy(`influencer.${sortField}`, sortOrder)
+        .orderBy(`
+            CASE 
+                WHEN influencer.credibilityScore = 'High' THEN 1
+                WHEN influencer.credibilityScore = 'Medium' THEN 2
+                WHEN influencer.credibilityScore = 'Low' THEN 3
+                ELSE 4
+            END`, 'ASC')
+        .addOrderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
         .take(limit);
 
@@ -255,6 +268,8 @@ export const getInfluencersWithHiddenPrices = async (
         },
     };
 };
+
+
 
 
 export const getFilterOptions = async () => {
