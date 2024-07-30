@@ -19,12 +19,12 @@ export const createUserOnboardingSelection = async (userId: string, questionId: 
             throw new Error('Question not found');
         }
 
-        // Find selected options by IDs
+        // Find selected option list
         const selectedOptions = [];
         for (const optionId of selectedOptionId) {
             const option = await AppDataSource.getRepository(Option).findOneBy({ id: optionId });
             if (!option) {
-                throw new Error(`Selected option not found for optionId: ${optionId}`);
+                throw new Error('Selected option not found');
             }
             selectedOptions.push(option);
         }
@@ -46,8 +46,8 @@ export const createUserOnboardingSelection = async (userId: string, questionId: 
             logger.error(`Error creating user onboarding selection: ${error.message}`);
             throw new Error('Internal Server Error');
         } else {
-            logger.error('An unknown error occurred during onboarding question creation');
-            throw new Error('An unknown error occurred during onboarding question creation');
+            logger.error('An unknown error occurred during onBoarding question creation');
+            throw new Error('An unknown error occurred during onBoarding  question creation');
         }
     }
 };
