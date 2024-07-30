@@ -64,8 +64,8 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
   try {
     // Extract query parameters for pagination and sorting
     const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
-    const followerRange = req.query.followerRange as string || "";
-    const priceRange = req.query.priceRange as string || "";
+    const followerRange = req.query.range as string || "";
+    const priceRange = req.query.hiddenPrice as string || "";
     const search = req.query.search as string || "";
     const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
     const sortField = req.query.sortField as string || DEFAULT_SORT_FIELD;
@@ -79,6 +79,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
       filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
     } catch (error) {
       logger.error('Error parsing filter query parameter:', error);
+      // Optionally return an error response or default to an empty filter
       filter = {};
     }
 
