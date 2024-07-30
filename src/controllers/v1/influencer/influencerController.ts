@@ -62,53 +62,53 @@ export const getFilterOptionsController = async (req: Request, res: Response) =>
 export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: Response) => {
   setCorsHeaders(req, res);
   try {
-      // Extract query parameters for pagination and sorting
-      const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
-      const followerRange = req.query.followerRange as string || "";
-      const priceRange = req.query.priceRange as string || "";
-      const searchTerm = req.query.searchTerm as string || "";
-      const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
-      const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
-      const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
-      const userId = req.query.userId as string;
+    // Extract query parameters for pagination and sorting
+    const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
+    const followerRange = req.query.followerRange as string || "";
+    const priceRange = req.query.priceRange as string || "";
+    const search = req.query.search as string || "";
+    const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
+    const sortField = req.query.sortField as string || DEFAULT_SORT_FIELD;
+    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
+    const userId = req.query.userId as string;
 
-      let filters: Record<string, any> = {};
+    let filter: object = {};
+    
+    // Parse the filter query parameter safely
+    try {
+      filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
+    } catch (error) {
+      logger.error('Error parsing filter query parameter:', error);
+      filter = {};
+    }
 
-      // Parse the filter query parameters safely
-      try {
-          filters = req.query.filters ? JSON.parse(req.query.filters as string) : {};
-      } catch (error) {
-          logger.error('Error parsing filter query parameter:', error);
-          // Optionally return an error response or default to an empty filter
-          filters = {};
-      }
+    const { influencers, pagination } = await getInfluencersWithHiddenPrices(
+      userId,
+      page,
+      limit,
+      sortField,
+      sortOrder,
+      search,
+      filter,
+      followerRange,
+      priceRange
+    );
 
-      // Ensure filters for platform, niche, and engagementRate can handle multiple values
-      if (req.query.platform) {
-          filters.platform = Array.isArray(req.query.platform) ? req.query.platform : [req.query.platform];
-      }
-      if (req.query.niche) {
-          filters.niche = Array.isArray(req.query.niche) ? req.query.niche : [req.query.niche];
-      }
-      if (req.query.engagementRate) {
-          filters.engagementRate = Array.isArray(req.query.engagementRate) ? req.query.engagementRate : [req.query.engagementRate];
-      }
 
-      const { influencers, pagination } = await getInfluencersWithHiddenPrices(userId, page, limit, sortField, sortOrder, searchTerm, filters, followerRange, priceRange);
-      logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
+    logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
 
-      return res.status(HttpStatus.OK).json({
-          pagination,
-          influencers,
-      });
+    return res.status(HttpStatus.OK).json({
+      pagination,
+      influencers,
+    });
   } catch (error) {
-      if (error instanceof Error) {
-          logger.error('Error fetching influencers with hidden prices:', error);
-          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
-      } else {
-          logger.error('An unknown error occurred during influencer fetching');
-          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
-      }
+    if (error instanceof Error) {
+      logger.error('Error fetching influencers with hidden prices:', error);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
+    } else {
+      logger.error('An unknown error occurred during influencer fetching');
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+    }
   }
 };
 

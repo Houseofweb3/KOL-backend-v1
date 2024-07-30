@@ -189,7 +189,7 @@ export const getInfluencersWithHiddenPrices = async (
     limit: number = DEFAULT_LIMIT,
     sortField: string = DEFAULT_SORT_FIELD,
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
-    searchTerm: string = '',
+    search: string = '',
     filters: Record<string, any> = {},
     followerRange: string = "",
     priceRange: string = "",
@@ -230,7 +230,7 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Create QueryBuilder instance
     const query = AppDataSource.getRepository(Influencer).createQueryBuilder('influencer')
-        .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` });
+        .where(search ? 'influencer.name ILIKE :search' : '1=1', { search: `%${search}%` });
 
     // Apply filters
     if (nicheFilter) {
@@ -300,7 +300,7 @@ export const getInfluencersWithHiddenPrices = async (
         blockchain: influencer.blockchain,
     }));
 
-    logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}, search term "${searchTerm}"`);
+    logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}, search term "${search}"`);
     return {
         influencers: influencersWithHiddenPrices,
         pagination: {
