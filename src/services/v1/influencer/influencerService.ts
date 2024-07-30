@@ -237,7 +237,7 @@ export const getInfluencersWithHiddenPrices = async (
         query.andWhere('influencer.niche = :nicheFilter', { nicheFilter });
     }
     if (blockchainFilter) {
-        query.andWhere('influencer.blockchain = :blockchainFilter', { blockchainFilter });
+        query.andWhere('influencer.blockchain ILIKE :blockchainFilter', { blockchainFilter: `%${blockchainFilter}%` });
     }
     if (investorTypeFilter.length > 0) {
         query.andWhere('influencer.investorType IN (:...investorTypeFilter)', { investorTypeFilter });

@@ -12,9 +12,9 @@ export const createUserOnboardingSelectionController = async (req: Request, res:
     setCorsHeaders(req, res);
     const { userId, questionId, selectedOptionId } = req.body;
 
-    if (!userId || !questionId || !selectedOptionId) {
-        logger.warn('Missing required fields in create user onboarding selection request', questionId, selectedOptionId, userId);
-        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
+    if (!userId || !questionId || !selectedOptionId || !Array.isArray(selectedOptionId)) {
+        logger.warn(`Missing or invalid required fields in create user onboarding selection request. Received body: ${JSON.stringify(req.body)}`);
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing or invalid required fields' });
     }
 
     try {
@@ -25,10 +25,9 @@ export const createUserOnboardingSelectionController = async (req: Request, res:
             logger.error(`Error during user onboarding selection creation: ${error.message}`);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Internal Server Error', message: `${error.message}` });
         } else {
-            logger.error('An unknown error occurred during OnBoardingQuestion creation');
+            logger.error('An unknown error occurred during onboarding question creation');
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
         }
-
     }
 };
 

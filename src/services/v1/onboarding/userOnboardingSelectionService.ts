@@ -1,8 +1,7 @@
 import { User } from '../../../entity/auth';
 import logger from '../../../config/logger';
-import { Question, Option } from '../../../entity/onboarding';
+import { Question, Option, UserOnboardingSelection } from '../../../entity/onboarding';
 import { AppDataSource } from '../../../config/data-source';
-import { UserOnboardingSelection } from '../../../entity/onboarding';
 
 const userOnboardingSelectionRepository = AppDataSource.getRepository(UserOnboardingSelection);
 
@@ -20,39 +19,36 @@ export const createUserOnboardingSelection = async (userId: string, questionId: 
             throw new Error('Question not found');
         }
 
-        // Find selected option list
-        const selectedOptions = []
-        
+        // Find selected options by IDs
+        const selectedOptions = [];
         for (const optionId of selectedOptionId) {
             const option = await AppDataSource.getRepository(Option).findOneBy({ id: optionId });
-
             if (!option) {
-                throw new Error('Selected option not found');
+                throw new Error(`Selected option not found for optionId: ${optionId}`);
             }
-
-            selectedOptions.push(option)
+            selectedOptions.push(option);
         }
+
+        // Save each selected option as a new UserOnboardingSelection
         for (const selectedOption of selectedOptions) {
-            // Create a new user onboarding selection
             const newUserOnboardingSelection = userOnboardingSelectionRepository.create({
                 user,
                 question,
                 selectedOption
             });
             await userOnboardingSelectionRepository.save(newUserOnboardingSelection);
-
             logger.info(`User onboarding selection created successfully: ${newUserOnboardingSelection.id}`);
         }
+
         return { message: 'User onboarding selection created successfully' };
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating user onboarding selection: ${error.message}`);
             throw new Error('Internal Server Error');
         } else {
-            logger.error('An unknown error occurred during onBoarding question creation');
-            throw new Error('An unknown error occurred during onBoarding  question creation');
+            logger.error('An unknown error occurred during onboarding question creation');
+            throw new Error('An unknown error occurred during onboarding question creation');
         }
-
     }
 };
 
