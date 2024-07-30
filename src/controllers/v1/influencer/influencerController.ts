@@ -70,6 +70,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
       const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
       const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
       const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
+      const userId = req.query.userId as string;
 
       let filters: Record<string, any> = {};
 
@@ -93,7 +94,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
           filters.engagementRate = Array.isArray(req.query.engagementRate) ? req.query.engagementRate : [req.query.engagementRate];
       }
 
-      const { influencers, pagination } = await getInfluencersWithHiddenPrices(page, limit, sortField, sortOrder, searchTerm, filters, followerRange, priceRange);
+      const { influencers, pagination } = await getInfluencersWithHiddenPrices(userId, page, limit, sortField, sortOrder, searchTerm, filters, followerRange, priceRange);
       logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
 
       return res.status(HttpStatus.OK).json({

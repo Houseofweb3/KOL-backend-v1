@@ -2,6 +2,7 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import logger from '../../../config/logger';
 import { Influencer } from '../../../entity/influencer';
+import { UserOnboardingSelection, Question, Option, OnboardingQuestion } from '../../../entity/onboarding';
 import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
 import { get } from 'http';
@@ -183,6 +184,7 @@ function capitalizeWords(str: string): string {
 
 // Get influencers with hidden prices, including pagination and sorting
 export const getInfluencersWithHiddenPrices = async (
+    userId: string | undefined,
     page: number = DEFAULT_PAGE,
     limit: number = DEFAULT_LIMIT,
     sortField: string = DEFAULT_SORT_FIELD,
@@ -197,11 +199,51 @@ export const getInfluencersWithHiddenPrices = async (
         ? { [sortField]: sortOrder }
         : { [DEFAULT_SORT_FIELD]: DEFAULT_SORT_ORDER };
 
+    let nicheFilter: string | undefined;
+    let blockchainFilter: string | undefined;
+    let investorTypeFilter: string[] = [];
+
+    if (userId) {
+        // Retrieve the user's selected options
+        const userSelections = await AppDataSource.getRepository(UserOnboardingSelection)
+            .createQueryBuilder('selection')
+            .leftJoinAndSelect('selection.selectedOption', 'option')
+            .leftJoinAndSelect('selection.question', 'question')
+            .leftJoinAndSelect('question.onboardingQuestions', 'onboardingQuestion')
+            .where('selection.user.id = :userId', { userId })
+            .orderBy('onboardingQuestion.order', 'ASC')
+            .getMany();
+
+        // Initialize filter conditions
+        nicheFilter = userSelections.find((selection) => 
+            selection.question.onboardingQuestions.some(oq => oq.order === 1)
+        )?.selectedOption.text;
+
+        blockchainFilter = userSelections.find((selection) => 
+            selection.question.onboardingQuestions.some(oq => oq.order === 2)
+        )?.selectedOption.text;
+
+        investorTypeFilter = userSelections
+            .filter((selection) => selection.question.onboardingQuestions.some(oq => oq.order >= 3))
+            .map((selection) => selection.selectedOption.investorType);
+    }
+
     // Create QueryBuilder instance
-    const query = influencerRepository.createQueryBuilder('influencer')
+    const query = AppDataSource.getRepository(Influencer).createQueryBuilder('influencer')
         .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` });
 
     // Apply filters
+    if (nicheFilter) {
+        query.andWhere('influencer.niche = :nicheFilter', { nicheFilter });
+    }
+    if (blockchainFilter) {
+        query.andWhere('influencer.blockchain = :blockchainFilter', { blockchainFilter });
+    }
+    if (investorTypeFilter.length > 0) {
+        query.andWhere('influencer.investorType IN (:...investorTypeFilter)', { investorTypeFilter });
+    }
+
+    // Apply additional filters
     Object.keys(filters).forEach(key => {
         if (Array.isArray(filters[key])) {
             query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
@@ -212,8 +254,8 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Apply sorting and pagination
     query
-        .orderBy(`
-            CASE 
+        .orderBy(
+            `CASE 
                 WHEN influencer.credibilityScore = 'High' THEN 1
                 WHEN influencer.credibilityScore = 'Medium' THEN 2
                 WHEN influencer.credibilityScore = 'Low' THEN 3
