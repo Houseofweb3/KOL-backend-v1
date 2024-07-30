@@ -73,24 +73,24 @@ export const getAllOptionsController = async (req: Request, res: Response) => {
 export const updateOptionController = async (req: Request, res: Response) => {
   setCorsHeaders(req, res);
   const { id } = req.params;
-  const { text } = req.body;
+  const { text, investorType } = req.body;
 
-  if (!text) {
-    logger.warn('Missing required fields in update option request');
-    return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
+  if (text === undefined && investorType === undefined) {
+      logger.warn('Missing required fields in update option request');
+      return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
   }
 
   try {
-    const { option, message } = await updateOption(id, text);
-    return res.status(HttpStatus.OK).json({ option, message });
+      const { option, message } = await updateOption(id, text, investorType);
+      return res.status(HttpStatus.OK).json({ option, message });
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error(`Error updating option: ${error.message}`);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
-    } else {
-      logger.error('An unknown error occurred during option update');
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
-    }
+      if (error instanceof Error) {
+          logger.error(`Error updating option: ${error.message}`);
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+      } else {
+          logger.error('An unknown error occurred during option update');
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+      }
   }
 };
 

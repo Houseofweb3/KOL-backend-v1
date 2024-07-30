@@ -189,8 +189,8 @@ export const getInfluencersWithHiddenPrices = async (
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
     searchTerm: string = '',
     filters: Record<string, any> = {},
-    followerRange: string | "",
-    priceRange: string | "",
+    followerRange: string = "",
+    priceRange: string = "",
 ) => {
     const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
@@ -255,6 +255,7 @@ export const getInfluencersWithHiddenPrices = async (
         platform: influencer.platform,
         price: influencer.price,
         hiddenPrice: getHiddenPrice(influencer.price),
+        blockchain: influencer.blockchain,
     }));
 
     logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}, search term "${searchTerm}"`);
@@ -268,9 +269,6 @@ export const getInfluencersWithHiddenPrices = async (
         },
     };
 };
-
-
-
 
 export const getFilterOptions = async () => {
     try {
