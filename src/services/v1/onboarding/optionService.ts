@@ -4,7 +4,7 @@ import { Option, Question } from '../../../entity/onboarding';
 
 const optionRepository = AppDataSource.getRepository(Option);
 
-export const createOption = async (text: string, questionId: string) => {
+export const createOption = async (text: string, questionId: string, investorType?: string) => {
     try {
         // Find the question by ID
         const question = await AppDataSource.getRepository(Question).findOneBy({ id: questionId });
@@ -13,7 +13,7 @@ export const createOption = async (text: string, questionId: string) => {
         }
 
         // Create a new option
-        const newOption = optionRepository.create({ text, question });
+        const newOption = optionRepository.create({ text, question, investorType });
         await optionRepository.save(newOption);
 
         logger.info(`Option created successfully: ${newOption.id}`);
@@ -26,9 +26,9 @@ export const createOption = async (text: string, questionId: string) => {
             logger.error('An unknown error occurred during question creation');
             throw new Error('An unknown error occurred during question creation');
         }
-
     }
 };
+
 
 export const getOptionById = async (id: string) => {
     try {
@@ -71,13 +71,21 @@ export const getAllOptions = async () => {
     }
 };
 
-export const updateOption = async (id: string, text: string) => {
+export const updateOption = async (id: string, text?: string, investorType?: string) => {
     try {
         const option = await optionRepository.findOneBy({ id });
         if (!option) {
             throw new Error('Option not found');
         }
-        option.text = text;
+
+        if (text !== undefined) {
+            option.text = text;
+        }
+
+        if (investorType !== undefined) {
+            option.investorType = investorType;
+        }
+
         await optionRepository.save(option);
         logger.info(`Option updated successfully: ${option.id}`);
         return { option, message: 'Option updated successfully' };
@@ -86,12 +94,12 @@ export const updateOption = async (id: string, text: string) => {
             logger.error(`Error updating option: ${error.message}`);
             throw new Error(error.message);
         } else {
-            logger.error('An unknown error occurred during question creation');
-            throw new Error('An unknown error occurred during question creation');
+            logger.error('An unknown error occurred during option update');
+            throw new Error('An unknown error occurred during option update');
         }
-
     }
 };
+
 
 export const deleteOption = async (id: string) => {
     try {
