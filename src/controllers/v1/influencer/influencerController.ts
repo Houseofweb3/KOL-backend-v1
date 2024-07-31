@@ -62,42 +62,44 @@ export const getFilterOptionsController = async (req: Request, res: Response) =>
 export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: Response) => {
   setCorsHeaders(req, res);
   try {
-    // Extract query parameters for pagination and sorting
-    const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
-    const followerRange = req.query.range as string || "";
-    const priceRange = req.query.hiddenPrice as string || "";
-    const search = req.query.search as string || "";
-    const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
-    const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
-    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
+      // Extract query parameters for pagination and sorting
+      const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
+      const followerRange = req.query.followerRange as string || "";
+      const priceRange = req.query.priceRange as string || "";
+      const searchTerm = req.query.searchTerm as string || "";
+      const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
+      const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
+      const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
+      const userId = req.query.userId as string;
 
-    let filter: object = {};
-    
-    // Parse the filter query parameter safely
-    try {
-      filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
-    } catch (error) {
-      logger.error('Error parsing filter query parameter:', error);
-      // Optionally return an error response or default to an empty filter
-      filter = {};
-    }
+      let filter: object = {};
 
-    const { influencers, pagination } = await getInfluencersWithHiddenPrices(page, limit, sortField, sortOrder, search, filter, followerRange, priceRange);
-    logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
+      // Parse the filter query parameters safely
+      try {
+          filter = req.query.filter ? JSON.parse(req.query.filter as string) : {};
+      } catch (error) {
+          logger.error('Error parsing filter query parameter:', error);
+          // Optionally return an error response or default to an empty filter
+          filter = {};
+      }
 
-    return res.status(HttpStatus.OK).json({
-      pagination,
-      influencers,
-    });
+      console.log(filter)
+
+      const { influencers, pagination } = await getInfluencersWithHiddenPrices(userId, page, limit, sortField, sortOrder, searchTerm, filter, followerRange, priceRange);
+      logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
+
+      return res.status(HttpStatus.OK).json({
+          pagination,
+          influencers,
+      });
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error('Error fetching influencers with hidden prices:', error);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
-    }
-    else {
-      logger.error('An unknown error occurred during OnBoardingQuestion creation');
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
-    }
+      if (error instanceof Error) {
+          logger.error('Error fetching influencers with hidden prices:', error);
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching data', error: error.message });
+      } else {
+          logger.error('An unknown error occurred during influencer fetching');
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+      }
   }
 };
 
