@@ -17,6 +17,9 @@ export class Option extends BaseModel {
     @Column()
     text!: string;
 
+    @Column({ nullable: true })
+    investorType!: string;
+
     @ManyToOne(() => Question, question => question.options)
     question!: Question;
 }

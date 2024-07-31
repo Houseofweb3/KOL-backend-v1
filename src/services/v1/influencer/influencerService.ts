@@ -2,6 +2,7 @@ import fs from 'fs';
 import csv from 'csv-parser';
 import logger from '../../../config/logger';
 import { Influencer } from '../../../entity/influencer';
+import { UserOnboardingSelection, Question, Option, OnboardingQuestion } from '../../../entity/onboarding';
 import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
 import { get } from 'http';
@@ -80,6 +81,7 @@ interface CSVRow {
     Niche: string;
     Followers: number;
     InvestorType: string;
+    Blockchain?: string;
 }
 
 const influencerRepository = AppDataSource.getRepository(Influencer);
@@ -115,6 +117,7 @@ export const uploadCSV = async (filePath: string) => {
                 Niche: capitalizeWords(row.Niche || "N/A"),
                 Followers: parseInt(row.Followers || 0),
                 InvestorType: capitalizeWords(row['Investor Type'] || "N/A"),
+                Blockchain: row.Blockchain || null,
             };
 
             const existingProduct = await influencerRepository.findOne({
@@ -127,7 +130,8 @@ export const uploadCSV = async (filePath: string) => {
                     credibilityScore: capitalizedRow.CredibilityScore,
                     engagementRate: capitalizedRow.EngagementRate,
                     investorType: capitalizedRow.InvestorType,
-                    price: capitalizedRow.PriceOfPackage
+                    price: capitalizedRow.PriceOfPackage,
+                    blockchain: capitalizedRow.Blockchain
                 },
             });
 
@@ -153,6 +157,7 @@ export const uploadCSV = async (filePath: string) => {
                 credibilityScore: capitalizedRow.CredibilityScore,
                 engagementRate: capitalizedRow.EngagementRate,
                 investorType: capitalizedRow.InvestorType,
+                blockchain: capitalizedRow.Blockchain,
             }
             // logger.info("dataToInsert: ", dataToInsert)
             const newInfluencerPR = influencerRepository.create(dataToInsert);
@@ -179,34 +184,84 @@ function capitalizeWords(str: string): string {
 
 // Get influencers with hidden prices, including pagination and sorting
 export const getInfluencersWithHiddenPrices = async (
+    userId: string | undefined,
     page: number = DEFAULT_PAGE,
     limit: number = DEFAULT_LIMIT,
     sortField: string = DEFAULT_SORT_FIELD,
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
     searchTerm: string = '',
     filters: Record<string, any> = {},
-    followerRange: string | "",
-    priceRange: string | "",
+    followerRange: string = "",
+    priceRange: string = "",
 ) => {
     const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
         ? { [sortField]: sortOrder }
         : { [DEFAULT_SORT_FIELD]: DEFAULT_SORT_ORDER };
 
+    let nicheFilter: string | undefined;
+    let blockchainFilter: string | undefined;
+    let investorTypeFilter: string[] = [];
+
+    if (userId) {
+        // Retrieve the user's selected options
+        const userSelections = await AppDataSource.getRepository(UserOnboardingSelection)
+            .createQueryBuilder('selection')
+            .leftJoinAndSelect('selection.selectedOption', 'option')
+            .leftJoinAndSelect('selection.question', 'question')
+            .leftJoinAndSelect('question.onboardingQuestions', 'onboardingQuestion')
+            .where('selection.user.id = :userId', { userId })
+            .orderBy('onboardingQuestion.order', 'ASC')
+            .getMany();
+
+        // Initialize filter conditions
+        nicheFilter = userSelections.find((selection) => 
+            selection.question.onboardingQuestions.some(oq => oq.order === 1)
+        )?.selectedOption.text;
+
+        blockchainFilter = userSelections.find((selection) => 
+            selection.question.onboardingQuestions.some(oq => oq.order === 2)
+        )?.selectedOption.text;
+
+        investorTypeFilter = userSelections
+            .filter((selection) => selection.question.onboardingQuestions.some(oq => oq.order >= 3))
+            .map((selection) => selection.selectedOption.investorType);
+    }
+
     // Create QueryBuilder instance
-    const query = influencerRepository.createQueryBuilder('influencer')
+    const query = AppDataSource.getRepository(Influencer).createQueryBuilder('influencer')
         .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` });
 
     // Apply filters
+    if (nicheFilter) {
+        query.andWhere('influencer.niche = :nicheFilter', { nicheFilter });
+    }
+    if (blockchainFilter) {
+        query.andWhere('influencer.blockchain ILIKE :blockchainFilter', { blockchainFilter: `%${blockchainFilter}%` });
+    }
+    if (investorTypeFilter.length > 0) {
+        query.andWhere('influencer.investorType IN (:...investorTypeFilter)', { investorTypeFilter });
+    }
+
+    // Apply additional filters
     Object.keys(filters).forEach(key => {
-        if (filters[key]) {
+        if (Array.isArray(filters[key])) {
+            query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
+        } else if (filters[key]) {
             query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
         }
     });
 
     // Apply sorting and pagination
     query
-        .orderBy(`influencer.${sortField}`, sortOrder)
+        .orderBy(
+            `CASE 
+                WHEN influencer.credibilityScore = 'High' THEN 1
+                WHEN influencer.credibilityScore = 'Medium' THEN 2
+                WHEN influencer.credibilityScore = 'Low' THEN 3
+                ELSE 4
+            END`, 'ASC')
+        .addOrderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
         .take(limit);
 
@@ -242,6 +297,7 @@ export const getInfluencersWithHiddenPrices = async (
         platform: influencer.platform,
         price: influencer.price,
         hiddenPrice: getHiddenPrice(influencer.price),
+        blockchain: influencer.blockchain,
     }));
 
     logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}, search term "${searchTerm}"`);
@@ -255,7 +311,6 @@ export const getInfluencersWithHiddenPrices = async (
         },
     };
 };
-
 
 export const getFilterOptions = async () => {
     try {
