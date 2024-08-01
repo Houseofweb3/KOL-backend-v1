@@ -97,7 +97,7 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
         // Generate HTML from EJS template
-        const html = await renderFile(join(__dirname, '../../templates/invoiceTemplate.ejs'), transformCartData);
+        const html = await renderFile('/home/ubuntu/deploy/src/templates/invoiceTemplate.ejs', transformCartData);
 
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
