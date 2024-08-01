@@ -6,7 +6,6 @@ import { UserOnboardingSelection, Question, Option, OnboardingQuestion } from '.
 import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
 import { get } from 'http';
-import { Brackets } from 'typeorm';
 
 // Define default values for pagination and sorting
 const DEFAULT_PAGE = 1;
@@ -191,7 +190,7 @@ export const getInfluencersWithHiddenPrices = async (
     sortField: string = DEFAULT_SORT_FIELD,
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
     searchTerm: string = '',
-    filters: Record<string, any> = {},  // Filters will contain platform and blockchain
+    filters: Record<string, any> = {},
     followerRange: string = "",
     priceRange: string = "",
 ) => {
@@ -233,34 +232,23 @@ export const getInfluencersWithHiddenPrices = async (
     const query = AppDataSource.getRepository(Influencer).createQueryBuilder('influencer')
         .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` });
 
-    // Apply platform filter
-    if (filters.platform && filters.platform.length > 0) {
-        query.andWhere('influencer.platform IN (:...platform)', { platform: filters.platform });
+    // Apply filters
+    if (nicheFilter) {
+        query.andWhere('influencer.niche = :nicheFilter', { nicheFilter });
     }
-
-    // Apply blockchain filter
-    if (filters.blockchain && filters.blockchain.length > 0) {
-        query.andWhere(
-            new Brackets((qb) => {
-                filters.blockchain.forEach((blockchain: string) => { // Explicitly typing blockchain as string
-                    qb.orWhere('influencer.blockchain ILIKE :blockchain', { blockchain: `%${blockchain}%` });
-                });
-            })
-        );
+    if (blockchainFilter) {
+        query.andWhere('influencer.blockchain ILIKE :blockchainFilter', { blockchainFilter: `%${blockchainFilter}%` });
     }
-
     if (investorTypeFilter.length > 0) {
         query.andWhere('influencer.investorType IN (:...investorTypeFilter)', { investorTypeFilter });
     }
 
     // Apply additional filters
     Object.keys(filters).forEach(key => {
-        if (key !== 'platform' && key !== 'blockchain') {  // Ensure no double processing of platform and blockchain
-            if (Array.isArray(filters[key])) {
-                query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
-            } else if (filters[key]) {
-                query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
-            }
+        if (Array.isArray(filters[key])) {
+            query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
+        } else if (filters[key]) {
+            query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
         }
     });
 
