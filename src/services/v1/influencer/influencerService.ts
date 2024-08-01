@@ -6,6 +6,7 @@ import { UserOnboardingSelection, Question, Option, OnboardingQuestion } from '.
 import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
 import { get } from 'http';
+import { Brackets } from 'typeorm';
 
 // Define default values for pagination and sorting
 const DEFAULT_PAGE = 1;
@@ -190,7 +191,7 @@ export const getInfluencersWithHiddenPrices = async (
     sortField: string = DEFAULT_SORT_FIELD,
     sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
     searchTerm: string = '',
-    filters: Record<string, any> = {},
+    filters: Record<string, any> = {},  // Filters will contain platform and blockchain
     followerRange: string = "",
     priceRange: string = "",
 ) => {
@@ -232,23 +233,34 @@ export const getInfluencersWithHiddenPrices = async (
     const query = AppDataSource.getRepository(Influencer).createQueryBuilder('influencer')
         .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', { searchTerm: `%${searchTerm}%` });
 
-    // Apply filters
-    if (nicheFilter) {
-        query.andWhere('influencer.niche = :nicheFilter', { nicheFilter });
+    // Apply platform filter
+    if (filters.platform && filters.platform.length > 0) {
+        query.andWhere('influencer.platform IN (:...platform)', { platform: filters.platform });
     }
-    if (blockchainFilter) {
-        query.andWhere('influencer.blockchain ILIKE :blockchainFilter', { blockchainFilter: `%${blockchainFilter}%` });
+
+    // Apply blockchain filter
+    if (filters.blockchain && filters.blockchain.length > 0) {
+        query.andWhere(
+            new Brackets((qb) => {
+                filters.blockchain.forEach((blockchain: string) => { // Explicitly typing blockchain as string
+                    qb.orWhere('influencer.blockchain ILIKE :blockchain', { blockchain: `%${blockchain}%` });
+                });
+            })
+        );
     }
+
     if (investorTypeFilter.length > 0) {
         query.andWhere('influencer.investorType IN (:...investorTypeFilter)', { investorTypeFilter });
     }
 
     // Apply additional filters
     Object.keys(filters).forEach(key => {
-        if (Array.isArray(filters[key])) {
-            query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
-        } else if (filters[key]) {
-            query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
+        if (key !== 'platform' && key !== 'blockchain') {  // Ensure no double processing of platform and blockchain
+            if (Array.isArray(filters[key])) {
+                query.andWhere(`influencer.${key} IN (:...${key})`, { [key]: filters[key] });
+            } else if (filters[key]) {
+                query.andWhere(`influencer.${key} = :${key}`, { [key]: filters[key] });
+            }
         }
     });
 
@@ -341,13 +353,20 @@ export const getFilterOptions = async () => {
             .createQueryBuilder('influencer')
             .select('DISTINCT(influencer.platform)', 'platform')
             .getRawMany();
+
         const subscribers = await influencerRepository
             .createQueryBuilder('influencer')
             .select('DISTINCT(influencer.subscribers)', 'subscribers')
             .getRawMany();
+
         const prices = await influencerRepository
             .createQueryBuilder('influencer')
             .select('DISTINCT(influencer.price)', 'price')
+            .getRawMany();
+
+        const blockchains = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.blockchain)', 'blockchain')
             .getRawMany();
 
         const hiddenPrices = prices.map(row => getHiddenPrice(row.price)).filter(price => price);
@@ -356,6 +375,17 @@ export const getFilterOptions = async () => {
             const range = categorizeFollowers(row.subscribers);
             logger.info(`Follower count: ${row.subscribers}, categorized as: ${range}`);
             return range;
+        });
+
+        // Process blockchains to remove duplicates and split combined entries
+        const blockchainSet = new Set<string>(); // Explicitly type the set
+        blockchains.forEach(row => {
+            const chains = row.blockchain.split(',').map((chain: string) => chain.trim());
+            chains.forEach((chain: string) => {
+                if (chain !== 'N/a' && chain !== null && chain !== '') {
+                    blockchainSet.add(chain);
+                }
+            });
         });
 
         return {
@@ -371,12 +401,15 @@ export const getFilterOptions = async () => {
             hiddenPrices: Array.from(new Set(hiddenPrices)).sort((a, b) => {
                 const rangeOrder = ['$', '$$', '$$$', '$$$$'];
                 return rangeOrder.indexOf(a) - rangeOrder.indexOf(b);
-            })
+            }),
+            blockchains: Array.from(blockchainSet).sort(),
         };
     } catch (error: any) {
         throw new Error(`Error fetching filter options: ${error.message}`);
     }
 };
+
+
 
 const getHiddenPrice = (price: number): string => {
     if (price <= 1000) return '$';
