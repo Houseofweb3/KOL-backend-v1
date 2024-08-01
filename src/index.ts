@@ -31,7 +31,6 @@ import { userOnboardingSelectionRoutes } from './routes';
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
-// Options
 const options = {
     swaggerDefinition: swaggerDocument,
     apis: ['./src/routes/*.ts', './src/models/*.ts'], // Path to the API docs
