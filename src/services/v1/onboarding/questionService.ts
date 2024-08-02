@@ -29,6 +29,7 @@ export const getQuestions = async (id?: string): Promise<Question[]> => {
             const question = await questionRepository.findOne({
                 where: { id },
                 relations: ['options', 'onboardingQuestions'],
+                order: { options: { createdAt: 'ASC' } }, // Sort options by createdAt
             });
 
             if (!question) {
@@ -41,6 +42,7 @@ export const getQuestions = async (id?: string): Promise<Question[]> => {
             // Fetch all questions
             const questions = await questionRepository.find({
                 relations: ['options', 'onboardingQuestions'],
+                order: { options: { createdAt: 'ASC' } }, // Sort options by createdAt
             });
 
             return questions;
@@ -55,6 +57,7 @@ export const getQuestions = async (id?: string): Promise<Question[]> => {
         }
     }
 };
+
 
 // Delete Question
 export const deleteQuestion = async (id: string) => {
