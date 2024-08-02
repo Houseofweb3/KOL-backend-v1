@@ -83,16 +83,8 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
           filter = {};
       }
 
-      // Ensure that blockchain and platform filters are arrays if present
-      if (filter.blockchain && !Array.isArray(filter.blockchain)) {
-          filter.blockchain = [filter.blockchain];
-      }
-
-      if (filter.platform && !Array.isArray(filter.platform)) {
-          filter.platform = [filter.platform];
-      }
-
-      console.log('Parsed filter:', filter); // Log parsed filter for debugging
+      // Log parsed filter for debugging
+      console.log('Parsed filter:', filter);
 
       // Fetch influencers using the service function with parsed filters
       const { influencers, pagination } = await getInfluencersWithHiddenPrices(
@@ -123,6 +115,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
       }
   }
 };
+
 
 // create inflencer
 export const createInfluencerHandler = async (req: Request, res: Response) => {
