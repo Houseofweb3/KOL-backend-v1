@@ -1,3 +1,5 @@
+// src/utils/communication/ses/emailSender.ts
+
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 
@@ -49,6 +51,43 @@ export async function sendInvoiceEmail(user: any, pdfBuffer: Buffer): Promise<an
   });
 
   console.log('Message sent: %s', info.messageId);
+  return info;
+}
+
+/**
+ * Send a welcome email to the new user.
+ * 
+ * @param {string} email - Recipient email address
+ * @returns {Promise} - Result of the email sending
+ */
+export async function sendWelcomeEmail(email: string): Promise<any> {
+  const info = await transporter.sendMail({
+    from: '"Ampli5" <info@ampli5.com>', // Sender address
+    to: [email], // Recipient email address
+    subject: 'Welcome to Ampli5 - AI-powered Crypto KOL/PR packages', // Subject line
+    text: `Hi there,
+    Mo here from Ampli5. Thanks for taking the time to check us out.
+    Here's our promise:
+    Ampli5 will:
+    - Help you build an Influencer (KOL) and PR list for your Crypto project in under 5 minutes
+    - Get your campaign launched and do the heavy lifting of coordinating with KOLs and PR houses
+    - Have the first KOL / PR post up in under 72 hours
+
+    If you need any assistance, just drop us a hi at [email ID].
+    - Mo from Ampli5.com`,
+    html: `<p>Hi there,</p>
+      <p>Mo here from Ampli5. Thanks for taking the time to check us out.</p>
+      <p>Here's our promise:</p>
+      <ul>
+        <li>Help you build an Influencer (KOL) and PR list for your Crypto project in under 5 minutes</li>
+        <li>Get your campaign launched and do the heavy lifting of coordinating with KOLs and PR houses</li>
+        <li>Have the first KOL / PR post up in under 72 hours</li>
+      </ul>
+      <p>If you need any assistance, just drop us a hi at <a href="mailto:info@ampli5.com">info@ampli5.com</a>.</p>
+      <p>- Mo from Ampli5.com</p>`,
+  });
+
+  console.log('Welcome email sent: %s', info.messageId);
   return info;
 }
 
