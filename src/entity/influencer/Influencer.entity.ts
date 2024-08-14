@@ -51,6 +51,9 @@ export class Influencer extends BaseModel {
     @Column({ nullable: true })
     blockchain!: string;
 
+    @Column()
+    dpLink!: string;
+
     @OneToMany(() => InfluencerCartItem, (item) => item.influencer)
     influencerCartItems!: InfluencerCartItem[];
 }
