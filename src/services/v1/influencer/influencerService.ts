@@ -215,7 +215,7 @@ export const getInfluencersWithHiddenPrices = async (
             .orderBy('onboardingQuestion.order', 'ASC')
             .getMany();
 
-        // Initialize filter conditions
+        // Extract niche, blockchain, and investorType filters
         nicheFilter = userSelections.find((selection) => 
             selection.question.onboardingQuestions.some(oq => oq.order === 1)
         )?.selectedOption.text;
@@ -225,7 +225,7 @@ export const getInfluencersWithHiddenPrices = async (
         )?.selectedOption.text;
 
         investorTypeFilter = userSelections
-            .filter((selection) => selection.question.onboardingQuestions.some(oq => oq.order >= 3))
+            .filter((selection) => selection.selectedOption.investorType)
             .map((selection) => selection.selectedOption.investorType);
     }
 
@@ -239,7 +239,9 @@ export const getInfluencersWithHiddenPrices = async (
     }
 
     // Apply blockchain filter
-    if (filters.blockchain && filters.blockchain.length > 0) {
+    if (blockchainFilter) {
+        query.andWhere('influencer.blockchain ILIKE :blockchainFilter', { blockchainFilter: `%${blockchainFilter}%` });
+    } else if (filters.blockchain && filters.blockchain.length > 0) {
         query.andWhere(
             new Brackets((qb) => {
                 filters.blockchain.forEach((blockchain: string) => { // Explicitly typing blockchain as string
@@ -249,6 +251,12 @@ export const getInfluencersWithHiddenPrices = async (
         );
     }
 
+    // Apply niche filter
+    if (nicheFilter) {
+        query.andWhere('influencer.niche ILIKE :nicheFilter', { nicheFilter: `%${nicheFilter}%` });
+    }
+
+    // Apply investor type filter
     if (investorTypeFilter.length > 0) {
         query.andWhere('influencer.investorType IN (:...investorTypeFilter)', { investorTypeFilter });
     }
@@ -323,6 +331,7 @@ export const getInfluencersWithHiddenPrices = async (
         },
     };
 };
+
 
 export const getFilterOptions = async () => {
     try {
