@@ -83,6 +83,7 @@ interface CSVRow {
     Followers: number;
     InvestorType: string;
     Blockchain?: string;
+    DpLink?: string; // Added this line
 }
 
 const influencerRepository = AppDataSource.getRepository(Influencer);
@@ -119,6 +120,7 @@ export const uploadCSV = async (filePath: string) => {
                 Followers: parseInt(row.Followers || 0),
                 InvestorType: capitalizeWords(row['Investor Type'] || "N/A"),
                 Blockchain: row.Blockchain || null,
+                DpLink: row['DP link'] || "N/A",  // Added this line
             };
 
             const existingProduct = await influencerRepository.findOne({
@@ -159,8 +161,9 @@ export const uploadCSV = async (filePath: string) => {
                 engagementRate: capitalizedRow.EngagementRate,
                 investorType: capitalizedRow.InvestorType,
                 blockchain: capitalizedRow.Blockchain,
+                dpLink: capitalizedRow.DpLink,  // Added this line
             }
-            // logger.info("dataToInsert: ", dataToInsert)
+
             const newInfluencerPR = influencerRepository.create(dataToInsert);
 
             await influencerRepository.save(newInfluencerPR);
@@ -181,6 +184,7 @@ export const uploadCSV = async (filePath: string) => {
 function capitalizeWords(str: string): string {
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
+
 
 
 // Get influencers with hidden prices, including pagination and sorting
@@ -318,6 +322,7 @@ export const getInfluencersWithHiddenPrices = async (
         price: influencer.price,
         hiddenPrice: getHiddenPrice(influencer.price),
         blockchain: influencer.blockchain,
+        dpLink: influencer.dpLink,
     }));
 
     logger.info(`Fetched influencers with hidden prices for page ${page}, limit ${limit}, search term "${searchTerm}"`);
