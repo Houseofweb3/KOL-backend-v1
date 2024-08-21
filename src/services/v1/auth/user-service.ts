@@ -7,6 +7,7 @@ import { User, UserType } from '../../../entity/auth/User.entity';
 import { Cart } from '../../../entity/cart';
 import { AppDataSource } from '../../../config/data-source';
 import { generateAccessToken, generateRefreshToken } from '../../../middleware/auth';
+import { sendWelcomeEmail } from '../../../utils/communication/ses/emailSender';
 import { create } from 'domain';
 
 const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET;
@@ -62,6 +63,10 @@ export const createUser = async (email: string, password?: string, fullname?: st
             await transactionalEntityManager.save(newUser);
 
             logger.info(`User created successfully: ${newUser.id}`);
+            
+            // Send welcome email
+            await sendWelcomeEmail(email);
+
             return { user: newUser, message: 'User signup successfully', token, refreshToken };
         });
 

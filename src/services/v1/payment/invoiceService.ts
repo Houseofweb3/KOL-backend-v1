@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { resolve } from 'path';
 import { renderFile } from 'ejs';
 
 import logger from '../../../config/logger';
@@ -96,8 +96,9 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         const transformCartData = transformData(data);
         logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
-        // Generate HTML from EJS template
-        const html = await renderFile('/home/ubuntu/deploy/src/templates/invoiceTemplate.ejs', transformCartData);
+        // Generate HTML from EJS template using an absolute path
+        const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate.ejs');
+        const html = await renderFile(templatePath, transformCartData);
 
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);

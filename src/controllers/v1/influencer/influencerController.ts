@@ -72,7 +72,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
       const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
       const userId = req.query.userId as string;
 
-      let filter: object = {};
+      let filter: Record<string, any> = {}; // Use Record<string, any> for better type safety
 
       // Parse the filter query parameters safely
       try {
@@ -83,9 +83,22 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
           filter = {};
       }
 
-      console.log(filter)
+      // Log parsed filter for debugging
+      console.log('Parsed filter:', filter);
 
-      const { influencers, pagination } = await getInfluencersWithHiddenPrices(userId, page, limit, sortField, sortOrder, searchTerm, filter, followerRange, priceRange);
+      // Fetch influencers using the service function with parsed filters
+      const { influencers, pagination } = await getInfluencersWithHiddenPrices(
+          userId,
+          page,
+          limit,
+          sortField,
+          sortOrder,
+          searchTerm,
+          filter,
+          followerRange,
+          priceRange
+      );
+
       logger.info(`Fetched influencers with hidden prices for user with page ${page}, limit ${limit}`);
 
       return res.status(HttpStatus.OK).json({
@@ -102,6 +115,7 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
       }
   }
 };
+
 
 // create inflencer
 export const createInfluencerHandler = async (req: Request, res: Response) => {
