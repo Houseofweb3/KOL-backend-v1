@@ -220,11 +220,11 @@ export const getInfluencersWithHiddenPrices = async (
             .getMany();
 
         // Extract niche, blockchain, and investorType filters
-        nicheFilter = userSelections.find((selection) => 
+        nicheFilter = userSelections.find((selection) =>
             selection.question.onboardingQuestions.some(oq => oq.order === 1)
         )?.selectedOption.text;
 
-        blockchainFilter = userSelections.find((selection) => 
+        blockchainFilter = userSelections.find((selection) =>
             selection.question.onboardingQuestions.some(oq => oq.order === 2)
         )?.selectedOption.text;
 
@@ -394,12 +394,14 @@ export const getFilterOptions = async () => {
         // Process blockchains to remove duplicates and split combined entries
         const blockchainSet = new Set<string>(); // Explicitly type the set
         blockchains.forEach(row => {
-            const chains = row.blockchain.split(',').map((chain: string) => chain.trim());
-            chains.forEach((chain: string) => {
-                if (chain !== 'N/a' && chain !== null && chain !== '') {
-                    blockchainSet.add(chain);
-                }
-            });
+            if (row.blockchain) {  // Check if blockchain is not null or undefined
+                const chains = row.blockchain.split(',').map((chain: string) => chain.trim());
+                chains.forEach((chain: string) => {
+                    if (chain !== 'N/a' && chain !== '') {
+                        blockchainSet.add(chain);
+                    }
+                });
+            }
         });
 
         return {
@@ -422,8 +424,6 @@ export const getFilterOptions = async () => {
         throw new Error(`Error fetching filter options: ${error.message}`);
     }
 };
-
-
 
 const getHiddenPrice = (price: number): string => {
     if (price <= 1000) return '$';
