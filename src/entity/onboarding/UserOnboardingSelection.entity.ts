@@ -1,21 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, ManyToMany } from 'typeorm';
 import { Question } from './Question.entity';
 import { Option } from './Option.entity';
-import { User } from '../auth/User.entity'
+import { User } from '../auth/User.entity';
 
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity()
 export class UserOnboardingSelection extends BaseModel {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
 
-  @ManyToOne(() => User, user => user.userSelections)
-  user!: User;
+    @ManyToOne(() => User, (user) => user.userSelections)
+    user!: User;
 
-  @ManyToOne(() => Question)
-  question!: Question;
+    @ManyToOne(() => Question)
+    question!: Question;
 
-  @ManyToOne(() => Option)
-  selectedOption!: Option;
+    @ManyToMany(() => Option)
+    selectedOption!: Option[];
 }
