@@ -21,6 +21,13 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
     try {
         const newCheckout = await createCheckout(cartId, totalAmount);
         res.status(HttpStatus.CREATED).json(newCheckout);
+
+        // Process invoice generation in the background
+        fetchInvoiceDetails(cartId as string)
+            .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
+            .catch((error) =>
+                logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`),
+            );
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error creating checkout: ${error}`);
