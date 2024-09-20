@@ -216,7 +216,6 @@ export const getInfluencersWithHiddenPrices = async (
     let investorTypeFilter: string[] = [];
 
     if (userId) {
-        // Retrieve the user's selected options
         const userSelections = await AppDataSource.getRepository(UserOnboardingSelection)
             .createQueryBuilder('selection')
             .leftJoinAndSelect('selection.selectedOption', 'option')
@@ -227,17 +226,24 @@ export const getInfluencersWithHiddenPrices = async (
             .getMany();
 
         // Extract niche, blockchain, and investorType filters
-        nicheFilter = userSelections.find((selection) =>
-            selection.question.onboardingQuestions.some((oq) => oq.order === 1),
-        )?.selectedOption.text;
+        nicheFilter = userSelections
+            .find((selection) =>
+                selection.question.onboardingQuestions.some((oq) => oq.order === 1),
+            )
+            ?.selectedOption.find((option) => option.text)?.text; // Accessing text property correctly
 
-        blockchainFilter = userSelections.find((selection) =>
-            selection.question.onboardingQuestions.some((oq) => oq.order === 2),
-        )?.selectedOption.text;
+        blockchainFilter = userSelections
+            .find((selection) =>
+                selection.question.onboardingQuestions.some((oq) => oq.order === 2),
+            )
+            ?.selectedOption.find((option) => option.text)?.text; // Accessing text property correctly
 
-        investorTypeFilter = userSelections
-            .filter((selection) => selection.selectedOption.investorType)
-            .map((selection) => selection.selectedOption.investorType);
+        investorTypeFilter = userSelections.flatMap(
+            (selection) =>
+                selection.selectedOption
+                    .filter((option) => option.investorType) // Filtering options with investorType
+                    .map((option) => option.investorType), // Mapping to investorType values
+        );
     }
 
     // Create QueryBuilder instance
