@@ -40,8 +40,12 @@ function transformData(data: any) {
         })),
     }));
 
-    const influencerSubtotal = data.influencerCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.influencer.price), 0).toFixed(2);
-    const packageSubtotal = data.packageCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0).toFixed(2);
+    const influencerSubtotal = data.influencerCartItems
+        .reduce((acc: number, item: any) => acc + parseFloat(item.influencer.price), 0)
+        .toFixed(2);
+    const packageSubtotal = data.packageCartItems
+        .reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0)
+        .toFixed(2);
     const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
     const managementFee = (parseFloat(totalPrice) * 0.25).toFixed(2);
     const totalPriceWithFee = (parseFloat(totalPrice) + parseFloat(managementFee)).toFixed(2);
@@ -57,7 +61,7 @@ function transformData(data: any) {
         managementFee,
         totalPriceWithFee,
         showInfluencersList: influencerPRs.length > 0,
-        showPackagesList: packageHeaders.length > 0
+        showPackagesList: packageHeaders.length > 0,
     };
 }
 
@@ -69,7 +73,10 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
     try {
         // Fetch cart by id
         logger.info(`Fetching cart with id: ${id}`);
-        const cart = await cartRepository.findOne({ where: { id }, relations: ['user', 'influencerCartItems', 'packageCartItems', 'checkout'] });
+        const cart = await cartRepository.findOne({
+            where: { id },
+            relations: ['user', 'influencerCartItems', 'packageCartItems', 'checkout'],
+        });
 
         if (!cart) {
             throw new Error(`No cart found for id: ${id}`);
@@ -78,42 +85,46 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
 
         // Fetch related influencerCartItems and packageCartItems
         logger.info(`Fetching influencerCartItems for cart id: ${id}`);
-        
-        const influencerCartItems = await influencerCartItemRepository.find({ where: { cart: { id } }, relations: ['influencer'] });
+
+        const influencerCartItems = await influencerCartItemRepository.find({
+            where: { cart: { id } },
+            relations: ['influencer'],
+        });
         logger.info(`Fetched influencerCartItems: ${JSON.stringify(influencerCartItems)}`);
 
         logger.info(`Fetching packageCartItems for cart id: ${id}`);
-        const packageCartItems = await packageCartItemRepository.find({ where: { cart: { id } }, relations: ['package', 'package.packageItems'] });
+        const packageCartItems = await packageCartItemRepository.find({
+            where: { cart: { id } },
+            relations: ['package', 'package.packageItems'],
+        });
         logger.info(`Fetched packageCartItems: ${JSON.stringify(packageCartItems)}`);
 
         const data = {
-            user: cart.user,  // Assuming Cart has a relation with User
+            user: cart.user, // Assuming Cart has a relation with User
             id: cart.id,
             influencerCartItems,
-            packageCartItems
+            packageCartItems,
         };
 
         const transformCartData = transformData(data);
-        logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
+        // logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
         // Generate HTML from EJS template using an absolute path
         const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate.ejs');
-        const html = await renderFile(templatePath, transformCartData);
 
+        const html = await renderFile(templatePath, transformCartData);
+        console.log('html', html);
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
-        logger.info("generated html: ", pdfBuffer)
-
+        // logger.info('generated html: ', pdfBuffer);
 
         // Send the PDF buffer as an email attachment
         await sendInvoiceEmail(transformCartData.user, pdfBuffer);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
-
         return {
             data: transformCartData,
         };
-
     } catch (error) {
         logger.error(`Error fetching invoice details for id: ${id}`, error);
 

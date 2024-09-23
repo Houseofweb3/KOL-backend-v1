@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, ManyToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Question } from './Question.entity';
 import { Option } from './Option.entity';
 import { User } from '../auth/User.entity';
@@ -17,5 +17,6 @@ export class UserOnboardingSelection extends BaseModel {
     question!: Question;
 
     @ManyToMany(() => Option)
+    @JoinTable()
     selectedOption!: Option[];
 }

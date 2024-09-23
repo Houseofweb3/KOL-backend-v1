@@ -9,17 +9,22 @@ import { createCheckout, getCheckoutById, deleteCheckout } from '../../../servic
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
-    const { cartId, totalAmount } = req.body;
+    const { cartId, totalAmount, firstName, lastName, projectName, telegramId, projectUrl } =
+        req.body;
 
-    if (!cartId || !totalAmount) {
+    if (!cartId || !totalAmount || !firstName || !lastName || !projectName) {
         logger.warn('Missing required fields: cartId and/or totalAmount');
-        return res
-            .status(HttpStatus.BAD_REQUEST)
-            .json({ error: 'Missing required fields: cartId and/or totalAmount' });
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
     }
 
     try {
-        const newCheckout = await createCheckout(cartId, totalAmount);
+        const newCheckout = await createCheckout(cartId, totalAmount, {
+            firstName,
+            lastName,
+            projectName,
+            telegramId,
+            projectUrl,
+        });
         res.status(HttpStatus.CREATED).json(newCheckout);
 
         // Process invoice generation in the background
