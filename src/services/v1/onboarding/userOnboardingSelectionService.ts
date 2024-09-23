@@ -27,6 +27,8 @@ export const createUserOnboardingSelection = async (
         const selectedOptions =
             await AppDataSource.getRepository(Option).findByIds(selectedOptionIds);
 
+        console.log('selectedOptions', selectedOptions);
+
         // Save each selected option as a new UserOnboardingSelection
         const newUserOnboardingSelection = AppDataSource.getRepository(
             UserOnboardingSelection,
