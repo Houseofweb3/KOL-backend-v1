@@ -16,6 +16,7 @@ import {
     OnboardingQuestion,
     UserOnboardingSelection,
 } from '../entity/onboarding';
+import { CouponCode, UserCoupon } from '../entity/couponCode';
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -41,6 +42,8 @@ export const AppDataSource = new DataSource({
         OnboardingQuestion,
         RefreshToken,
         BillingDetails,
+        UserCoupon,
+        CouponCode,
     ],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
