@@ -1,12 +1,8 @@
-import {
-    Entity,
-    Column,
-    OneToMany,
-    PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Cart } from '../cart';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
+import { UserCoupon } from '../couponCode/userCoupon.entity';
 import { UserOnboardingSelection } from '../onboarding/UserOnboardingSelection.entity';
 
 export enum UserType {
@@ -16,7 +12,7 @@ export enum UserType {
 
 @Entity()
 export class User extends BaseModel {
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ unique: true })
@@ -34,13 +30,16 @@ export class User extends BaseModel {
     @Column({
         type: 'enum',
         enum: UserType,
-        default: UserType.USER
+        default: UserType.USER,
     })
     userType!: UserType;
 
-    @OneToMany(() => UserOnboardingSelection, userSelection => userSelection.user)
+    @OneToMany(() => UserOnboardingSelection, (userSelection) => userSelection.user)
     userSelections!: UserOnboardingSelection[];
 
-    @OneToMany(() => Cart, cart => cart.user)
+    @OneToMany(() => Cart, (cart) => cart.user)
     carts!: Cart[];
+
+    @OneToMany(() => UserCoupon, (userCoupon) => userCoupon.user)
+    userCoupons!: UserCoupon[];
 }

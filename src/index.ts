@@ -4,7 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import { createServer, Server as HttpServer } from 'http';
 import express, { Application, Request, Response } from 'express';
 
-import { ENV } from "./config/env";
+import { ENV } from './config/env';
 import logger from './config/logger';
 import swaggerDocument from './swagger.json';
 import { AppDataSource } from './config/data-source';
@@ -23,10 +23,11 @@ import { utilsRoutes } from './routes';
 import { influencerRoutes } from './routes';
 import { invoiceRoutes } from './routes';
 import { packageItemRoutes } from './routes';
-import { packageCartItemRoutes } from './routes';;
+import { packageCartItemRoutes } from './routes';
 import { influencerCartItemRoutes } from './routes';
 import { onboardingQuestionsRoutes } from './routes';
 import { userOnboardingSelectionRoutes } from './routes';
+import { couponRoutes } from './routes';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -75,6 +76,8 @@ app.use(`/api/v${ENV.VERSION}/checkout`, checkoutRoutes);
 // invoice Routes
 app.use(`/api/v${ENV.VERSION}/invoice`, invoiceRoutes);
 
+// coupon Routes
+app.use(`/api/v${ENV.VERSION}/coupons`, couponRoutes);
 // utils Routes
 app.use(`/api/v${ENV.VERSION}/utils`, utilsRoutes);
 
@@ -84,14 +87,16 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Initialize TypeORM data source
-AppDataSource.initialize().then(() => {
-    logger.info('Database connected successfully');
+AppDataSource.initialize()
+    .then(() => {
+        logger.info('Database connected successfully');
 
-    const server: HttpServer = createServer(app);
+        const server: HttpServer = createServer(app);
 
-    server.listen(port, () => {
-        logger.info(`Server is running on port ${port}`);
+        server.listen(port, () => {
+            logger.info(`Server is running on port ${port}`);
+        });
+    })
+    .catch((error) => {
+        logger.error('Database connection failed:', error);
     });
-}).catch(error => {
-    logger.error('Database connection failed:', error);
-});
