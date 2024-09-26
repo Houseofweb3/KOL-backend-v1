@@ -47,8 +47,8 @@ function transformData(data: any) {
         .reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0)
         .toFixed(2);
     const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
-    const managementFee = (parseFloat(totalPrice) * 0.25).toFixed(2);
-    const totalPriceWithFee = (parseFloat(totalPrice) + parseFloat(managementFee)).toFixed(2);
+    const managementFee = data.managementFee;
+    const totalPriceWithFee = data.totalAmount;
 
     return {
         user,
@@ -59,13 +59,20 @@ function transformData(data: any) {
         packageSubtotal,
         totalPrice,
         managementFee,
+        managementFeePercentage: data.managementFeePercentage,
         totalPriceWithFee,
         showInfluencersList: influencerPRs.length > 0,
         showPackagesList: packageHeaders.length > 0,
     };
 }
 
-export const fetchInvoiceDetails = async (id: string, userId?: string) => {
+export const fetchInvoiceDetails = async (
+    id: string,
+    additionalEmail: string,
+    managementFee: number,
+    managementFeePercentage: number,
+    totalAmount: number,
+) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
     const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
@@ -104,9 +111,13 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
             id: cart.id,
             influencerCartItems,
             packageCartItems,
+            managementFee,
+            managementFeePercentage,
+            totalAmount,
         };
 
         const transformCartData = transformData(data);
+        console.log('transformCartData', transformCartData);
         // logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
         // Generate HTML from EJS template using an absolute path
@@ -119,7 +130,7 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
         // logger.info('generated html: ', pdfBuffer);
 
         // Send the PDF buffer as an email attachment
-        await sendInvoiceEmail(transformCartData.user, pdfBuffer);
+        await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         return {

@@ -11,6 +11,9 @@ export class UserCoupon extends BaseModel {
     @Column({ type: 'boolean', default: false })
     isUsed!: boolean;
 
+    @Column({ type: 'boolean', default: false })
+    hasAvail!: boolean;
+
     @ManyToOne(() => User, (user) => user.userCoupons)
     @JoinColumn({ name: 'userId' })
     user!: User;

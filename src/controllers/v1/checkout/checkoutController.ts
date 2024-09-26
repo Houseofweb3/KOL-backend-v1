@@ -9,10 +9,20 @@ import { createCheckout, getCheckoutById, deleteCheckout } from '../../../servic
 // Create a new Checkout
 export const createCheckoutHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
-    const { cartId, totalAmount, firstName, lastName, projectName, telegramId, projectUrl } =
-        req.body;
+    const {
+        cartId,
+        totalAmount,
+        firstName,
+        lastName,
+        projectName,
+        telegramId,
+        projectUrl,
+        email,
+        managementFee,
+        managementFeePercentage,
+    } = req.body;
 
-    if (!cartId || !totalAmount || !firstName || !lastName || !projectName) {
+    if (!cartId || !totalAmount || !firstName || !lastName || !projectName || !email) {
         logger.warn('Missing required fields: cartId and/or totalAmount');
         return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
     }
@@ -24,11 +34,18 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
             projectName,
             telegramId,
             projectUrl,
+            email,
         });
         res.status(HttpStatus.CREATED).json(newCheckout);
 
         // Process invoice generation in the background
-        fetchInvoiceDetails(cartId as string)
+        fetchInvoiceDetails(
+            cartId as string,
+            email as string,
+            managementFee as number,
+            managementFeePercentage as number,
+            totalAmount as number,
+        )
             .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
             .catch((error) =>
                 logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`),

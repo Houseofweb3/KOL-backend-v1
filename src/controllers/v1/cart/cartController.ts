@@ -59,6 +59,7 @@ export const getCartsHandler = async (req: Request, res: Response) => {
         couponId,
     } = req.query;
 
+    const copounApply = applyCoupon === 'true';
     try {
         const cartsResponse = await getCarts(
             userId as string,
@@ -66,7 +67,7 @@ export const getCartsHandler = async (req: Request, res: Response) => {
             parseInt(limit as string, 10),
             sortField as string,
             sortOrder as 'ASC' | 'DESC',
-            Boolean(applyCoupon),
+            copounApply as boolean,
             couponId as string,
         );
 

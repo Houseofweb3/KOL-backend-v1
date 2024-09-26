@@ -8,7 +8,7 @@ import { fetchInvoiceDetails } from '../../../services/v1/payment/invoiceService
 // Generate Invoice
 export const generateInvoiceController = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
-    const { userId, cartId } = req.body;
+    const { cartId, email, managementFee, managementFeePercentage, totalAmount } = req.body;
 
     if (!cartId) {
         logger.warn('Missing required fields in generate Invoice');
@@ -16,19 +16,25 @@ export const generateInvoiceController = async (req: Request, res: Response) => 
     }
 
     try {
-        const { data } = await fetchInvoiceDetails(cartId as string, userId as string);
+        const { data } = await fetchInvoiceDetails(
+            cartId as string,
+            email as string,
+            managementFee as number,
+            managementFeePercentage as number,
+            totalAmount as number,
+        );
 
         logger.info('Invoice generated successfully');
         return res.status(HttpStatus.CREATED).json({ data });
     } catch (error) {
         if (error instanceof Error) {
-
             logger.error(`Error generating invoice: ${error.message}`);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
-
             logger.error('An unknown error occurred while generating invoice');
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+            return res
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .json({ error: 'An unknown error occurred' });
         }
     }
 };

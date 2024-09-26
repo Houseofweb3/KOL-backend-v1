@@ -42,7 +42,7 @@ export const checkCouponCodeService = async (
         });
 
         // Check if the coupon has already been used by this user
-        if (userCoupon?.isUsed) {
+        if (userCoupon?.isUsed && userCoupon.hasAvail) {
             return 'You have already used this coupon code';
         }
 
@@ -57,11 +57,11 @@ export const checkCouponCodeService = async (
             userCoupon = userCouponRepository.create({
                 user: { id: userId } as any,
                 couponCode: { id: coupon.id } as any,
-                isUsed: true,
+                hasAvail: true,
             });
         } else {
             // If there's an existing record, update it to mark the coupon as used
-            userCoupon.isUsed = true;
+            userCoupon.hasAvail = true;
         }
 
         // Save the changes to the database

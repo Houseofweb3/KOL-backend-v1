@@ -18,6 +18,7 @@ export const createCheckout = async (
         projectName: string;
         telegramId?: string;
         projectUrl?: string;
+        email?: string;
     },
 ): Promise<Checkout> => {
     try {
