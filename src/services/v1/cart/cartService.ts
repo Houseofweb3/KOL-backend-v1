@@ -2,7 +2,7 @@ import { Cart } from '../../../entity/cart';
 import logger from '../../../config/logger';
 import { AppDataSource } from '../../../config/data-source';
 import { updateTimestamp } from '../../../utils/updateTimestamp';
-import { getRepository } from 'typeorm';
+import { UserCoupon } from '../../../entity/couponCode';
 import { checkCouponCodeService } from './cuponCodeCheckerService';
 
 const cartRepository = AppDataSource.getRepository(Cart);
@@ -53,7 +53,7 @@ export const getCarts = async (
     couponId?: string,
 ): Promise<any[]> => {
     try {
-        const validSortFields = ['createdAt', 'updatedAt']; // Adjust valid sort fields as needed
+        const validSortFields = ['createdAt', 'updatedAt'];
         const order: { [key: string]: 'ASC' | 'DESC' } = validSortFields.includes(sortField)
             ? { [sortField]: sortOrder }
             : { createdAt: sortOrder };
@@ -66,11 +66,12 @@ export const getCarts = async (
             .leftJoinAndSelect('cart.packageCartItems', 'packageCartItems')
             .leftJoinAndSelect('packageCartItems.package', 'package')
             .leftJoinAndSelect('package.packageItems', 'packageItems')
-            .leftJoinAndSelect('cart.checkout', 'checkout');
+            .leftJoinAndSelect('cart.checkout', 'checkout')
+            .leftJoinAndSelect('user.userCoupons', 'userCoupons')
+            .leftJoinAndSelect('userCoupons.couponCode', 'couponCode');
 
         queryBuilder = queryBuilder.where('cart.userId = :userId', { userId });
 
-        // Apply sorting and pagination
         queryBuilder = queryBuilder
             .orderBy(`cart.${sortField}`, sortOrder)
             .skip((page - 1) * limit)
@@ -78,7 +79,6 @@ export const getCarts = async (
 
         const [carts, total] = await queryBuilder.getManyAndCount();
 
-        // Calculate the order total
         const calculateTotalPrice = (cart: Cart) => {
             let totalPrice = 0;
             if (cart.packageCartItems && cart.packageCartItems.length > 0) {
@@ -95,72 +95,111 @@ export const getCarts = async (
             return totalPrice;
         };
 
-        // Handle coupon application if requested
-        let discountMessage = '';
-        let discountValue = 0;
-        if (applyCoupon && couponId && userId) {
-            const orderTotal = calculateTotalPrice(carts[0]);
-            let couponResponse = await checkCouponCodeService(userId, couponId, orderTotal);
+        const transformedCarts = await Promise.all(
+            carts.map(async (cart) => {
+                let totalPrice = calculateTotalPrice(cart);
 
-            if (typeof couponResponse === 'string') {
-                discountMessage = couponResponse; // Set the message if the response is an error or notice
-            } else {
-                discountMessage = 'Coupon applied successfully';
-                discountValue = couponResponse.discountPercentage || 0; // Assuming the coupon has a discountValue field
-            }
-        }
+                let managementFeePercentage = 0;
+                if (totalPrice < 25000) {
+                    managementFeePercentage = 15;
+                } else if (totalPrice < 50000) {
+                    managementFeePercentage = 12.5;
+                } else if (totalPrice < 75000) {
+                    managementFeePercentage = 10;
+                } else if (totalPrice < 100000) {
+                    managementFeePercentage = 7.5;
+                }
 
-        // Transform the response
-        const transformedCarts = carts.map((cart) => {
-            let totalPrice = calculateTotalPrice(cart);
+                const managementFee = (totalPrice * managementFeePercentage) / 100;
+                const discountPercentage = 5;
+                const discountedManagementFee =
+                    managementFee - (managementFee * discountPercentage) / 100;
 
-            // Determine the management fee percentage based on the total price
-            let managementFeePercentage = 0;
-            if (totalPrice < 25000) {
-                managementFeePercentage = 15;
-            } else if (totalPrice < 50000) {
-                managementFeePercentage = 12.5;
-            } else if (totalPrice < 75000) {
-                managementFeePercentage = 10; // Negotiable if not an affiliate deal
-            } else if (totalPrice < 100000) {
-                managementFeePercentage = 7.5; // Direct deal
-            }
+                let discountMessage = '';
+                let discountValue = 0;
+                let appliedCoupon = null;
 
-            // Calculate the initial management fee
-            const managementFee = (totalPrice * managementFeePercentage) / 100;
+                // Check for the coupon to be applied
+                if (applyCoupon && couponId && userId) {
+                    const couponResponse = await checkCouponCodeService(
+                        userId,
+                        couponId,
+                        totalPrice,
+                    );
 
-            // Apply the 5% discount on the management fee
-            const discountPercentage = 5;
-            const discountedManagementFee =
-                managementFee - (managementFee * discountPercentage) / 100;
-
-            const totalPriceAfterCouponDiscount = totalPrice - (totalPrice * discountValue) / 100;
-
-            const totalPriceAfterDiscount = totalPriceAfterCouponDiscount + discountedManagementFee;
-
-            // Include the total price, management fee, discounted fee, and percentage in the transformed cart
-            return {
-                ...cart,
-                subtotal: totalPrice,
-                managementFee,
-                discount: discountedManagementFee,
-                total: totalPriceAfterDiscount,
-                cutAmount: totalPrice + managementFee,
-                discountPercentage,
-                managementFeePercentage,
-                influencerCartItems: cart.influencerCartItems.map((item) => {
-                    if (item.influencer) {
-                        (item.influencer as any).influencer = item.influencer.name;
-                        delete (item.influencer as any).name;
-
-                        (item.influencer as any).followers = item.influencer.subscribers;
-                        delete (item.influencer as any).subscribers;
+                    if (typeof couponResponse !== 'string') {
+                        appliedCoupon = couponResponse;
+                        discountMessage = 'Coupon applied successfully';
+                        discountValue = couponResponse.discountPercentage || 0;
+                    } else {
+                        discountMessage = couponResponse;
                     }
-                    return item;
-                }),
-                discountMessage, // Include the message from the coupon check
-            };
-        });
+                } else {
+                    // Check for previously availed but unused coupon
+                    const availedCoupon = cart.user?.userCoupons?.find(
+                        (uc) => uc.hasAvail && !uc.isUsed,
+                    );
+                    if (availedCoupon) {
+                        const couponResponse = await checkCouponCodeService(
+                            userId!,
+                            availedCoupon.couponCode.id,
+                            totalPrice,
+                        );
+
+                        if (typeof couponResponse !== 'string') {
+                            appliedCoupon = couponResponse;
+                            discountMessage = 'Previously availed coupon applied';
+                            discountValue = couponResponse.discountPercentage || 0;
+                        } else {
+                            discountMessage = couponResponse;
+                        }
+                    }
+                }
+
+                const totalPriceAfterCouponDiscount =
+                    totalPrice - (totalPrice * discountValue) / 100;
+                const totalPriceAfterDiscount =
+                    totalPriceAfterCouponDiscount + discountedManagementFee;
+
+                // Mark coupon as used if checkout is not null and a coupon was applied
+                if (cart.checkout && appliedCoupon) {
+                    const userCouponRepository = AppDataSource.getRepository(UserCoupon);
+                    const userCoupon = await userCouponRepository.findOne({
+                        where: {
+                            user: { id: userId } as any,
+                            couponCode: { id: appliedCoupon.id } as any,
+                        },
+                    });
+                    if (userCoupon) {
+                        userCoupon.isUsed = true;
+                        await userCouponRepository.save(userCoupon);
+                    }
+                }
+
+                return {
+                    ...cart,
+                    subtotal: totalPrice,
+                    managementFee,
+                    discount: discountedManagementFee,
+                    total: totalPriceAfterDiscount,
+                    cutAmount: totalPrice + managementFee,
+                    discountPercentage,
+                    managementFeePercentage,
+                    influencerCartItems: cart.influencerCartItems.map((item) => {
+                        if (item.influencer) {
+                            (item.influencer as any).influencer = item.influencer.name;
+                            delete (item.influencer as any).name;
+                            (item.influencer as any).followers = item.influencer.subscribers;
+                            delete (item.influencer as any).subscribers;
+                        }
+                        return item;
+                    }),
+                    discountMessage,
+                    couponDiscount: discountValue,
+                    appliedCouponId: appliedCoupon ? appliedCoupon.id : null,
+                };
+            }),
+        );
 
         logger.info(`Fetched ${transformedCarts.length} cart(s) for page ${page}, limit ${limit}`);
 
