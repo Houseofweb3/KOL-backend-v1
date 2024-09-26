@@ -182,7 +182,7 @@ export const getCarts = async (
                     managementFee,
                     discount: discountedManagementFee,
                     total: totalPriceAfterDiscount,
-                    cutAmount: totalPrice + managementFee,
+                    cutAmount: totalPrice + discountedManagementFee,
                     discountPercentage,
                     managementFeePercentage,
                     influencerCartItems: cart.influencerCartItems.map((item) => {
