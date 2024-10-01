@@ -155,8 +155,9 @@ export const getCarts = async (
                         }
                     }
                 }
-
-                const totalPriceAfterDiscount = totalPrice + (managementFee * discountValue) / 100;
+                const managementFeeAfterCouponDiscount =
+                    managementFee - (managementFee * discountValue) / 100;
+                const totalPriceAfterDiscount = totalPrice + managementFeeAfterCouponDiscount;
 
                 // Mark coupon as used if checkout is not null and a coupon was applied
                 if (cart.checkout && appliedCoupon) {
