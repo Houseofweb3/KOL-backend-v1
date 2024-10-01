@@ -156,10 +156,7 @@ export const getCarts = async (
                     }
                 }
 
-                const totalPriceAfterCouponDiscount =
-                    totalPrice - (totalPrice * discountValue) / 100;
-                const totalPriceAfterDiscount =
-                    totalPriceAfterCouponDiscount + discountedManagementFee;
+                const totalPriceAfterDiscount = totalPrice + (managementFee * discountValue) / 100;
 
                 // Mark coupon as used if checkout is not null and a coupon was applied
                 if (cart.checkout && appliedCoupon) {
@@ -182,7 +179,7 @@ export const getCarts = async (
                     managementFee,
                     discount: discountedManagementFee,
                     total: totalPriceAfterDiscount,
-                    cutAmount: totalPrice + discountedManagementFee,
+                    cutAmount: totalPrice + managementFee,
                     discountPercentage,
                     managementFeePercentage,
                     influencerCartItems: cart.influencerCartItems.map((item) => {
