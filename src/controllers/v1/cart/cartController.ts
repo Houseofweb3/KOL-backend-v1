@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import { createCart, deleteCart, getCarts } from '../../../services/v1/cart';
 
-
 // Create a new Cart
 export const createCartHandler = async (req: Request, res: Response) => {
     const { userId } = req.body;
@@ -17,11 +16,12 @@ export const createCartHandler = async (req: Request, res: Response) => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
             logger.error('An unknown error occurred while creating or getting cart');
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+            return res
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .json({ error: 'An unknown error occurred' });
         }
     }
 };
-
 
 // Delete a Cart
 export const deleteCartHandler = async (req: Request, res: Response) => {
@@ -41,29 +41,42 @@ export const deleteCartHandler = async (req: Request, res: Response) => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
             logger.error('An unknown error occurred while creating influencer');
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unknown error occurred' });
+            return res
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .json({ error: 'An unknown error occurred' });
         }
     }
 };
 
-
 export const getCartsHandler = async (req: Request, res: Response) => {
-    const { userId, page = 1, limit = 10, sortField = 'createdAt', sortOrder = 'DESC' } = req.query;
+    const {
+        userId,
+        page = 1,
+        limit = 10,
+        sortField = 'createdAt',
+        sortOrder = 'DESC',
+        applyCoupon,
+        couponId,
+    } = req.query;
 
+    const copounApply = applyCoupon === 'true';
     try {
         const cartsResponse = await getCarts(
             userId as string,
             parseInt(page as string, 10),
             parseInt(limit as string, 10),
             sortField as string,
-            sortOrder as 'ASC' | 'DESC'
+            sortOrder as 'ASC' | 'DESC',
+            copounApply as boolean,
+            couponId as string,
         );
 
         logger.info(`Fetched ${cartsResponse.length} cart(s) for user ${userId || 'N/A'}`);
         return res.status(HttpStatus.OK).json(cartsResponse);
     } catch (error: any) {
         logger.error(`Error fetching cart(s): ${error.message}`);
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error fetching cart(s)', error: error.message });
+        return res
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .json({ message: 'Error fetching cart(s)', error: error.message });
     }
 };
-

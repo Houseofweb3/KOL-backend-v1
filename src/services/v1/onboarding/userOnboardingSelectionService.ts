@@ -5,7 +5,11 @@ import { AppDataSource } from '../../../config/data-source';
 
 const userOnboardingSelectionRepository = AppDataSource.getRepository(UserOnboardingSelection);
 
-export const createUserOnboardingSelection = async (userId: string, questionId: string, selectedOptionId: Array<string>) => {
+export const createUserOnboardingSelection = async (
+    userId: string,
+    questionId: string,
+    selectedOptionIds: Array<string>,
+) => {
     try {
         // Find user by ID
         const user = await AppDataSource.getRepository(User).findOneBy({ id: userId });
@@ -20,25 +24,25 @@ export const createUserOnboardingSelection = async (userId: string, questionId: 
         }
 
         // Find selected option list
-        const selectedOptions = [];
-        for (const optionId of selectedOptionId) {
-            const option = await AppDataSource.getRepository(Option).findOneBy({ id: optionId });
-            if (!option) {
-                throw new Error('Selected option not found');
-            }
-            selectedOptions.push(option);
-        }
+        const selectedOptions =
+            await AppDataSource.getRepository(Option).findByIds(selectedOptionIds);
+
+        console.log('selectedOptions', selectedOptions);
 
         // Save each selected option as a new UserOnboardingSelection
-        for (const selectedOption of selectedOptions) {
-            const newUserOnboardingSelection = userOnboardingSelectionRepository.create({
-                user,
-                question,
-                selectedOption
-            });
-            await userOnboardingSelectionRepository.save(newUserOnboardingSelection);
-            logger.info(`User onboarding selection created successfully: ${newUserOnboardingSelection.id}`);
-        }
+        const newUserOnboardingSelection = AppDataSource.getRepository(
+            UserOnboardingSelection,
+        ).create({
+            user,
+            question,
+            selectedOption: selectedOptions, // Assign the array of selected options
+        });
+
+        await AppDataSource.getRepository(UserOnboardingSelection).save(newUserOnboardingSelection);
+
+        logger.info(
+            `User onboarding selection created successfully: ${newUserOnboardingSelection.id}`,
+        );
 
         return { message: 'User onboarding selection created successfully' };
     } catch (error) {
@@ -56,7 +60,7 @@ export const getUserOnboardingSelectionsByUserId = async (userId: string) => {
     try {
         const userOnboardingSelections = await userOnboardingSelectionRepository.find({
             where: { user: { id: userId } },
-            relations: ['question', 'selectedOption']
+            relations: ['question', 'selectedOption'],
         });
         return userOnboardingSelections;
     } catch (error) {
@@ -67,6 +71,5 @@ export const getUserOnboardingSelectionsByUserId = async (userId: string) => {
             logger.error('An unknown error occurred during onBoarding question creation');
             throw new Error('An unknown error occurred during onBoarding  question creation');
         }
-
     }
 };

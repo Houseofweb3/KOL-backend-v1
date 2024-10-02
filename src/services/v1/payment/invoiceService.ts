@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { resolve } from 'path';
 import { renderFile } from 'ejs';
 
 import logger from '../../../config/logger';
@@ -40,11 +40,15 @@ function transformData(data: any) {
         })),
     }));
 
-    const influencerSubtotal = data.influencerCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.influencer.price), 0).toFixed(2);
-    const packageSubtotal = data.packageCartItems.reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0).toFixed(2);
+    const influencerSubtotal = data.influencerCartItems
+        .reduce((acc: number, item: any) => acc + parseFloat(item.influencer.price), 0)
+        .toFixed(2);
+    const packageSubtotal = data.packageCartItems
+        .reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0)
+        .toFixed(2);
     const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
-    const managementFee = (parseFloat(totalPrice) * 0.25).toFixed(2);
-    const totalPriceWithFee = (parseFloat(totalPrice) + parseFloat(managementFee)).toFixed(2);
+    const managementFee = data.managementFee;
+    const totalPriceWithFee = data.totalAmount;
 
     return {
         user,
@@ -55,13 +59,20 @@ function transformData(data: any) {
         packageSubtotal,
         totalPrice,
         managementFee,
+        managementFeePercentage: data.managementFeePercentage,
         totalPriceWithFee,
         showInfluencersList: influencerPRs.length > 0,
-        showPackagesList: packageHeaders.length > 0
+        showPackagesList: packageHeaders.length > 0,
     };
 }
 
-export const fetchInvoiceDetails = async (id: string, userId?: string) => {
+export const fetchInvoiceDetails = async (
+    id: string,
+    additionalEmail: string,
+    managementFee: number,
+    managementFeePercentage: number,
+    totalAmount: number,
+) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
     const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
@@ -69,7 +80,10 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
     try {
         // Fetch cart by id
         logger.info(`Fetching cart with id: ${id}`);
-        const cart = await cartRepository.findOne({ where: { id }, relations: ['user', 'influencerCartItems', 'packageCartItems', 'checkout'] });
+        const cart = await cartRepository.findOne({
+            where: { id },
+            relations: ['user', 'influencerCartItems', 'packageCartItems', 'checkout'],
+        });
 
         if (!cart) {
             throw new Error(`No cart found for id: ${id}`);
@@ -78,41 +92,50 @@ export const fetchInvoiceDetails = async (id: string, userId?: string) => {
 
         // Fetch related influencerCartItems and packageCartItems
         logger.info(`Fetching influencerCartItems for cart id: ${id}`);
-        
-        const influencerCartItems = await influencerCartItemRepository.find({ where: { cart: { id } }, relations: ['influencer'] });
+
+        const influencerCartItems = await influencerCartItemRepository.find({
+            where: { cart: { id } },
+            relations: ['influencer'],
+        });
         logger.info(`Fetched influencerCartItems: ${JSON.stringify(influencerCartItems)}`);
 
         logger.info(`Fetching packageCartItems for cart id: ${id}`);
-        const packageCartItems = await packageCartItemRepository.find({ where: { cart: { id } }, relations: ['package', 'package.packageItems'] });
+        const packageCartItems = await packageCartItemRepository.find({
+            where: { cart: { id } },
+            relations: ['package', 'package.packageItems'],
+        });
         logger.info(`Fetched packageCartItems: ${JSON.stringify(packageCartItems)}`);
 
         const data = {
-            user: cart.user,  // Assuming Cart has a relation with User
+            user: cart.user, // Assuming Cart has a relation with User
             id: cart.id,
             influencerCartItems,
-            packageCartItems
+            packageCartItems,
+            managementFee,
+            managementFeePercentage,
+            totalAmount,
         };
 
         const transformCartData = transformData(data);
-        logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
+        console.log('transformCartData', transformCartData);
+        // logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
-        // Generate HTML from EJS template
-        const html = await renderFile('/home/ubuntu/deploy/src/templates/invoiceTemplate.ejs', transformCartData);
+        // Generate HTML from EJS template using an absolute path
+        const templatePath = resolve(__dirname, '../../../template/invoiceTemplate.ejs');
 
+        const html = await renderFile(templatePath, transformCartData);
+        console.log('html', html);
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
-        logger.info("generated html: ", pdfBuffer)
-
+        // logger.info('generated html: ', pdfBuffer);
 
         // Send the PDF buffer as an email attachment
-        await sendInvoiceEmail(transformCartData.user, pdfBuffer);
+        await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
-
 
         return {
             data: transformCartData,
         };
-
     } catch (error) {
         logger.error(`Error fetching invoice details for id: ${id}`, error);
 

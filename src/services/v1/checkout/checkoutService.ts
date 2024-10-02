@@ -1,13 +1,26 @@
 import { Cart } from '../../../entity/cart';
 import logger from '../../../config/logger';
 import { Checkout } from '../../../entity/checkout';
+import { BillingDetails } from '../../../entity/billingDetails';
 import { AppDataSource } from '../../../config/data-source';
 
 const checkoutRepository = AppDataSource.getRepository(Checkout);
 const cartRepository = AppDataSource.getRepository(Cart);
+const billingDetailsRepository = AppDataSource.getRepository(BillingDetails);
 
 // Create a new Checkout
-export const createCheckout = async (cartId: string, totalAmount: number): Promise<Checkout> => {
+export const createCheckout = async (
+    cartId: string,
+    totalAmount: number,
+    billingDetails: {
+        firstName: string;
+        lastName: string;
+        projectName: string;
+        telegramId?: string;
+        projectUrl?: string;
+        email?: string;
+    },
+): Promise<Checkout> => {
     try {
         const cart = await cartRepository.findOne({ where: { id: cartId } });
 
@@ -17,7 +30,16 @@ export const createCheckout = async (cartId: string, totalAmount: number): Promi
         const newCheckout = checkoutRepository.create({ cart, totalAmount });
 
         await checkoutRepository.save(newCheckout);
+
+        const newBillingDetails = billingDetailsRepository.create({
+            ...billingDetails,
+            checkout: newCheckout,
+        });
+
+        await billingDetailsRepository.save(newBillingDetails);
+
         logger.info(`Created new checkout with id ${newCheckout.id}`);
+
         return newCheckout;
     } catch (error) {
         logger.error(`Error creating checkout: ${error}`);
@@ -29,7 +51,7 @@ export const createCheckout = async (cartId: string, totalAmount: number): Promi
 export const getCheckoutById = async (id: string): Promise<Checkout | null> => {
     try {
         const checkout = await checkoutRepository.findOne({ where: { id }, relations: ['cart'] });
-        
+
         return checkout;
     } catch (error) {
         logger.error(`Error fetching checkout with id ${id}: ${error}`);
