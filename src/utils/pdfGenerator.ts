@@ -14,14 +14,14 @@ export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string)
         const browser = await puppeteer.launch({
             headless: true,
             args: [
-                '--no-sandbox',                 // Disable sandboxing for non-root users
-                '--disable-setuid-sandbox',     // Disable setuid sandbox
-                '--disable-dev-shm-usage',      // Use /tmp instead of /dev/shm
-                '--single-process',             // Run in a single process
-                '--no-zygote',                  // Disable the zygote process
-                '--disable-gpu',                // Disable GPU hardware acceleration
+                '--no-sandbox', // Disable sandboxing for non-root users
+                '--disable-setuid-sandbox', // Disable setuid sandbox
+                '--disable-dev-shm-usage', // Use /tmp instead of /dev/shm
+                '--single-process', // Run in a single process
+                '--no-zygote', // Disable the zygote process
+                '--disable-gpu', // Disable GPU hardware acceleration
             ],
-            timeout: 60000 // Increase the timeout to 60 seconds
+            timeout: 60000, // Increase the timeout to 60 seconds
         });
 
         // Create a new page
@@ -29,7 +29,7 @@ export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string)
         logger.info('Browser instance and new page created.');
 
         // Log console messages
-        page.on('console', msg => logger.info('PAGE LOG:', msg.text()));
+        page.on('console', (msg) => logger.info('PAGE LOG:', msg.text()));
 
         // Set viewport size
         await page.setViewport({ width: 1200, height: 800 });
@@ -42,7 +42,7 @@ export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string)
         await page.emulateMediaType('screen');
 
         // Wait for a short period to ensure rendering
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         logger.info('Waited for 1 second to ensure rendering.');
 
         // Generate the PDF with zero padding
@@ -57,62 +57,44 @@ export const convertHtmlToPdf = async (htmlFilePath: string, outputPath: string)
         await browser.close();
         logger.info(`PDF saved successfully to ${outputPath}`);
     } catch (error) {
-        logger.error("Error converting HTML file to PDF:", error);
+        logger.error('Error converting HTML file to PDF:', error);
     }
 };
 
 // Function to convert HTML to PDF buffer
 export const convertHtmlToPdfBuffer = async (html: string): Promise<Buffer> => {
+    let browser;
     try {
         // Create a browser instance
-        const browser = await puppeteer.launch({
+        browser = await puppeteer.launch({
             headless: true,
             args: [
-                '--no-sandbox',                 // Disable sandboxing for non-root users
-                '--disable-setuid-sandbox',     // Disable setuid sandbox
-                '--disable-dev-shm-usage',      // Use /tmp instead of /dev/shm
-                '--single-process',             // Run in a single process
-                '--no-zygote',                  // Disable the zygote process
-                '--disable-gpu',                // Disable GPU hardware acceleration
+                '--no-sandbox', // Disable sandboxing for non-root users
+                '--disable-setuid-sandbox', // Disable setuid sandbox
             ],
-            timeout: 60000 // Increase the timeout to 60 seconds
         });
 
         // Create a new page
         const page = await browser.newPage();
-        logger.info('Browser instance and new page created.');
 
-        // Log console messages
-        page.on('console', msg => logger.info('PAGE LOG:', msg.text()));
-
-        // Set viewport size
-        await page.setViewport({ width: 1200, height: 800 });
-
-        // Set HTML content
-        await page.setContent(html, { waitUntil: 'networkidle2', timeout: 60000 });
-        logger.info('HTML content set on the page.');
-
-        // To reflect CSS used for screens instead of print
-        await page.emulateMediaType('screen');
-
-        // Wait for a short period to ensure rendering
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        logger.info('Waited for 1 second to ensure rendering.');
+        // Set the HTML content and wait for it to fully load (networkidle0 ensures full idle)
+        await page.setContent(html, { waitUntil: 'networkidle0' });
 
         // Generate the PDF buffer
         const pdfBuffer = await page.pdf({
-            margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
-            printBackground: true,
-            format: 'A4',
+            format: 'A4', // Standard A4 format
+            printBackground: true, // Include background graphics
+            preferCSSPageSize: true, // Respect CSS @page size rules
         });
 
         // Close the browser instance
         await browser.close();
-        logger.info('PDF buffer generated successfully.');
 
         return pdfBuffer;
     } catch (error) {
-        logger.error('Error converting HTML to PDF buffer:', error);
+        if (browser) {
+            await browser.close(); // Ensure the browser is closed in case of an error
+        }
         throw error;
     }
 };
