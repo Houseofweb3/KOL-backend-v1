@@ -37,7 +37,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
             email,
         });
         res.status(HttpStatus.CREATED).json(newCheckout);
-
+        console.log('**** This is checkout controller **** ****', managementFeePercentage)
         // Process invoice generation in the background
         fetchInvoiceDetails(
             cartId as string,

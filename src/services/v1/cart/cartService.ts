@@ -11,16 +11,6 @@ const cartRepository = AppDataSource.getRepository(Cart);
 export const createCart = async (userId?: string): Promise<Cart> => {
     try {
         let cart: Cart | null = null;
-        // TODO: Remove the access code if required
-        // if (userId) {
-        //   // cart = await cartRepository.findOneBy({ user: { id: userId } });
-
-        //   // if (cart) {
-        //     cart = await updateTimestamp(cartRepository, cart);
-        //     logger.info(`Updated existing cart for user with id ${userId}`);
-        //     return cart;
-        //   // }
-        // }
 
         const newCart = cartRepository.create({ user: userId ? { id: userId } : undefined });
         const savedCart = await updateTimestamp(cartRepository, newCart);
@@ -101,8 +91,6 @@ export const getCarts = async (
 
                 let managementFeePercentage = 0;
                 if (totalPrice < 25000) {
-                    // TODO: Remove this later on
-                    console.log('**** managementFeePercentage ****',managementFeePercentage)
                     managementFeePercentage = 15;
                 } else if (totalPrice < 50000) {
                     managementFeePercentage = 12.5;
