@@ -101,6 +101,8 @@ export const getCarts = async (
 
                 let managementFeePercentage = 0;
                 if (totalPrice < 25000) {
+                    // TODO: Remove this later on
+                    console.log('**** managementFeePercentage ****',managementFeePercentage)
                     managementFeePercentage = 15;
                 } else if (totalPrice < 50000) {
                     managementFeePercentage = 12.5;
