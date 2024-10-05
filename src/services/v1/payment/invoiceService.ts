@@ -119,9 +119,11 @@ export const fetchInvoiceDetails = async (
 
         // Generate HTML from EJS template using an absolute path
         const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate.ejs');
-        logger.info('****** templatePath ****', transformCartData)
+        logger.info('****** templatePath ****')
+        logger.info(transformCartData)
         const html = await renderFile(templatePath, transformCartData);
-        logger.info('**** html ****', html)
+        logger.info('**** html ****')
+        logger.info(html)
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
 
@@ -146,3 +148,7 @@ export const fetchInvoiceDetails = async (
         }
     }
 };
+
+
+
+
