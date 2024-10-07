@@ -63,6 +63,7 @@ function transformData(data: any) {
         totalPriceWithFee,
         showInfluencersList: influencerPRs.length > 0,
         showPackagesList: packageHeaders.length > 0,
+        discount: data.discount,
     };
 }
 
@@ -72,6 +73,7 @@ export const fetchInvoiceDetails = async (
     managementFee: number,
     managementFeePercentage: number,
     totalAmount: number,
+    discount: number,
 ) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
@@ -113,6 +115,7 @@ export const fetchInvoiceDetails = async (
             managementFee,
             managementFeePercentage,
             totalAmount,
+            discount,
         };
 
         const transformCartData = transformData(data);

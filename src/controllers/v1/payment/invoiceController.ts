@@ -8,7 +8,8 @@ import { fetchInvoiceDetails } from '../../../services/v1/payment/invoiceService
 // Generate Invoice
 export const generateInvoiceController = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
-    const { cartId, email, managementFee, managementFeePercentage, totalAmount } = req.body;
+    const { cartId, email, managementFee, managementFeePercentage, totalAmount, discount } =
+        req.body;
 
     if (!cartId) {
         logger.warn('Missing required fields in generate Invoice');
@@ -22,6 +23,7 @@ export const generateInvoiceController = async (req: Request, res: Response) => 
             managementFee as number,
             managementFeePercentage as number,
             totalAmount as number,
+            discount as number,
         );
 
         logger.info('Invoice generated successfully');
