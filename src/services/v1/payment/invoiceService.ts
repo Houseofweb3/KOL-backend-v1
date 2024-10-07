@@ -99,7 +99,6 @@ export const fetchInvoiceDetails = async (
             where: { cart: { id } },
             relations: ['influencer'],
         });
-        logger.info(`Fetched influencerCartItems: ${JSON.stringify(influencerCartItems)}`);
 
         logger.info(`Fetching packageCartItems for cart id: ${id}`);
         const packageCartItems = await packageCartItemRepository.find({
@@ -120,17 +119,16 @@ export const fetchInvoiceDetails = async (
         };
 
         const transformCartData = transformData(data);
-        console.log('transformCartData', transformCartData);
-        // logger.info(`Transformed cart data: ${JSON.stringify(transformCartData)}`);
 
         // Generate HTML from EJS template using an absolute path
         const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate.ejs');
-
+        logger.info('****** templatePath ****')
+        logger.info(transformCartData)
         const html = await renderFile(templatePath, transformCartData);
-        console.log('html', html);
+        logger.info('**** html ****')
+        logger.info(html)
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
-        // logger.info('generated html: ', pdfBuffer);
 
         // Send the PDF buffer as an email attachment
         await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail);
@@ -153,3 +151,7 @@ export const fetchInvoiceDetails = async (
         }
     }
 };
+
+
+
+
