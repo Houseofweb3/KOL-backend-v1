@@ -20,6 +20,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
         email,
         managementFee,
         managementFeePercentage,
+        discount,
     } = req.body;
 
     if (!cartId || !totalAmount || !firstName || !lastName || !projectName || !email) {
@@ -45,6 +46,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
             managementFee as number,
             managementFeePercentage as number,
             totalAmount as number,
+            discount as number,
         )
             .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
             .catch((error) =>
