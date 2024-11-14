@@ -33,6 +33,10 @@ export class Influencer extends BaseModel {
     @Index() // Add an index for sorting
     price!: number;
 
+    @Column({ type: 'int', nullable: true })
+    @Index() // Add an index for sorting
+    tweetScoutScore!: number;
+
     @Column()
     credibilityScore!: string;
 
@@ -50,6 +54,9 @@ export class Influencer extends BaseModel {
 
     @Column({ nullable: true })
     socialMediaLink!: string;
+
+    @Column({ nullable: true })
+    deleted!: boolean;
 
     @OneToMany(() => InfluencerCartItem, (item) => item.influencer)
     influencerCartItems!: InfluencerCartItem[];
