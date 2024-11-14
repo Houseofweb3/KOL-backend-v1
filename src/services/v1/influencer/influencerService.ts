@@ -292,6 +292,7 @@ export const getInfluencersWithHiddenPrices = async (
         });
     }
 
+    query.where('influencer.deleted = :deleted', { deleted: false });
     // Apply additional filters
     Object.keys(filters).forEach((key) => {
         if (key !== 'platform' && key !== 'blockchain') {
@@ -306,7 +307,6 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Apply sorting and pagination
     query
-        .where('influencer.deleted = :deleted', { deleted: false })
         .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
         .addOrderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
