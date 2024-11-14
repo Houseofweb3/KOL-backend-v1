@@ -3,12 +3,12 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - dev
+      - master
       - test-deployment
 
 jobs:
   deploy-dev:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
