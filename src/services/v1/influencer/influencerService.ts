@@ -253,7 +253,8 @@ export const getInfluencersWithHiddenPrices = async (
     // Create QueryBuilder instance
     const query = AppDataSource.getRepository(Influencer)
         .createQueryBuilder('influencer')
-        .where(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', {
+        .where('influencer.deleted = :deleted', { deleted: false })
+        .andWhere(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', {
             searchTerm: `%${searchTerm}%`,
         });
 
@@ -292,7 +293,6 @@ export const getInfluencersWithHiddenPrices = async (
         });
     }
 
-    query.where('influencer.deleted = :deleted', { deleted: false });
     // Apply additional filters
     Object.keys(filters).forEach((key) => {
         if (key !== 'platform' && key !== 'blockchain') {
