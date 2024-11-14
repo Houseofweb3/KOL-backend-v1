@@ -71,6 +71,7 @@ interface CSVRow {
     Influencer: string;
     Link: string;
     Category: string;
+    TweetScoutScore: number;
     CredibilityScore: string;
     EngagementRate: string;
     EngagementType: string;
@@ -107,6 +108,7 @@ export const uploadCSV = async (filePath: string) => {
                 Influencer: capitalizeWords(row.Influencer || 'N/A'),
                 Link: row.Link || 'N/A',
                 Category: capitalizeWords(row.Category || 'N/A'),
+                TweetScoutScore: parseInt(row.TweetScoutScore || 0),
                 CredibilityScore: capitalizeWords(row['Credibilty Score'] || 'N/A'),
                 EngagementRate: capitalizeWords(row['Engagement Rate'] || 'N/A'),
                 EngagementType: capitalizeWords(row['Engagement Type'] || 'N/A'),
@@ -133,6 +135,7 @@ export const uploadCSV = async (filePath: string) => {
                     subscribers: capitalizedRow.Followers,
                     geography: capitalizedRow.Geography,
                     platform: capitalizedRow.Platform,
+                    tweetScoutScore: capitalizedRow.TweetScoutScore,
                     credibilityScore: capitalizedRow.CredibilityScore,
                     engagementRate: capitalizedRow.EngagementRate,
                     investorType: capitalizedRow.InvestorType,
@@ -160,6 +163,7 @@ export const uploadCSV = async (filePath: string) => {
                 geography: capitalizedRow.Geography,
                 platform: capitalizedRow.Platform,
                 price: capitalizedRow.IndividualPrice,
+                tweetScoutScore: capitalizedRow.TweetScoutScore,
                 credibilityScore: capitalizedRow.CredibilityScore,
                 engagementRate: capitalizedRow.EngagementRate,
                 investorType: capitalizedRow.InvestorType,
@@ -302,15 +306,8 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Apply sorting and pagination
     query
-        .orderBy(
-            `CASE 
-                WHEN influencer.credibilityScore = 'High' THEN 1
-                WHEN influencer.credibilityScore = 'Medium' THEN 2
-                WHEN influencer.credibilityScore = 'Low' THEN 3
-                ELSE 4
-            END`,
-            'ASC',
-        )
+        .where('influencer.deleted = :deleted', { deleted: false })
+        .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
         .addOrderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
         .take(limit);
