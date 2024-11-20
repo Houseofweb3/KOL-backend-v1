@@ -339,7 +339,10 @@ export const getInfluencersWithHiddenPrices = async (
         socialMediaLink: influencer.socialMediaLink,
         categoryName: influencer.categoryName,
         engagementRate: influencer.engagementRate,
-        niche: influencer.niche,
+        niche:
+            influencer.niche2 !== null
+                ? influencer.niche + ',' + influencer.niche2
+                : influencer.niche,
         credibilityScore: influencer.credibilityScore,
         geography: influencer.geography,
         platform: influencer.platform,

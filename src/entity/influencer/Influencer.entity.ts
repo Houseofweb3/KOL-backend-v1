@@ -11,6 +11,9 @@ export class Influencer extends BaseModel {
     @Column()
     niche!: string;
 
+    @Column({ nullable: true })
+    niche2!: string;
+
     @Column()
     @Index() // Add an index to speed up search queries
     name!: string;
