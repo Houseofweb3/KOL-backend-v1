@@ -126,8 +126,8 @@ export const fetchInvoiceDetails = async (
         logger.info('****** templatePath ****');
         logger.info(transformCartData);
         const html = await renderFile(templatePath, transformCartData);
-        logger.info('**** html ****');
-        logger.info(html);
+        // logger.info('**** html ****');
+        // logger.info(html);
         // Convert HTML content directly to PDF in memory
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
 
