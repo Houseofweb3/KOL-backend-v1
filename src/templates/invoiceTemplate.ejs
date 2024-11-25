@@ -228,8 +228,9 @@
                         <div class="w-full py-6 px-3 font-[700] flex text-gray-700 bg-gray-200 border-t border-t-gray-600">
                             <div class="w-[60%]">
                                 <div class="w-full flex flex-col gap-2 font-[700] text-gray-700">
-                                    <div>
-                                        <a href="#" class="underline"><%= item.name %></a>
+                                    <div class="flex flex-col gap-2">
+                                        <a href="#"><%= item.name %></a>
+                                        <div href="#" class="text-xs">Social Media : <a href="" class="underline"> <%= item.socialMediaLink %></a></div>
                                     </div>
                                     <div><%= item.category_name %> | <%= item.location %> | <%= item.subscribers %> Subscribers | <%= item.content_type %></div>
                                 </div>
