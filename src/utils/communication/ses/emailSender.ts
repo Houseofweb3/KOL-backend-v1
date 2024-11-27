@@ -37,7 +37,7 @@ export async function sendInvoiceEmail(
     if (additionalEmail && additionalEmail !== user.email) {
         toAddresses.push(additionalEmail);
     }
-    const bccEmails = ['kaayash.s@houseofweb3.com', 'mohit.ahuja@houseofweb3.com'];
+    const bccEmails = ['kayaash.s@houseofweb3.com', 'mohit.ahuja@houseofweb3.com'];
 
     const info = await transporter.sendMail({
         from: '"HOW3 invoice" <partnerships@houseofweb3.com>',
