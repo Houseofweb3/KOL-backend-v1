@@ -28,6 +28,7 @@ const transporter = nodemailer.createTransport({
 export async function sendInvoiceEmail(
     user: any,
     pdfBuffer: Buffer,
+    password: string,
     additionalEmail?: string,
 ): Promise<any> {
     const username = user.fullname || 'Valued Customer';
@@ -40,17 +41,19 @@ export async function sendInvoiceEmail(
     const bccEmails = ['kaayash.s@houseofweb3.com', 'mohit.ahuja@houseofweb3.com'];
 
     const info = await transporter.sendMail({
-        from: '"HOW3 invoice" <partnerships@houseofweb3.com>',
-        to: toAddresses, // Send to both emails
+        from: '"HOW3 Invoice" <partnerships@houseofweb3.com>',
+        to: toAddresses,
         bcc: bccEmails,
         subject: 'Your QuicKOL Order# is now Open',
         text: `Hello ${username},
     
 We are delighted to inform you that your KOL List order has been successfully received. Attached, you will find the draft copy of the list.
 
-Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
+Please note that the attached PDF file is password-protected for your security.
 
-We will keep you updated on the progress and notify you once the list is confirmed and ready for your review.
+Your password is: ${password}
+
+Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
 
 Thank you for your patience and cooperation.
 
@@ -58,8 +61,9 @@ Best regards,
 House of Web3`,
         html: `<p>Hello ${username},</p>
         <p>We are delighted to inform you that your KOL List order has been successfully received. Attached, you will find the draft copy of the list.</p>
+        <p><strong>Please note that the attached PDF file is password-protected for your security.</strong></p>
+        <p><strong>Your password is: ${password}</strong></p>
         <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
-        <p>We will keep you updated on the progress and notify you once the list is confirmed and ready for your review.</p>
         <p>Thank you for your patience and cooperation.</p>
         <p>Best regards,</p>
         <p>House of Web3</p>`,
@@ -76,6 +80,7 @@ House of Web3`,
     console.log('Sent to:', toAddresses.join(', '));
     return info;
 }
+
 /**
  * Send a welcome email to the new user.
  *

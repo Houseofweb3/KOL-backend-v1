@@ -1,5 +1,7 @@
 import { resolve } from 'path';
 import { renderFile } from 'ejs';
+import pdftk from 'node-pdftk';
+import crypto from 'crypto';
 
 import logger from '../../../config/logger';
 import { AppDataSource } from '../../../config/data-source';
@@ -7,6 +9,13 @@ import { convertHtmlToPdfBuffer } from '../../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
 import { Cart, InfluencerCartItem, PackageCartItem } from '../../../entity/cart';
 
+// Retain transformData function as is
+
+function generatePassword(): string {
+    return crypto.randomBytes(8).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 10);
+}
+
+// Retain the transformData function
 function transformData(data: any) {
     const checkoutDetails = {
         projectName: data.user?.fullname || 'Unknown User',
@@ -68,6 +77,7 @@ function transformData(data: any) {
     };
 }
 
+// Updated fetchInvoiceDetails function
 export const fetchInvoiceDetails = async (
     id: string,
     additionalEmail: string,
@@ -81,7 +91,6 @@ export const fetchInvoiceDetails = async (
     const packageCartItemRepository = AppDataSource.getRepository(PackageCartItem);
 
     try {
-        // Fetch cart by id
         logger.info(`Fetching cart with id: ${id}`);
         const cart = await cartRepository.findOne({
             where: { id },
@@ -93,23 +102,18 @@ export const fetchInvoiceDetails = async (
         }
         logger.info(`Fetched cart: ${JSON.stringify(cart)}`);
 
-        // Fetch related influencerCartItems and packageCartItems
-        logger.info(`Fetching influencerCartItems for cart id: ${id}`);
-
         const influencerCartItems = await influencerCartItemRepository.find({
             where: { cart: { id } },
             relations: ['influencer'],
         });
 
-        logger.info(`Fetching packageCartItems for cart id: ${id}`);
         const packageCartItems = await packageCartItemRepository.find({
             where: { cart: { id } },
             relations: ['package', 'package.packageItems'],
         });
-        logger.info(`Fetched packageCartItems: ${JSON.stringify(packageCartItems)}`);
 
         const data = {
-            user: cart.user, // Assuming Cart has a relation with User
+            user: cart.user,
             id: cart.id,
             influencerCartItems,
             packageCartItems,
@@ -121,18 +125,24 @@ export const fetchInvoiceDetails = async (
 
         const transformCartData = transformData(data);
 
-        // Generate HTML from EJS template using an absolute path
         const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate.ejs');
-        logger.info('****** templatePath ****');
-        logger.info(transformCartData);
         const html = await renderFile(templatePath, transformCartData);
-        // logger.info('**** html ****');
-        // logger.info(html);
-        // Convert HTML content directly to PDF in memory
+
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
 
-        // Send the PDF buffer as an email attachment
-        await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail);
+        const password = generatePassword();
+
+        // Protect PDF using node-pdftk
+        const protectedPdfBuffer = await pdftk
+            .input(pdfBuffer)
+            .encrypt128Bit()
+            .userPw(password) // Set the user password
+            .ownerPw(password) // Set the owner password
+            .allow('Printing') // Allow specific permissions like printing
+            .output();
+
+        await sendInvoiceEmail(transformCartData.user, protectedPdfBuffer, password, additionalEmail);
+
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         return {
@@ -146,7 +156,6 @@ export const fetchInvoiceDetails = async (
             logger.error(`Error stack: ${error.stack}`);
             throw new Error('Error fetching invoice details');
         } else {
-            // TODO: is there a better way to store the text that we are logging and using in exception?
             logger.error('Unknown error occurred while fetching invoice details');
             throw new Error('Unknown error occurred while fetching invoice details');
         }

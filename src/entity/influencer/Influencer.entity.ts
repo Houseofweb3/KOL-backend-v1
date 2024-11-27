@@ -22,7 +22,7 @@ export class Influencer extends BaseModel {
     @Index() // Add an index for sorting and filtering
     categoryName!: string;
 
-    @Column('int')
+    @Column({nullable: true, type:"numeric"})
     @Index() // Add an index for sorting
     subscribers!: number;
 
