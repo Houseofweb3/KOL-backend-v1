@@ -129,7 +129,12 @@ export const fetchInvoiceDetails = async (
         // logger.info('**** html ****');
         // logger.info(html);
         // Convert HTML content directly to PDF in memory
-        const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
+        const currentYear = new Date().getFullYear();
+        const usernamePrefix = transformCartData?.user?.fullname.slice(0, 4).toLowerCase(); // First 4 characters of the username in lowercase
+        const password = `${usernamePrefix}${currentYear}`; // Example: "john2024"
+        console.log("password: ", password)
+
+        const pdfBuffer = await convertHtmlToPdfBuffer(html as string, password as string);
 
         // Send the PDF buffer as an email attachment
         await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail);
