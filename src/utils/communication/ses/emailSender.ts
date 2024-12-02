@@ -46,23 +46,28 @@ export async function sendInvoiceEmail(
         subject: 'Your QuicKOL Order# is now Open',
         text: `Hello ${username},
     
-We are delighted to inform you that your KOL List order has been successfully received. Attached, you will find the draft copy of the list.
-
-Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
-
-We will keep you updated on the progress and notify you once the list is confirmed and ready for your review.
-
-Thank you for your patience and cooperation.
-
-Best regards,
-House of Web3`,
+    We are delighted to inform you that your KOL List order has been successfully received. Attached, you will find the draft copy of the list.
+    
+    The attached PDF is password-protected. Please use the following password to open the file:
+    
+    Password: [First 4 characters of your username in lowercase][Current year]
+    Example: If your username is "JohnSmith", your password will be "john2024".
+    
+    Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
+    
+    Thank you for your patience and cooperation.
+    
+    Best regards,
+    House of Web3`,
         html: `<p>Hello ${username},</p>
-        <p>We are delighted to inform you that your KOL List order has been successfully received. Attached, you will find the draft copy of the list.</p>
-        <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
-        <p>We will keep you updated on the progress and notify you once the list is confirmed and ready for your review.</p>
-        <p>Thank you for your patience and cooperation.</p>
-        <p>Best regards,</p>
-        <p>House of Web3</p>`,
+            <p>We are delighted to inform you that your KOL List order has been successfully received. Attached, you will find the draft copy of the list.</p>
+            <p><b>The attached PDF is password-protected. Please use the following password to open the file:</b></p>
+            <p><b>Password:</b> [First 4 characters of your username in lowercase][Current year]</p>
+            <p><b>Example:</b> If your username is "JohnSmith", your password will be "john2024".</p>
+            <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
+            <p>Thank you for your patience and cooperation.</p>
+            <p>Best regards,</p>
+            <p>House of Web3</p>`,
         attachments: [
             {
                 filename: `HOW3x${username}.pdf`,

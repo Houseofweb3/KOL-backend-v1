@@ -22,7 +22,7 @@ export class Influencer extends BaseModel {
     @Index() // Add an index for sorting and filtering
     categoryName!: string;
 
-    @Column({nullable: true, type:"numeric"})
+    @Column({ nullable: true, type: "numeric" })
     @Index() // Add an index for sorting
     subscribers!: number;
 
@@ -36,8 +36,7 @@ export class Influencer extends BaseModel {
     @Index() // Add an index for sorting
     price!: number;
 
-    @Column({ type: 'int', nullable: true })
-    @Index() // Add an index for sorting
+    @Column({ type: 'numeric', nullable: true, default: 0 })
     tweetScoutScore!: number;
 
     @Column()

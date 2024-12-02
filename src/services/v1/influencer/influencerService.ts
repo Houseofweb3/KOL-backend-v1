@@ -350,6 +350,8 @@ export const getInfluencersWithHiddenPrices = async (
         hiddenPrice: getHiddenPrice(influencer.price),
         blockchain: influencer.blockchain,
         dpLink: influencer.dpLink,
+        tweetScoutScore: influencer.tweetScoutScore,
+        deleted: influencer.deleted
     }));
 
     logger.info(
