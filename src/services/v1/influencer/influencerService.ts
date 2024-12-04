@@ -16,8 +16,8 @@ import { Brackets } from 'typeorm';
 // Define default values for pagination and sorting
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
-const DEFAULT_SORT_FIELD = 'price';
-const DEFAULT_SORT_ORDER = 'ASC';
+const DEFAULT_SORT_FIELD = 'tweetScoutScore';
+const DEFAULT_SORT_ORDER = 'DESC';
 
 // range formation for subscribers
 const categorizeFollowers = (count: any) => {
@@ -227,6 +227,7 @@ export const getInfluencersWithHiddenPrices = async (
             .leftJoinAndSelect('question.onboardingQuestions', 'onboardingQuestion')
             .where('selection.user.id = :userId', { userId })
             .orderBy('onboardingQuestion.order', 'ASC')
+            .addOrderBy(`influencer.${sortField}`, sortOrder)
             .getMany();
 
         // Extract niche, blockchain, and investorType filters
@@ -306,9 +307,10 @@ export const getInfluencersWithHiddenPrices = async (
     });
 
     // Apply sorting and pagination
+    console.log(sortField,  sortOrder)
     query
-        .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
-        .addOrderBy(`influencer.${sortField}`, sortOrder)
+        // .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
+        .orderBy(`influencer.${sortField}`, sortOrder)
         .skip((page - 1) * limit)
         .take(limit);
 

@@ -75,6 +75,7 @@ export const fetchInvoiceDetails = async (
     managementFeePercentage: number,
     totalAmount: number,
     discount: number,
+    checkoutDetails?: any,
 ) => {
     const cartRepository = AppDataSource.getRepository(Cart);
     const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
@@ -137,7 +138,7 @@ export const fetchInvoiceDetails = async (
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string, password as string);
 
         // Send the PDF buffer as an email attachment
-        await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail);
+        await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail, checkoutDetails);
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         return {

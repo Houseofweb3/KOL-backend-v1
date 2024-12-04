@@ -29,8 +29,10 @@ export async function sendInvoiceEmail(
     user: any,
     pdfBuffer: Buffer,
     additionalEmail?: string,
+    checkoutDetails?: any,
 ): Promise<any> {
-    const username = user.fullname || 'Valued Customer';
+    // const username = user.fullname || 'Valued Customer';
+    const username = checkoutDetails?.firstName || 'Valued Customer';
 
     // Create an array of email recipients
     const toAddresses = [user.email];
@@ -70,7 +72,7 @@ export async function sendInvoiceEmail(
             <p>House of Web3</p>`,
         attachments: [
             {
-                filename: `HOW3x${username}.pdf`,
+                filename: `Ampli5X${checkoutDetails?.projectName || ""}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf',
             },

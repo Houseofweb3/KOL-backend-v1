@@ -68,8 +68,8 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
       const priceRange = req.query.priceRange as string || "";
       const searchTerm = req.query.searchTerm as string || "";
       const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
-      const sortField = (req.query.sortField as string) || DEFAULT_SORT_FIELD;
-      const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || DEFAULT_SORT_ORDER;
+      const sortField = (req.query.sortField as string);
+      const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC');
       const userId = req.query.userId as string;
 
       let filter: Record<string, any> = {}; // Use Record<string, any> for better type safety

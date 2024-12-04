@@ -29,6 +29,14 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
     }
 
     try {
+        const checkoutDetails = {
+            firstName,
+            lastName,
+            projectName,
+            telegramId,
+            projectUrl,
+            email,
+        }
         const newCheckout = await createCheckout(cartId, totalAmount, {
             firstName,
             lastName,
@@ -47,6 +55,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
             managementFeePercentage as number,
             totalAmount as number,
             discount as number,
+            checkoutDetails as any
         )
             .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
             .catch((error) =>
