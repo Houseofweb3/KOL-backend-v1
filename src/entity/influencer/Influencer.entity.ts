@@ -18,7 +18,7 @@ export class Influencer extends BaseModel {
     @Index() // Add an index to speed up search queries
     name!: string;
 
-    @Column()
+    @Column({ nullable: true })
     @Index() // Add an index for sorting and filtering
     categoryName!: string;
 
@@ -26,7 +26,7 @@ export class Influencer extends BaseModel {
     @Index() // Add an index for sorting
     subscribers!: number;
 
-    @Column()
+    @Column({ nullable: true })
     geography!: string;
 
     @Column()
@@ -42,10 +42,10 @@ export class Influencer extends BaseModel {
     @Column()
     credibilityScore!: string;
 
-    @Column()
+    @Column({ nullable: true })
     engagementRate!: string;
 
-    @Column()
+    @Column({ nullable: true })
     investorType!: string;
 
     @Column({ nullable: true })
@@ -56,6 +56,9 @@ export class Influencer extends BaseModel {
 
     @Column({ nullable: true })
     socialMediaLink!: string;
+
+    @Column({ nullable: true })
+    contentType!: string;
 
     @Column({ nullable: true })
     deleted!: boolean;
