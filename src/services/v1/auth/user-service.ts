@@ -50,8 +50,12 @@ export const validateEmail = async (email: string) => {
         if (domainCount >= 2) {
             throw { status: HttpStatus.FORBIDDEN, message: 'Only 2 accounts per domain are allowed' };
         }
-    } catch (error) {
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error checking email domain limit' };
+    } catch (error: any) {
+        if ((error as any).status) {
+            throw error; // Pass custom errors forward
+        }
+        logger.error(`Error creating user: ${(error as Error).message}`);
+        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while creating the user' };
     }
 };
 
