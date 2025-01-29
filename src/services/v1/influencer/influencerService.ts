@@ -307,7 +307,6 @@ export const getInfluencersWithHiddenPrices = async (
     });
 
     // Apply sorting and pagination
-    console.log(sortField,  sortOrder)
     query
         // .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
         .orderBy(`influencer.${sortField}`, sortOrder)
@@ -353,6 +352,7 @@ export const getInfluencersWithHiddenPrices = async (
         blockchain: influencer.blockchain,
         dpLink: influencer.dpLink,
         tweetScoutScore: influencer.tweetScoutScore,
+        contentType: influencer.contentType,
         deleted: influencer.deleted
     }));
 
@@ -399,6 +399,14 @@ export const getFilterOptions = async () => {
             .createQueryBuilder('influencer')
             .select('DISTINCT(influencer.platform)', 'platform')
             .getRawMany();
+
+        const platformContentTypes = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select(['influencer.platform', 'ARRAY_AGG(DISTINCT influencer.contentType) AS contentTypes'])
+            .where('influencer.platform IS NOT NULL AND influencer.contentType IS NOT NULL')
+            .groupBy('influencer.platform')
+            .getRawMany();
+
 
         const subscribers = await influencerRepository
             .createQueryBuilder('influencer')
@@ -453,6 +461,10 @@ export const getFilterOptions = async () => {
             platforms: platforms
                 .map((row) => row.platform)
                 .filter((el) => el !== 'N/a' && el !== null),
+            platformsWithContentTypes: platformContentTypes.map((row) => ({
+                platform: row.influencer_platform, // Ensure lowercase field name
+                contentTypes: row.contenttypes, // Ensure lowercase field name
+            })),
             followerRanges: Array.from(new Set(followerRanges)).sort((a, b) => {
                 const rangeOrder = [
                     '1-10',
