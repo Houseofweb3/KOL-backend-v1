@@ -90,20 +90,18 @@ export const getCarts = async (
                 let totalPrice = calculateTotalPrice(cart);
 
                 let managementFeePercentage = 0;
-                if (totalPrice < 25000) {
-                    managementFeePercentage = 15;
-                } else if (totalPrice < 50000) {
-                    managementFeePercentage = 12.5;
-                } else if (totalPrice < 75000) {
-                    managementFeePercentage = 10;
+
+                if (totalPrice < 30000) {
+                    managementFeePercentage = 20;
                 } else if (totalPrice < 100000) {
-                    managementFeePercentage = 7.5;
+                    managementFeePercentage = 15;
+                } else {
+                    managementFeePercentage = 12.5;
                 }
 
                 const managementFee = (totalPrice * managementFeePercentage) / 100;
                 const discountPercentage = 5;
-                const discountedManagementFee =
-                    managementFee - (managementFee * discountPercentage) / 100;
+                const discountedManagementFee = managementFee - (managementFee * discountPercentage) / 100;
 
                 let discountMessage = '';
                 let discountValue = 0;

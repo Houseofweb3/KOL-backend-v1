@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
+import HttpStatus from 'http-status-codes';
 import { ENV } from '../../../config/env';
 import logger from '../../../config/logger';
 import { User, UserType } from '../../../entity/auth/User.entity';
@@ -9,6 +9,7 @@ import { AppDataSource } from '../../../config/data-source';
 import { generateAccessToken, generateRefreshToken } from '../../../middleware/auth';
 import { sendWelcomeEmail } from '../../../utils/communication/ses/emailSender';
 import { create } from 'domain';
+import { FindOperator, ILike } from 'typeorm';
 
 const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET;
 
@@ -19,31 +20,64 @@ interface JwtPayload {
     type: any;
 }
 
+// List of domains that are allowed to bypass the 2-account restriction
+const ALLOWED_DOMAINS = ['houseofweb3.com'];
+
+export const validateEmail = async (email: string) => {
+    if (!email) {
+        throw { status: HttpStatus.BAD_REQUEST, message: 'Email is required' };
+    }
+
+    const emailDomain = email.split('@')[1]?.toLowerCase();
+
+    // 1️⃣ Block Gmail accounts
+    if (emailDomain === 'gmail.com') {
+        throw { status: HttpStatus.FORBIDDEN, message: 'Gmail accounts are not allowed' };
+    }
+
+    // 2️⃣ Check if the domain should bypass the limit
+    if (ALLOWED_DOMAINS.includes(emailDomain)) {
+        return; // ✅ Skip domain limit check
+    }
+
+    try {
+        // 3️⃣ Fetch count of users with the same domain from DB
+        const userRepository = AppDataSource.getRepository(User);
+        const domainCount = await userRepository.count({
+            where: { email: Like(`%@${emailDomain}`) }
+        });
+
+        if (domainCount >= 2) {
+            throw { status: HttpStatus.FORBIDDEN, message: 'Only 2 accounts per domain are allowed' };
+        }
+    } catch (error) {
+        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error checking email domain limit' };
+    }
+};
+
+
 export const createUser = async (email: string, password?: string, fullname?: string, type?: string) => {
     try {
-        // Check if a user with the given email already exists
-        const existingUser = await AppDataSource.transaction(async (transactionalEntityManager) => {
-            const user = await transactionalEntityManager.findOne(User, {
-                where: [{ email }],
-            });
+        // 🔹 Validate email before proceeding
+        await validateEmail(email);
+
+        return await AppDataSource.transaction(async (transactionalEntityManager) => {
+            const user = await transactionalEntityManager.findOne(User, { where: [{ email }] });
 
             if (user) {
                 // TODO: this can be replaced with deletedAt
                 if (user.is_deleted) {
                     user.is_deleted = false;
-
                     await transactionalEntityManager.save(user);
 
                     logger.info(`User reactivated successfully: ${user.id}`);
-
                     return { user, message: 'User reactivated successfully' };
                 } else {
                     logger.warn(`User already exists and is inactive: ${user.id}`);
-                    throw new Error('User already exists and is inactive');
+                    throw { status: HttpStatus.CONFLICT, message: 'User already exists and is inactive' };
                 }
             }
 
-            // hash the password only if provided
             const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
             // create the entity to store in the db
@@ -59,65 +93,63 @@ export const createUser = async (email: string, password?: string, fullname?: st
             const token = generateAccessToken({ id: newUser.id, type });
             const refreshToken = generateRefreshToken({ id: newUser.id, type });
 
-            // save the entity in the db
             await transactionalEntityManager.save(newUser);
 
             logger.info(`User created successfully: ${newUser.id}`);
-            
-            // Send welcome email
             await sendWelcomeEmail(email);
 
             return { user: newUser, message: 'User signup successfully', token, refreshToken };
         });
 
-        return existingUser;
-
     } catch (error) {
-        if (error instanceof Error) {
-            logger.error(`Error creating user: ${error.message}`);
-            throw new Error(`Error creating user: ${error.message}`);
-        } else {
-            logger.error('An unknown error occurred while creating the user');
-            throw new Error('An unknown error occurred while creating the user');
+        if ((error as any).status) {
+            throw error; // Pass custom errors forward
         }
+
+        logger.error(`Error creating user: ${(error as Error).message}`);
+        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while creating the user' };
     }
 };
 
 
+
 // Login User
 // TODO: refactor this later
-export const loginUser = async (email: string, password: string, fullname: string = '', type: string = UserType.USER) => {
+export const loginUser = async (
+    email: string,
+    password: string,
+    fullname: string = '',
+    type: string = UserType.USER
+) => {
     try {
+        // 🔹 Validate email before proceeding
+        await validateEmail(email);
+
         // Find user by email
-        let user = await AppDataSource.getRepository(User).findOne({
-            where: [{ email }],
-        });
-        // Check if user exists
+        let user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
+
+        // Check if user exists, if not, create the user
         if (!user) {
             // logger.warn(`User not found with email: ${email}`);
             // throw new Error('User not found');
             await createUser(email, password, fullname, type);
         }
 
-        user = await AppDataSource.getRepository(User).findOne({
-            where: [{ email }],
-        });
+        // Fetch user again after potential creation
+        user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
 
         if (user) {
-            // logger.warn(`User not found with email: ${email}`);
-            // throw new Error('User not found');
             // Check if the user is active
             if (user.is_deleted) {
                 logger.warn(`User is inactive: ${user.id}`);
-                throw new Error('User is inactive');
+                throw { status: HttpStatus.FORBIDDEN, message: 'User is inactive' };
             }
 
             // Verify the password
             const isPasswordValid = await bcrypt.compare(password, user.password || '');
-
             if (!isPasswordValid) {
                 logger.warn(`Invalid password attempt for email: ${email}`);
-                throw new Error('Invalid password');
+                throw { status: HttpStatus.UNAUTHORIZED, message: 'Invalid password' };
             }
 
             // Generate token and refresh token
@@ -126,22 +158,20 @@ export const loginUser = async (email: string, password: string, fullname: strin
 
             logger.info(`User logged in successfully: ${user.id}`);
             return { user, message: 'Login successful', token, refreshToken };
-        }
-        else {
-            logger.error('An unknown error occurred while logging in the user');
-            throw new Error('An unknown error occurred');
-        }
-
-    } catch (error) {
-        if (error instanceof Error) {
-            logger.error(`Error logging in user: ${error.message}`);
-            throw new Error(error.message);
         } else {
             logger.error('An unknown error occurred while logging in the user');
-            throw new Error('An unknown error occurred');
+            throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred' };
         }
+    } catch (error: any) {
+        if (error.status) {
+            throw error; // Pass custom errors forward
+        }
+
+        logger.error(`Error logging in user: ${error.message}`);
+        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while logging in the user' };
     }
 };
+
 
 
 // Refresh User Token
@@ -306,3 +336,8 @@ export const deactivateUserById = async (id: string): Promise<void> => {
         throw new Error('Failed to deactivate user');
     }
 };
+
+function Like(pattern: string): FindOperator<string> {
+    return ILike(pattern);
+}
+
