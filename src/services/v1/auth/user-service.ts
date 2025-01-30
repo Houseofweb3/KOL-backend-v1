@@ -23,64 +23,113 @@ interface JwtPayload {
 // List of domains that are allowed to bypass the 2-account restriction
 const ALLOWED_DOMAINS = ['houseofweb3.com'];
 
-export const validateEmail = async (email: string) => {
-    if (!email) {
-        throw { status: HttpStatus.BAD_REQUEST, message: 'Email is required' };
+const extractEmailDomain = (email: string): string | null => {
+    return email.split("@")[1]?.toLowerCase() || null;
+};
+
+export const validateGmail = (email: string): void => {
+    const emailDomain = extractEmailDomain(email);
+    if (!emailDomain) {
+        throw { status: HttpStatus.BAD_REQUEST, message: "Invalid email format" };
     }
-
-    const emailDomain = email.split('@')[1]?.toLowerCase();
-
-    // 1️⃣ Block Gmail accounts
-    if (emailDomain === 'gmail.com') {
-        throw { status: HttpStatus.FORBIDDEN, message: 'Gmail accounts are not allowed' };
-    }
-
-    // 2️⃣ Check if the domain should bypass the limit
-    if (ALLOWED_DOMAINS.includes(emailDomain)) {
-        return; // ✅ Skip domain limit check
-    }
-
-    try {
-        // 3️⃣ Fetch count of users with the same domain from DB
-        const userRepository = AppDataSource.getRepository(User);
-        const domainCount = await userRepository.count({
-            where: { email: Like(`%@${emailDomain}`) }
-        });
-
-        if (domainCount >= 2) {
-            throw { status: HttpStatus.FORBIDDEN, message: 'Only 2 accounts per domain are allowed' };
-        }
-    } catch (error: any) {
-        if ((error as any).status) {
-            throw error; // Pass custom errors forward
-        }
-        logger.error(`Error creating user: ${(error as Error).message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while creating the user' };
+    if (emailDomain === "gmail.com") {
+        throw { status: HttpStatus.FORBIDDEN, message: "Gmail accounts are not allowed" };
     }
 };
 
+export const validateDomainLimit = async (email: string): Promise<void> => {
+    const emailDomain = extractEmailDomain(email);
+    if (!emailDomain) {
+        throw { status: HttpStatus.BAD_REQUEST, message: "Invalid email format" };
+    }
 
-export const createUser = async (email: string, password?: string, fullname?: string, type?: string) => {
+    // ✅ Skip domain limit check for ALLOWED_DOMAINS
+    if (ALLOWED_DOMAINS.includes(emailDomain)) return;
+
+    try {
+        // Fetch count of users with the same domain from DB
+        const userRepository = AppDataSource.getRepository(User);
+        const domainCount = await userRepository.count({
+            where: { email: Like(`%@${emailDomain}`) },
+        });
+
+        if (domainCount >= 2) {
+            throw { status: HttpStatus.FORBIDDEN, message: "Only 2 accounts per domain are allowed" };
+        }
+    } catch (error: any) {
+        if (error.status) throw error; // Pass custom errors forward
+        logger.error(`Error validating domain limit: ${error.message}`);
+        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: "An unknown error occurred while validating the domain" };
+    }
+};
+
+// export const validateEmail = async (email: string) => {
+//     if (!email) {
+//         throw { status: HttpStatus.BAD_REQUEST, message: 'Email is required' };
+//     }
+
+//     const emailDomain = email.split('@')[1]?.toLowerCase();
+
+//     // 1️⃣ Block Gmail accounts
+//     if (emailDomain === 'gmail.com') {
+//         throw { status: HttpStatus.FORBIDDEN, message: 'Gmail accounts are not allowed' };
+//     }
+
+//     // 2️⃣ Check if the domain should bypass the limit
+//     if (ALLOWED_DOMAINS.includes(emailDomain)) {
+//         return; // ✅ Skip domain limit check
+//     }
+
+//     try {
+//         // 3️⃣ Fetch count of users with the same domain from DB
+//         const userRepository = AppDataSource.getRepository(User);
+//         const domainCount = await userRepository.count({
+//             where: { email: Like(`%@${emailDomain}`) }
+//         });
+
+//         if (domainCount >= 2) {
+//             throw { status: HttpStatus.FORBIDDEN, message: 'Only 2 accounts per domain are allowed' };
+//         }
+//     } catch (error: any) {
+//         if ((error as any).status) {
+//             throw error; // Pass custom errors forward
+//         }
+//         logger.error(`Error creating user: ${(error as Error).message}`);
+//         throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while creating the user' };
+//     }
+// };
+
+
+export const createUser = async (email: string, password: string, fullname?: string, type?: string) => {
     try {
         // 🔹 Validate email before proceeding
-        await validateEmail(email);
-
+        validateGmail(email);
         return await AppDataSource.transaction(async (transactionalEntityManager) => {
             const user = await transactionalEntityManager.findOne(User, { where: [{ email }] });
 
             if (user) {
+                const token = generateAccessToken({ id: user.id, type });
+                const refreshToken = generateRefreshToken({ id: user.id, type });
                 // TODO: this can be replaced with deletedAt
                 if (user.is_deleted) {
                     user.is_deleted = false;
                     await transactionalEntityManager.save(user);
 
                     logger.info(`User reactivated successfully: ${user.id}`);
-                    return { user, message: 'User reactivated successfully' };
-                } else {
-                    logger.warn(`User already exists and is inactive: ${user.id}`);
-                    throw { status: HttpStatus.CONFLICT, message: 'User already exists and is inactive' };
+                    // return { user, message: 'User reactivated successfully' };
                 }
+                // Verify the password
+                const isPasswordValid = await bcrypt.compare(password, user.password || '');
+                if (!isPasswordValid) {
+                    logger.warn(`Invalid password attempt for email: ${email}`);
+                    throw { status: HttpStatus.UNAUTHORIZED, message: 'Invalid password' };
+                }
+                // else {
+                logger.warn(`User already exists and is active: ${user.id}`);
+                return { user, message: 'User already exists. Logging it', token, refreshToken };
+                // }
             }
+            await validateDomainLimit(email);
 
             const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
@@ -127,7 +176,6 @@ export const loginUser = async (
 ) => {
     try {
         // 🔹 Validate email before proceeding
-        await validateEmail(email);
 
         // Find user by email
         let user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
