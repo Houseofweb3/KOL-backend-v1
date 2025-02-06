@@ -24,7 +24,8 @@ function transformData(data: any) {
         category_name: item.influencer.categoryName,
         location: item.influencer.geography,
         subscribers: item.influencer.subscribers,
-        content_type: item.influencer.platform,
+        platform: item.influencer.platform,
+        contentType: item.influencer.contentType,
         price: item.influencer.price,
         socialMediaLink: item.influencer.socialMediaLink,
     }));
@@ -48,8 +49,18 @@ function transformData(data: any) {
         .reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0)
         .toFixed(2);
     const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
-    const managementFee = data.managementFee;
-    const totalPriceWithFee = data.totalAmount;
+
+    // calc management fee based on total amount
+    const managementFee = (parseFloat(totalPrice) * (data.managementFeePercentage / 100)).toFixed(2);
+
+    const discount = data.discount || 5; // Default to 5% if no discount is provided
+
+    // Apply dynamic discount to subtotal before adding the management fee
+    const totalPriceWithFee = ((parseFloat(totalPrice) * ((100 - discount) / 100)) + parseFloat(managementFee)).toFixed(2);
+
+    const discountVal = (parseFloat(totalPrice) * parseFloat(discount)) / 100
+
+
 
     return {
         user,
@@ -64,7 +75,9 @@ function transformData(data: any) {
         totalPriceWithFee,
         showInfluencersList: influencerPRs.length > 0,
         showPackagesList: packageHeaders.length > 0,
-        discount: data.discount,
+        discount: discount,
+        influencerLength: influencerPRs.length,
+        discountVal
     };
 }
 
@@ -123,7 +136,7 @@ export const fetchInvoiceDetails = async (
         const transformCartData = transformData(data);
 
         // Generate HTML from EJS template using an absolute path
-        const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate.ejs');
+        const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate2.0.ejs');
         logger.info('****** templatePath ****');
         logger.info(transformCartData);
         const html = await renderFile(templatePath, transformCartData);

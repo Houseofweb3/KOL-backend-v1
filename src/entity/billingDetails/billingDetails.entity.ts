@@ -22,6 +22,10 @@ export class BillingDetails extends BaseModel {
     @Column({ type: 'varchar', length: 255, nullable: true })
     projectUrl?: string;
 
+    // add Campaign Live Date field
+    @Column({ type: 'timestamp', nullable: true })
+    campaignLiveDate?: Date;
+
     @OneToOne(() => Checkout)
     @JoinColumn({ name: 'checkout_id' })
     checkout!: Checkout;
