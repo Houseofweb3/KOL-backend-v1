@@ -28,6 +28,9 @@ import { influencerCartItemRoutes } from './routes';
 import { onboardingQuestionsRoutes } from './routes';
 import { userOnboardingSelectionRoutes } from './routes';
 import { couponRoutes } from './routes';
+import { adminInfluencerRoutes } from './routes';
+
+// import { telegramLogin, sendTelegramMessage } from './utils/communication/telegram/sendTelegramNotification';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -81,6 +84,9 @@ app.use(`/api/v${ENV.VERSION}/coupons`, couponRoutes);
 // utils Routes
 app.use(`/api/v${ENV.VERSION}/utils`, utilsRoutes);
 
+// Admin Influencer Routes
+app.use(`/api/v${ENV.VERSION}/admin/influencer`, adminInfluencerRoutes);
+
 // Dummy API
 app.get('/', (req: Request, res: Response) => {
     res.send('It is working');
@@ -88,7 +94,7 @@ app.get('/', (req: Request, res: Response) => {
 
 // Initialize TypeORM data source
 AppDataSource.initialize()
-    .then(() => {
+    .then(async () => {
         logger.info('Database connected successfully');
 
         const server: HttpServer = createServer(app);
@@ -96,7 +102,10 @@ AppDataSource.initialize()
         server.listen(port, () => {
             logger.info(`Server is running on port ${port}`);
         });
+
+        await sendTelegramMessage('7128122054', 'message');
+        // await telegramLogin();
     })
     .catch((error) => {
         logger.error('Database connection failed:', error);
-    });
+    }); 

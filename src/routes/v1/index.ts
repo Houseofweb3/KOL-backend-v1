@@ -8,3 +8,4 @@ export * from './checkout';
 export * from './onboarding';
 export * from './coupon';
 export * from './influencer';
+export * from './admin';
