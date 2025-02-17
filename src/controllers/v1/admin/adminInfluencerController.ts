@@ -1,9 +1,7 @@
 import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
-import { AppDataSource } from '../../../config/data-source';
 import { getAllInfluencers, createInfluencer, deleteInfluencer, updateInfluencer, getInfluencerById } from '../../../services/v1/admin';
-import { message } from 'telegram/client';
 
 
 // get all influencers
