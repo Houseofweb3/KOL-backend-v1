@@ -103,7 +103,7 @@ AppDataSource.initialize()
             logger.info(`Server is running on port ${port}`);
         });
 
-        await sendTelegramMessage('7128122054', 'message');
+        // await sendTelegramMessage('7128122054', 'message');
         // await telegramLogin();
     })
     .catch((error) => {
