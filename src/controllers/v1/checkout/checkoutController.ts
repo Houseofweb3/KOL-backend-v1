@@ -6,9 +6,12 @@ import { fetchInvoiceDetails } from '../../../services/v1/payment';
 import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
 import { createCheckout, getCheckoutById, deleteCheckout } from '../../../services/v1/checkout';
 
-// Create a new Checkout
+import { isValidEmail, isValidTelegramId, isValidUrl } from '../utils/validChecks';
+
+// Checkout Handler with Proper Validation
 export const createCheckoutHandler = async (req: Request, res: Response) => {
     setCorsHeaders(req, res);
+
     const {
         cartId,
         totalAmount,
@@ -21,56 +24,67 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
         managementFee,
         managementFeePercentage,
         discount,
+        campaignLiveDate
     } = req.body;
 
-    if (!cartId || !totalAmount || !firstName || !lastName || !projectName || !email) {
-        logger.warn('Missing required fields: cartId and/or totalAmount');
-        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing required fields' });
+    // Required fields validation
+    const requiredFields = { cartId, totalAmount, firstName, lastName, projectName, email };
+    const missingFields = Object.entries(requiredFields)
+        .filter(([_, value]) => !value || (typeof value === "string" && !value.trim()))
+        .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+        logger.warn(`Missing required fields: ${missingFields.join(", ")}`);
+        return res.status(HttpStatus.BAD_REQUEST).json({
+            error: `Missing required fields: ${missingFields.join(", ")}`,
+        });
+    }
+
+    // Input-specific validations
+    if (!isValidEmail(email)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Invalid email format" });
+    }
+
+    if (!isValidTelegramId(telegramId)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Invalid Telegram ID" });
+    }
+
+    if (!isValidUrl(projectUrl)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Invalid Project URL" });
+    }
+
+    if (typeof totalAmount !== "number" || totalAmount <= 0) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Total amount must be a positive number" });
+    }
+
+    if (managementFee !== undefined && (typeof managementFee !== "number" || managementFee < 0)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Management fee must be a non-negative number" });
+    }
+
+    if (managementFeePercentage !== undefined && (typeof managementFeePercentage !== "number" || managementFeePercentage < 0 || managementFeePercentage > 100)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Management fee percentage must be between 0 and 100" });
+    }
+
+    if (discount !== undefined && (typeof discount !== "number" || discount < 0)) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: "Discount must be a non-negative number" });
     }
 
     try {
-        const checkoutDetails = {
-            firstName,
-            lastName,
-            projectName,
-            telegramId,
-            projectUrl,
-            email,
-        }
-        const newCheckout = await createCheckout(cartId, totalAmount, {
-            firstName,
-            lastName,
-            projectName,
-            telegramId,
-            projectUrl,
-            email,
-        });
+        const checkoutDetails = { firstName, lastName, projectName, telegramId, projectUrl, email, campaignLiveDate };
+
+        const newCheckout = await createCheckout(cartId, totalAmount, checkoutDetails);
         res.status(HttpStatus.CREATED).json(newCheckout);
 
-        // Process invoice generation in the background
-        fetchInvoiceDetails(
-            cartId as string,
-            email as string,
-            managementFee as number,
-            managementFeePercentage as number,
-            totalAmount as number,
-            discount as number,
-            checkoutDetails as any
-        )
+        // Process invoice in the background
+        fetchInvoiceDetails(cartId, email, managementFee, managementFeePercentage, totalAmount, discount, checkoutDetails)
             .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
-            .catch((error) =>
-                logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`),
-            );
+            .catch(error => logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`));
+
     } catch (error) {
-        if (error instanceof Error) {
-            logger.error(`Error creating checkout: ${error}`);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
-        } else {
-            logger.error('An unknown error occurred while creating checkout');
-            return res
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .json({ error: 'An unknown error occurred' });
-        }
+        logger.error(`Error creating checkout: ${error instanceof Error ? error.message : "Unknown error"}`);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            error: error instanceof Error ? error.message : "An unknown error occurred",
+        });
     }
 };
 
