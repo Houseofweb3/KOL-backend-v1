@@ -100,7 +100,11 @@ export const validateDomainLimit = async (email: string): Promise<void> => {
 // };
 
 
-export const createUser = async (email: string, password: string, fullname?: string, type?: string) => {
+export const createUser = async (email: string, password: string, fullname?: string, type?: string,
+    projectName?: string,
+    telegramId?: string,
+    projectUrl?: string,
+) => {
     try {
         // 🔹 Validate email before proceeding
         validateGmail(email);
@@ -139,6 +143,9 @@ export const createUser = async (email: string, password: string, fullname?: str
                 password: hashedPassword,
                 fullname,
                 type,
+                projectName,
+                telegramId,
+                projectUrl,
                 status: true,
             });
 

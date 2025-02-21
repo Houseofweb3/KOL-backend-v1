@@ -24,6 +24,17 @@ export class User extends BaseModel {
     @Column({ nullable: true })
     fullname?: string;
 
+    @Column({ nullable: true, name: 'project_name' })
+    projectName?: string;
+
+    //add colm for telegram id
+    @Column({ type: 'varchar', length: 100, nullable: true, name: 'telegram_id' })
+    telegramId?: string;
+
+    //add colm for project url
+    @Column({ nullable: true, name: 'project_url' })
+    projectUrl?: string;
+
     @Column({ default: false })
     is_deleted!: boolean;
 
