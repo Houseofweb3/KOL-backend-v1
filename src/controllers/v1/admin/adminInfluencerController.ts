@@ -3,16 +3,21 @@ import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import { getAllInfluencers, createInfluencer, deleteInfluencer, updateInfluencer, getInfluencerById } from '../../../services/v1/admin';
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
 
 // get all influencers
 export const getAllInfluencersController = async (req: Request, res: Response) => {
-    const { page, limit, sort, order } = req.query;
+    const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
+    const searchTerm = req.query.searchTerm as string || "";
+    const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
+    const sortField = (req.query.sortField as string);
+    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC');
     try {
-        const influencers = await getAllInfluencers(+(page || 1), +(limit || 10), sort as string, order as string);
+        const { influencers, pagination } = await getAllInfluencers(page, limit, searchTerm, sortField, sortOrder);
         return res.status(HttpStatus.OK).json({
             influencers,
-            page: +(page || 1),
-            limit: +(limit || 10),
+            pagination
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
