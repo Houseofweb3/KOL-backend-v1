@@ -14,7 +14,7 @@ import { AppDataSource } from '../../../config/data-source';
 
 // create a signp User
 export const signup = async (req: Request, res: Response) => {
-	const { email, password, fullname, type } = req.body;
+	const { email, password, fullname, type, projectName, telegramId, projectUrl } = req.body;
 
 	if (!email || !password || !fullname || !type) {
 		logger.warn('Missing required fields in signup request');
@@ -22,7 +22,7 @@ export const signup = async (req: Request, res: Response) => {
 	}
 
 	try {
-		const { user, message, token, refreshToken } = await createUser(email, password, fullname, type);
+		const { user, message, token, refreshToken } = await createUser(email, password, fullname, type, projectName, telegramId, projectUrl);
 
 		logger.info(`User created/updated successfully: ${user?.id}`);
 		return res.status(HttpStatus.CREATED).json({ user, message, accessToken: token, refreshToken });

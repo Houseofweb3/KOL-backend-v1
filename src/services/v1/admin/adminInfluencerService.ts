@@ -37,10 +37,10 @@ export const getInfluencerById = async (id: string) => {
 
 
 // service to create influencer with try catch block
-export const createInfluencer = async (influencer: Influencer) => {
+export const createInfluencer = async (influencers: Influencer[]) => {
     const influencerRepository = AppDataSource.getRepository(Influencer);
     try {
-        const newInfluencer = await influencerRepository.save(influencer);
+        const newInfluencer = await influencerRepository.save(influencers);
         return newInfluencer;
     } catch (error) {
         logger.error(`Error while creating influencer`);

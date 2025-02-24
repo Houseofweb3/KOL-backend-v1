@@ -44,9 +44,25 @@ export const getInfluencerByIdController = async (req: Request, res: Response) =
 // create influencer
 export const createInfluencerController = async (req: Request, res: Response) => {
     const influencer = req.body;
+    const { contentTypeAndPrice } = influencer;
+    if (!contentTypeAndPrice) {
+        return res.status(HttpStatus.BAD_REQUEST).json({ error: 'contentTypeAndPrice is required' });
+    }
     try {
-        const newInfluencer = await createInfluencer(influencer);
-        return res.status(HttpStatus.CREATED).json(newInfluencer);
+        // create mlitple inflcers as per the payload geenrated on the baiss of contentTypeAndPrice array
+        let influencerPayload = contentTypeAndPrice.map(({ contentType, price }: { contentType: string, price: number }) => {
+            // Exclude `contentTypeAndPrice` field from new influencer object
+            const { contentTypeAndPrice: _, ...filteredInfluencer } = influencer;
+
+            return {
+                ...filteredInfluencer,
+                contentType,
+                price
+            };
+        });
+
+        const newInfluencers = await createInfluencer(influencerPayload);
+        return res.status(HttpStatus.CREATED).json(newInfluencers);
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage = error.message || 'An unknown error occurred during creating influencer';

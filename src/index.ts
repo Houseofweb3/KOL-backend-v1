@@ -29,8 +29,8 @@ import { onboardingQuestionsRoutes } from './routes';
 import { userOnboardingSelectionRoutes } from './routes';
 import { couponRoutes } from './routes';
 import { adminInfluencerRoutes } from './routes';
+import { adminClientRoutes } from './routes';
 
-// import { telegramLogin, sendTelegramMessage } from './utils/communication/telegram/sendTelegramNotification';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -87,6 +87,10 @@ app.use(`/api/v${ENV.VERSION}/utils`, utilsRoutes);
 // Admin Influencer Routes
 app.use(`/api/v${ENV.VERSION}/admin/influencer`, adminInfluencerRoutes);
 
+// Admin Client Routes
+app.use(`/api/v${ENV.VERSION}/admin/client`, adminClientRoutes);
+
+
 // Dummy API
 app.get('/', (req: Request, res: Response) => {
     res.send('It is working');
@@ -103,8 +107,6 @@ AppDataSource.initialize()
             logger.info(`Server is running on port ${port}`);
         });
 
-        // await sendTelegramMessage('7128122054', 'message');
-        // await telegramLogin();
     })
     .catch((error) => {
         logger.error('Database connection failed:', error);
