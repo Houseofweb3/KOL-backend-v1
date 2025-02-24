@@ -2,26 +2,48 @@ import logger from '../../../config/logger';
 import { Influencer } from '../../../entity/influencer';
 import { AppDataSource } from '../../../config/data-source';
 
-
+const DEFAULT_SORT_FIELD = 'credibilityScore';
+const DEFAULT_SORT_ORDER = 'DESC';
 // service to get all influencers, add sorting and pagination
-export const getAllInfluencers = async (page: number, limit: number, sort: string, order: string) => {
+export const getAllInfluencers = async (
+    page: number, 
+    limit: number, 
+    searchTerm: string = '',
+    sortField: string = DEFAULT_SORT_FIELD,
+    sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER,
+
+) => {
     try {
-        const offset = (page - 1) * limit;
-        const influencerRepository = AppDataSource.getRepository(Influencer);
-        const influencers = await influencerRepository.find({
-            order: {
-                [sort]: order
+        const query = AppDataSource.getRepository(Influencer)
+            .createQueryBuilder('influencer')
+            .where('influencer.deleted = :deleted', { deleted: false })
+            .andWhere(searchTerm ? 'influencer.name ILIKE :searchTerm' : '1=1', {
+                searchTerm: `%${searchTerm}%`,
+            });
+        // Apply sorting and pagination
+        query
+            // .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
+            .orderBy(`influencer.${sortField}`, sortOrder)
+            .skip((page - 1) * limit)
+            .take(limit);
+        const [influencers, total] = await query.getManyAndCount();
+
+        return {
+            influencers,
+            pagination: {
+                page: page || 1, // Default to page 1
+                limit: limit || 10, // Default limit
+                total,
+                totalPages: limit ? Math.ceil(total / limit) : 1, // Avoid division by zero
             },
-            take: limit,
-            skip: offset
-        });
-        return influencers;
+        };
     }
     catch (error) {
         logger.error(`Error while fetching all list influencer}`);
         throw error;
     }
 };
+
 
 // service to get influencer by id with try catch block
 export const getInfluencerById = async (id: string) => {
