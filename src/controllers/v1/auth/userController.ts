@@ -6,7 +6,8 @@ import {
 	createUser,
 	deactivateUserById,
 	refreshTokenService,
-	getUserDetailsAndOrderHistoryById
+	getUserDetailsAndOrderHistoryById,
+	generateAndSendOTP
 } from '../../../services/v1/auth/user-service';
 import { ENV } from '../../../config/env';
 import { RefreshToken } from '../../../entity/auth';
@@ -14,7 +15,7 @@ import { AppDataSource } from '../../../config/data-source';
 
 // create a signp User
 export const signup = async (req: Request, res: Response) => {
-	const { email, password, fullname, type, projectName, telegramId, projectUrl } = req.body;
+	const { email, password, fullname, type, projectName, telegramId, projectUrl, phoneNumber, role, firstName, lastName } = req.body;
 
 	if (!email || !password || !fullname || !type) {
 		logger.warn('Missing required fields in signup request');
@@ -22,7 +23,7 @@ export const signup = async (req: Request, res: Response) => {
 	}
 
 	try {
-		const { user, message, token, refreshToken } = await createUser(email, password, fullname, type, projectName, telegramId, projectUrl);
+		const { user, message, token, refreshToken } = await createUser(email, password, fullname, type, projectName, telegramId, projectUrl, phoneNumber, role, firstName, lastName);
 
 		logger.info(`User created/updated successfully: ${user?.id}`);
 		return res.status(HttpStatus.CREATED).json({ user, message, accessToken: token, refreshToken });
@@ -220,5 +221,34 @@ export const deactivateUser = async (req: Request, res: Response) => {
 			return res.status(HttpStatus.NOT_FOUND).json({ error: error.message });
 		}
 		return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'An unexpected error occurred' });
+	}
+};
+
+
+// Generate OTP
+export const generateOTP = async (req: Request, res: Response) => {
+	try {
+		// Extract userId from the request body and validate
+		const { phoneNumber, email, countryCode } = req.params;
+
+		// add checks for phone number and email
+		if (!phoneNumber || countryCode) {
+			logger.warn('Invalid or missing phone number or email in request body');
+			return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Invalid or missing phone number or email' });
+		}
+
+		// Generate OTP and send to user
+		const otp = await generateAndSendOTP(phoneNumber, countryCode);
+
+		logger.info(`OTP generated and sent to user: ${phoneNumber}`);
+
+		return res.status(HttpStatus.OK).json({ message: 'OTP generated and sent successfully', otp });
+	} catch (error: any) {
+		const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+		const errorMessage = error.message || 'An unknown error occurred during login';
+
+		logger.error(`Login error (${statusCode}): ${errorMessage}`);
+
+		return res.status(statusCode).json({ error: errorMessage });
 	}
 };
