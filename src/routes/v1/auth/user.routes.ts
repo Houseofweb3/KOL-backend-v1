@@ -7,6 +7,7 @@ import {
     deactivateUser,
     refreshTokenhandler,
     logoutController,
+    generateOTP
 } from '../../../controllers/v1/auth/userController';
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.post('/logout', logoutController);
 router.post('/refresh-token', refreshTokenhandler);
 router.get('/profile/:userId?', getUserProfile);
 router.patch('/deactivate/:userId', verifyAccessToken, deactivateUser);
+router.post('/generate-otp', generateOTP);
 
 export { router as userRoutes };
