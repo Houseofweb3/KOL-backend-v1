@@ -2,22 +2,41 @@ import logger from '../../../config/logger';
 import { User } from '../../../entity/auth';
 import { AppDataSource } from '../../../config/data-source';
 
+const DEFAULT_SORT_FIELD = 'createdAt';
+const DEFAULT_SORT_ORDER = 'DESC';
 
 // serivce to get all users, add sorting and pagination for admin
-export const getAllUsers = async (page: number, limit: number, sort: string, order: string) => {
+export const getAllUsers = async (
+    page: number,
+    limit: number,
+    searchTerm: string = '',
+    sortField: string = DEFAULT_SORT_FIELD,
+    sortOrder: 'ASC' | 'DESC' = DEFAULT_SORT_ORDER
+) => {
     try {
-        const offset = (page - 1) * limit;
-        const userRepository = AppDataSource.getRepository(User);
-        const users = await userRepository.find({
-            order: {
-                [sort]: order
+        const query = AppDataSource.getRepository(User)
+            .createQueryBuilder('user')
+            .leftJoinAndSelect('user.carts', 'cart') // Fetch user carts
+            .leftJoinAndSelect('cart.checkout', 'checkout') // Fetch checkout details within carts
+            .where('user.is_deleted = :is_deleted', { is_deleted: false })
+            .andWhere(searchTerm ? 'user.fullname ILIKE :searchTerm OR user.email ILIKE :searchTerm' : '1=1', {
+                searchTerm: `%${searchTerm}%`,
+            })
+            .orderBy(`user.${sortField}`, sortOrder)
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [users, total] = await query.getManyAndCount();
+
+        return {
+            users,
+            pagination: {
+                page: page || 1, // Default to page 1
+                limit: limit || 10, // Default limit
+                total,
+                totalPages: limit ? Math.ceil(total / limit) : 1, // Avoid division by zero
             },
-            take: limit,
-            skip: offset,
-            relations: ['carts.checkout'],
-            
-        });
-        return users;
+        };
     }
     catch (error) {
         logger.error(`Error while fetching all list users}`);
