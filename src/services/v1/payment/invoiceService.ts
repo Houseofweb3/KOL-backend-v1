@@ -84,7 +84,7 @@ function transformData(data: any) {
 export const fetchInvoiceDetails = async (
     id: string,
     additionalEmail: string,
-    managementFee: number,
+    // managementFee: number,
     managementFeePercentage: number,
     totalAmount: number,
     discount: number,
@@ -127,7 +127,7 @@ export const fetchInvoiceDetails = async (
             id: cart.id,
             influencerCartItems,
             packageCartItems,
-            managementFee,
+            // managementFee,
             managementFeePercentage,
             totalAmount,
             discount,

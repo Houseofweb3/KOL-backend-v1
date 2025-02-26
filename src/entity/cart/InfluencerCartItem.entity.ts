@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 import { Cart } from './Cart.entity';
 import { Influencer } from '../influencer';
@@ -13,6 +13,10 @@ export class InfluencerCartItem extends BaseModel {
     @ManyToOne(() => Influencer, (influencer) => influencer.influencerCartItems, { onDelete: "CASCADE" })
     @JoinColumn({ name: 'influencer_id' })
     influencer!: Influencer;
+    // price is the price of the influencer for a particular content type
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    price!: number;
 
     @ManyToOne(() => Cart, (cart) => cart.influencerCartItems)
     @JoinColumn({ name: 'cart_id' })
