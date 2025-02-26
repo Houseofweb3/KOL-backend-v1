@@ -33,6 +33,10 @@ export const createCheckout = async (
         telegramId?: string;
         projectUrl?: string;
         email?: string;
+        campaignLiveDate?: Date;
+        managementFeePercentage?: number;
+        discount?: number;
+        note?: string;
     },
 ): Promise<Checkout> => {
     try {
@@ -55,7 +59,10 @@ export const createCheckout = async (
 
         const newBillingDetails = billingDetailsRepository.create({
             ...billingDetails,
+            proposalStatus: 'sent',
+            invoiceStatus: 'not paid',
             checkout: newCheckout,
+            totalAmount
         });
 
         await billingDetailsRepository.save(newBillingDetails);
