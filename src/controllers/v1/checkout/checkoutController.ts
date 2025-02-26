@@ -24,7 +24,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
         managementFee,
         managementFeePercentage,
         discount,
-        campaignLiveDate
+        campaignLiveDate,
     } = req.body;
 
     // Required fields validation
@@ -70,7 +70,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
     }
 
     try {
-        const checkoutDetails = { firstName, lastName, projectName, telegramId, projectUrl, email, campaignLiveDate };
+        const checkoutDetails = { firstName, lastName, projectName, telegramId, projectUrl, email, campaignLiveDate, managementFeePercentage, discount };
 
         const newCheckout = await createCheckout(cartId, totalAmount, checkoutDetails);
         res.status(HttpStatus.CREATED).json(newCheckout);

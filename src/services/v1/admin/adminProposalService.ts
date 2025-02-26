@@ -121,7 +121,7 @@ export const getProposalDetails = async (checkoutId: string) => {
         // Fetch cart by checkout ID
         const checkout = await AppDataSource.getRepository(Checkout).findOne({
             where: { id: checkoutId },
-            relations: ['cart', 'cart.influencerCartItems', 'cart.influencerCartItems.influencer'],
+            relations: ['cart', 'cart.influencerCartItems', 'cart.influencerCartItems.influencer', 'cart.user'],
         });
 
         if (!checkout) {
@@ -145,9 +145,8 @@ export const editProposal = async (
         proposalStatus?: string,
         invoiceStatus?: string,
         paymentStatus?: string,
-        note?: string,
     },
-    updatedInfluencerItems: { influencerId: string; price: number }[]
+    updatedInfluencerItems: { influencerId: string; price: number, note?: string, }[]
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
         try {
@@ -177,7 +176,6 @@ export const editProposal = async (
                 proposalStatus: updatedBillingInfo.proposalStatus ?? billingDetails.proposalStatus,
                 invoiceStatus: updatedBillingInfo.invoiceStatus ?? billingDetails.invoiceStatus,
                 paymentStatus: updatedBillingInfo.paymentStatus ?? billingDetails.paymentStatus,
-                note: updatedBillingInfo.note ?? billingDetails.note,
             });
 
             await transactionalEntityManager.save(billingDetails);
@@ -193,6 +191,7 @@ export const editProposal = async (
                 cartItem.cart = cart;
                 cartItem.influencer = { id: item.influencerId } as any;
                 cartItem.price = item.price;
+                cartItem.note = item.note;
                 return cartItem;
             });
 

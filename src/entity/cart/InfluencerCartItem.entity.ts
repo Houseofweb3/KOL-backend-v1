@@ -18,6 +18,10 @@ export class InfluencerCartItem extends BaseModel {
     @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     price!: number;
 
+    // add a note field
+    @Column({ type: 'text', nullable: true })
+    note?: string;
+
     @ManyToOne(() => Cart, (cart) => cart.influencerCartItems)
     @JoinColumn({ name: 'cart_id' })
     cart!: Cart;
