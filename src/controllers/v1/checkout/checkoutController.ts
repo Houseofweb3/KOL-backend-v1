@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import { fetchInvoiceDetails } from '../../../services/v1/payment';
 import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
-import { createCheckout, getCheckoutById, deleteCheckout } from '../../../services/v1/checkout';
+import { createCheckout, getCheckoutById, deleteCheckout, getCheckouts } from '../../../services/v1/checkout';
 
 import { isValidEmail, isValidTelegramId, isValidUrl } from '../utils/validChecks';
 
@@ -76,7 +76,7 @@ export const createCheckoutHandler = async (req: Request, res: Response) => {
         res.status(HttpStatus.CREATED).json(newCheckout);
 
         // Process invoice in the background
-        fetchInvoiceDetails(cartId, email, managementFee, managementFeePercentage, totalAmount, discount, checkoutDetails)
+        fetchInvoiceDetails(cartId, email, managementFeePercentage, totalAmount, discount, checkoutDetails)
             .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
             .catch(error => logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`));
 
@@ -135,6 +135,33 @@ export const deleteCheckoutHandler = async (req: Request, res: Response) => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
         } else {
             logger.error('An unknown error occurred while deleting checkout');
+            return res
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .json({ error: 'An unknown error occurred' });
+        }
+    }
+};
+
+
+// Get all Checkouts with pagination and its billing details
+export const getCheckoutsHandler = async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
+    const sortField = req.query.sortField as string || 'createdAt';
+    const sortOrder = req.query.sortOrder as 'ASC' | 'DESC' || 'DESC';
+
+    try {
+        const { billingDetails, pagination } = await getCheckouts(page, limit, sortField, sortOrder);
+        return res.status(HttpStatus.OK).json({
+            billingDetails,
+            pagination
+        });
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Error fetching all checkouts: ${error}`);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
+        } else {
+            logger.error('An unknown error occurred while fetching checkouts');
             return res
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .json({ error: 'An unknown error occurred' });

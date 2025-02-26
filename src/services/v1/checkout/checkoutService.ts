@@ -130,3 +130,44 @@ export const deleteCheckout = async (id: string): Promise<void> => {
         throw new Error('Error deleting checkout');
     }
 };
+
+
+// Get all Checkouts with pagination and its billing details
+
+export const getCheckouts = async (
+    page: number = 1,
+    limit: number = 10,
+    sortField: string = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+) => {
+    try {
+        let queryBuilder = billingDetailsRepository
+            .createQueryBuilder('billingDetails')
+            .leftJoinAndSelect('billingDetails.checkout', 'checkout')
+            .leftJoinAndSelect('checkout.cart', 'cart')
+            .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
+            .leftJoinAndSelect('cart.user', 'user');
+
+        queryBuilder = queryBuilder
+            .orderBy(`billingDetails.${sortField}`, sortOrder)
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [billingDetails, total] = await queryBuilder.getManyAndCount();
+
+        // retrn the response with pagination
+        return {
+            billingDetails,
+            pagination: {
+                page: page || 1,
+                limit: limit || 10,
+                total,
+                totalPages: limit ? Math.ceil(total / limit) : 1,
+            },
+        };
+
+    } catch (error) {
+        logger.error(`Error fetching all checkouts: ${error}`);
+        throw new Error('Error fetching all checkouts');
+    }
+};

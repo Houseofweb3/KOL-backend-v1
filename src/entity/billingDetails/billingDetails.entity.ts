@@ -26,6 +26,30 @@ export class BillingDetails extends BaseModel {
     @Column({ type: 'timestamp', nullable: true })
     campaignLiveDate?: Date;
 
+    // add proposal status field
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    proposalStatus?: string;
+
+    // add invoice status field
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    invoiceStatus?: string;
+
+    // add payment status field
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    paymentStatus?: string;
+
+    //add total amount field
+    @Column({ type: 'decimal', nullable: true })
+    totalAmount?: number;
+
+    // add ,management fee percentage field
+    @Column({ type: 'decimal', nullable: true })
+    managementFeePercentage?: number;
+
+    //add note field
+    @Column({ type: 'text', nullable: true })
+    note?: string;
+
     @OneToOne(() => Checkout)
     @JoinColumn({ name: 'checkout_id' })
     checkout!: Checkout;
