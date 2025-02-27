@@ -154,6 +154,7 @@ export const getCheckouts = async (
             .leftJoinAndSelect('billingDetails.checkout', 'checkout')
             .leftJoinAndSelect('checkout.cart', 'cart')
             .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
+            .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')
             .leftJoinAndSelect('cart.user', 'user')
             .where(searchTerm ?
                 `(user.fullname ILIKE :searchTerm)`
