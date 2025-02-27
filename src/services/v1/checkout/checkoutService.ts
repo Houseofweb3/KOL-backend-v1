@@ -146,6 +146,7 @@ export const getCheckouts = async (
     limit: number = 10,
     sortField: string = 'createdAt',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
+    searchTerm?: string,
 ) => {
     try {
         let queryBuilder = billingDetailsRepository
@@ -153,7 +154,13 @@ export const getCheckouts = async (
             .leftJoinAndSelect('billingDetails.checkout', 'checkout')
             .leftJoinAndSelect('checkout.cart', 'cart')
             .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
-            .leftJoinAndSelect('cart.user', 'user');
+            .leftJoinAndSelect('cart.user', 'user')
+            .where(searchTerm ?
+                `(user.fullname ILIKE :searchTerm)`
+                : '1=1',
+                { searchTerm: `%${searchTerm}%` });
+
+
 
         queryBuilder = queryBuilder
             .orderBy(`billingDetails.${sortField}`, sortOrder)
