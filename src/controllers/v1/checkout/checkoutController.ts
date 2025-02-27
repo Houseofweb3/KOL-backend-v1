@@ -149,9 +149,10 @@ export const getCheckoutsHandler = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string, 10) || 10;
     const sortField = req.query.sortField as string || 'createdAt';
     const sortOrder = req.query.sortOrder as 'ASC' | 'DESC' || 'DESC';
+    const searchTerm = req.query.searchTerm as string;
 
     try {
-        const { billingDetails, pagination } = await getCheckouts(page, limit, sortField, sortOrder);
+        const { billingDetails, pagination } = await getCheckouts(page, limit, sortField, sortOrder, searchTerm);
         return res.status(HttpStatus.OK).json({
             billingDetails,
             pagination
