@@ -5,7 +5,6 @@ import { Checkout } from '../../../entity/checkout';
 import { BillingDetails } from '../../../entity/billingDetails';
 import { User } from '../../../entity/auth';
 import logger from '../../../config/logger';
-import { fetchInvoiceDetails } from '../payment';
 
 
 
@@ -119,10 +118,25 @@ export const createProposal = async (
 export const getProposalDetails = async (checkoutId: string) => {
     try {
         // Fetch cart by checkout ID
-        const checkout = await AppDataSource.getRepository(Checkout).findOne({
+        const checkoutRes = await AppDataSource.getRepository(Checkout).findOne({
             where: { id: checkoutId },
             relations: ['cart', 'cart.influencerCartItems', 'cart.influencerCartItems.influencer', 'cart.user'],
         });
+
+        // fetch billing details from checkout
+        const billingDetails = await AppDataSource.getRepository(BillingDetails).findOne({
+            where: { checkout: { id: checkoutId } },
+        });
+
+        let checkout;
+
+        // add the billing details to the checkout object
+        if (checkoutRes) {
+            checkout = {
+                ...checkoutRes,
+                billingDetails,
+            }
+        }
 
         if (!checkout) {
             throw new Error(`No checkout found for id: ${checkoutId}`);
