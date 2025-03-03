@@ -65,19 +65,27 @@ export const getProposalDetailsController = async (req: Request, res: Response) 
 export const editProposalController = async (req: Request, res: Response) => {
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
+
         const { message, checkoutDetails, cartId, email, calculatedTotalAmount } = await editProposal(checkoutId, billingInfo, influencerItems);
-        res.status(HttpStatus.OK).json({
-            message,
-            checkoutDetails,
-        });
         // ✅ Process invoice in the background (no `await`, non-blocking)
-        if (cartId && email) {
+        if (cartId && email && billingInfo?.proposalStatus === 'sent') {
             fetchInvoiceDetails(cartId, email, billingInfo.managementFeePercentage ?? 0, calculatedTotalAmount, billingInfo.discount ?? 5, checkoutDetails)
                 .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
                 .catch(error => logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`));
+
+            // send response immediately to proposal re-sent
+            res.status(HttpStatus.OK).json({
+                message: 'Proposal updated and invoice processing initiated',
+                checkoutDetails,
+            });
+
         } else {
-            logger.error('cartId or email is undefined');
+            res.status(HttpStatus.OK).json({
+                message,
+                checkoutDetails,
+            })
         }
+
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage = error.message || 'An unknown error occurred while updating proposal';

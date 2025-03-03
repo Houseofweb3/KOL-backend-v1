@@ -73,6 +73,10 @@ export class User extends BaseModel {
     })
     role?: UserRole | null;
 
+    // Add json field to store address info
+    @Column({ type: 'json', nullable: true })
+    addressInfo?: Record<string, string>;
+
     @OneToMany(() => UserOnboardingSelection, (userSelection) => userSelection.user)
     userSelections!: UserOnboardingSelection[];
 

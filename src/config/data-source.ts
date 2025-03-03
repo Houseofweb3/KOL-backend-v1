@@ -10,6 +10,7 @@ import { Influencer } from '../entity/influencer';
 import { InfluencerCartItem } from '../entity/cart';
 import { User, RefreshToken } from '../entity/auth';
 import { BillingDetails } from '../entity/billingDetails';
+import { OTP } from '../entity/auth';
 import {
     Option,
     Question,
@@ -44,6 +45,7 @@ export const AppDataSource = new DataSource({
         BillingDetails,
         UserCoupon,
         CouponCode,
+        OTP
     ],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
