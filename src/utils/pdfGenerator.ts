@@ -1,5 +1,6 @@
 import fs from 'fs';
 import puppeteer from 'puppeteer';
+import AWS from 'aws-sdk';
 
 import logger from '../config/logger';
 
@@ -70,7 +71,7 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 // Function to generate a password-protected PDF buffer
-export const convertHtmlToPdfBuffer = async (html: string, password:string): Promise<Buffer> => {
+export const convertHtmlToPdfBuffer = async (html: string, password?: string): Promise<Buffer> => {
     let browser;
     try {
         // Create a browser instance
@@ -94,6 +95,11 @@ export const convertHtmlToPdfBuffer = async (html: string, password:string): Pro
 
         // Close the browser instance
         await browser.close();
+
+        // If no password is provided, return the PDF buffer as is
+        if (!password) {
+            return pdfBuffer;
+        }
 
         // Save the buffer to a temporary file
         const tempInputPath = path.join(__dirname, 'temp.pdf');
@@ -122,5 +128,27 @@ export const convertHtmlToPdfBuffer = async (html: string, password:string): Pro
 };
 
 
+
+export async function uploadPdfToS3(buffer: Buffer, bucketName: string, key: string) {
+    try {
+        const s3 = new AWS.S3();
+        await s3.upload({
+            Bucket: bucketName,
+            Key: key,
+            Body: buffer,
+            ContentType: 'application/pdf'
+        }).promise();
+
+        const s3PublicUrl = `https://${bucketName}.s3.amazonaws.com/${key}`;
+        return s3PublicUrl;
+    }
+    catch (error: any) {
+        throw new Error(`Error storing PDF to s3: ${error.message}`);
+    }
+
+}
+
+
+
 // Ensure convertHtmlToPdfBuffer is exported for use in other modules
-module.exports = { convertHtmlToPdf, convertHtmlToPdfBuffer };
+module.exports = { convertHtmlToPdf, convertHtmlToPdfBuffer, uploadPdfToS3 };

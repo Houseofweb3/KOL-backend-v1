@@ -43,10 +43,12 @@
     },
     "dependencies": {
         "@cmdotcom/text-sdk": "^2.1.0",
+        "@types/aws-sdk": "^2.7.4",
         "@types/bcryptjs": "^2.4.6",
         "@types/jsonwebtoken": "^9.0.6",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.14.1",
+        "aws-sdk": "^2.1692.0",
         "axios": "^1.7.7",
         "bcryptjs": "^2.4.3",
         "cors": "^2.8.5",
