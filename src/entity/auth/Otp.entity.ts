@@ -1,9 +1,12 @@
-import { Entity, Column, Index, Unique } from "typeorm";
+import { Entity, Column, Index, Unique, PrimaryGeneratedColumn } from "typeorm";
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 
 @Entity("otps")
 @Unique(["phoneNumber", "otpCode", "isUsed"])  // Ensures uniqueness for unused OTPs per phone number
 export class OTP extends BaseModel {
+
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
 
     @Index()
     @Column({ name: "phone_number" })

@@ -42,16 +42,18 @@ function generateOTP(): string {
 }
 
 
-export async function generateAndSendOTP(phoneNumber: string, countryCode: string): Promise<void> {
+export async function generateAndSendOTP(phoneNumber: string, countryCode: string): Promise<{ message: string, status: number }> {
     try {
         // Find user by email or phone number
-        let user = await AppDataSource.getRepository(User).findOne({ where: [{ phoneNumber }] });
+        const normalizedPhoneNumber = `+${countryCode}${phoneNumber}`;
+        console.log(normalizedPhoneNumber);
+        let user = await AppDataSource.getRepository(User).findOne({ where: [{ phoneNumber: normalizedPhoneNumber }] });
+        console.log(user);
         // Check if user exists,  and if its an admin
         if (!user || user.userType !== UserType.ADMIN) {
-            logger.warn(`User not found with email or phn no.: ${phoneNumber}`);
+            logger.warn(`User not found with email or phn no.: ${normalizedPhoneNumber}`);
             throw { status: HttpStatus.UNAUTHORIZED, message: 'Admin Not Found' };
         }
-        const normalizedPhoneNumber = `+${countryCode}${phoneNumber}`;
         let otpCode: string;
         const expiresAt = Math.floor(Date.now() / 1000) + 60; // OTP expires in 60 seconds
         // Generate a new OTP
@@ -74,12 +76,67 @@ export async function generateAndSendOTP(phoneNumber: string, countryCode: strin
             otp.isUsed = false;
             await transactionalEntityManager.getRepository(OTP).save(otp);
         });
+
+        logger.info(`OTP generated and sent successfully to: ${normalizedPhoneNumber}`);
+
+        return { message: 'OTP sent successfully', status: HttpStatus.OK };
+
+
     } catch (error: any) {
         if (error.status) {
             throw error; // Pass custom errors forward
         }
         logger.error(`Error generating and sending OTP: ${error.message}`);
         throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while generating and sending OTP' };
+    }
+}
+
+export async function validateOTP(phoneNumber: string, otpCode: string, countryCode: string): Promise<{
+    token?: string;
+    message: string;
+    refreshToken?: string;
+    userId?: string;
+}> {
+    try {
+        return await AppDataSource.transaction(async transactionalEntityManager => {
+            const normalizedPhoneNumber = `+${countryCode}${phoneNumber}`;
+            const otpRepository = transactionalEntityManager.getRepository(OTP);
+            const userRepository = transactionalEntityManager.getRepository(User);
+
+            // Step 2: If not whitelisted, proceed with normal OTP validation
+            const otpRecord = await otpRepository.findOne({
+                where: { phoneNumber: normalizedPhoneNumber, otpCode, isUsed: false }
+            });
+
+            if (!otpRecord || otpRecord.expiresAt < Math.floor(Date.now() / 1000)) {
+                // thorw error with message and status code
+                throw { status: HttpStatus.UNAUTHORIZED, message: 'Invalid OTP or Expired OTP' };
+            }
+
+            // Step 3: Mark the OTP as used
+            otpRecord.isUsed = true;
+            await otpRepository.save(otpRecord);
+
+            // Step 4: Check if the user already exists
+            const user = await userRepository.findOne({ where: { phoneNumber: normalizedPhoneNumber } });
+
+            if (user) {
+                // if isAdmin also encode phoneNumber in token to authenticate admins based on phoneNumber later on 
+                const token = generateAccessToken({ id: user.id, type: user.userType });
+                const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
+                return { token, refreshToken, message: 'Login successful', userId: user.id };
+            } else {
+                // throw error if user is not found with status code 404
+                throw { status: HttpStatus.NOT_FOUND, message: 'User not found' };
+
+            }
+        });
+    } catch (error: any) {
+        if (error.status) {
+            throw error; // Pass custom errors forward
+        }
+        logger.error(`Error validating OTP: ${error.message}`);
+        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while validating OTP' };
     }
 }
 
@@ -145,7 +202,8 @@ export const createUser = async (
     phoneNumber?: string,
     role?: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    addressInfo?: Record<string, string>,
 ) => {
     try {
         // 🔹 Validate email before proceeding
@@ -185,7 +243,7 @@ export const createUser = async (
                 email,
                 password: hashedPassword,
                 fullname,
-                type: type as UserType,
+                userType: type as UserType,
                 projectName,
                 telegramId,
                 projectUrl,
@@ -194,6 +252,7 @@ export const createUser = async (
                 lastName,
                 role: validRole, // ✅ Prevents invalid enum errors
                 status: true,
+                addressInfo
             });
 
             // Generate token and refresh token
