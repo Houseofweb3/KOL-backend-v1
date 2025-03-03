@@ -26,7 +26,7 @@ function transformData(data: any) {
         subscribers: item.influencer.subscribers,
         platform: item.influencer.platform,
         contentType: item.influencer.contentType,
-        price: item.influencer.price,
+        price: item.price ? item.price : item.influencer.price,
         socialMediaLink: item.influencer.socialMediaLink,
     }));
 

@@ -50,6 +50,18 @@ export class BillingDetails extends BaseModel {
     @Column({ type: 'text', nullable: true })
     note?: string;
 
+    // add invoice no. field
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    invoiceNo?: string;
+
+    // add invoice date field
+    @Column({ type: 'timestamp', nullable: true })
+    invoiceDate?: Date;
+
+    // add invoice s3 link field
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    invoiceS3Link?: string;
+
     @OneToOne(() => Checkout)
     @JoinColumn({ name: 'checkout_id' })
     checkout!: Checkout;

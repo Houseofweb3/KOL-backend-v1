@@ -60,7 +60,6 @@ export const createCheckout = async (
         const newBillingDetails = billingDetailsRepository.create({
             ...billingDetails,
             proposalStatus: 'sent',
-            invoiceStatus: 'not paid',
             checkout: newCheckout,
             totalAmount
         });

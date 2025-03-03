@@ -5,6 +5,11 @@ import { Checkout } from '../../../entity/checkout';
 import { BillingDetails } from '../../../entity/billingDetails';
 import { User } from '../../../entity/auth';
 import logger from '../../../config/logger';
+import fs from 'fs/promises'
+import { resolve } from 'path';
+import ejs from 'ejs'
+import { convertHtmlToPdfBuffer, uploadPdfToS3 } from '../../../utils/pdfGenerator';
+
 
 
 
@@ -244,7 +249,139 @@ export const editProposal = async (
     });
 };
 
+interface InvoiceData {
+    invoiceNumber: string;
+    invoiceDate: string;
+    dueDate: string;
+    balanceDue: string;
+    companyName: string;
+    companyAddress: string;
+    companyEmail: string;
+    clientName: string;
+    clientAddress: string;
+    items: InvoiceItem[];
+    subtotal: string;
+    managementFee: string;
+    airdropFee: string;
+    cryptoWalletAddress: string;
+    ethWalletAddress: string;
+    notes: string;
+}
 
+interface InvoiceItem {
+    index: number;
+    name: string;
+    platform: string;
+    contentType: string;
+    price: string;
+}
+
+function extractInvoiceData(apiData: any): InvoiceData {
+    const invoiceDate = new Date(apiData.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' });
+    const dueDate = new Date(apiData.updatedAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' });
+    const formattedInvoiceNo = "INV-" + new Date().toISOString().split('T')[0].replace(/-/g, '');
+
+    return {
+        invoiceNumber: formattedInvoiceNo,
+        invoiceDate: invoiceDate,
+        dueDate: dueDate,
+        balanceDue: apiData.totalAmount || "0.00",
+
+        // Hardcoded Company Details
+        companyName: "HOW3 Pte. Ltd.",
+        companyAddress: "68 CIRCULAR ROAD #02-01, Singapore 049422",
+        companyEmail: "finance@houseofweb3.com",
+
+        // Client Details
+        clientName: apiData.cart?.user?.fullname || "Unknown Client",
+        clientAddress: "British Virgin Islands, VG110", // Hardcoded
+
+        // Extracting Influencer Cart Items
+        items: apiData.cart?.influencerCartItems?.map((item: any, index: number) => ({
+            index: index + 1,
+            name: item.influencer?.name || "Unknown Influencer",
+            platform: item.influencer?.platform || "Unknown",
+            contentType: item.influencer?.contentType || "Unknown",
+            price: item.price || "0.00"
+        })) || [],
+
+        // Summary Calculations (Hardcoded Fees)
+        subtotal: apiData.totalAmount || "0.00",
+        managementFee: (parseFloat(apiData.totalAmount) * 0.05).toFixed(2),
+        airdropFee: (parseFloat(apiData.totalAmount) * 0.05).toFixed(2),
+
+        // Payment Information (Hardcoded)
+        cryptoWalletAddress: "BF46k8HylFy...",
+        ethWalletAddress: "0x7aAa41403Ec...",
+
+        // Notes
+        notes: "Payments are final. No refunds or adjustments after confirmation.",
+    };
+}
+
+// Generate invoice details for a given checkoutId and store it to s3 and billing details
+export const generateInvoicePdf = async (
+    checkoutId: string,
+) => {
+    const checkoutRepository = AppDataSource.getRepository(Checkout);
+    const billingDetailsRepository = AppDataSource.getRepository(BillingDetails)
+
+    try {
+        // ✅ Find BillingDetails by checkoutId (since Checkout does not have a direct reference)
+        const billingData = await billingDetailsRepository.findOne({
+            where: { checkout: { id: checkoutId } }
+        });
+
+        if (!billingData) {
+            throw new Error(`No billing details found for checkout ID: ${checkoutId}`);
+        }
+        // Fetch cart by id
+        logger.info(`Fetching cart with id: ${checkoutId}`);
+        const data = await checkoutRepository.findOne({
+            where: { id: checkoutId },
+            relations: [
+                'cart',
+                'cart.user',
+                'cart.influencerCartItems',
+                'cart.influencerCartItems.influencer'
+            ],
+        });
+
+        if (!data) {
+            throw new Error(`No record found for id: ${checkoutId}`);
+        }
+
+        const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate3.0.ejs');
+        const templateContent = await fs.readFile(templatePath, { encoding: 'utf8' });
+
+        const finalInvoiceData = extractInvoiceData(data);
+        const renderedHTML = ejs.render(templateContent, finalInvoiceData);
+
+        const pdfBuffer = await convertHtmlToPdfBuffer(renderedHTML as string);
+
+        const BUCKET_NAME = "ampli5";
+        const fileKey = `invoices/${finalInvoiceData?.invoiceNumber}.pdf`;
+
+
+        // ✅ Upload PDF to S3 and get URL
+        const s3PublicUrl = await uploadPdfToS3(pdfBuffer, BUCKET_NAME, fileKey);
+
+
+        // ✅ Update BillingDetails with the generated invoice link
+        await billingDetailsRepository.update(billingData.id, {
+            invoiceS3Link: s3PublicUrl,
+            invoiceDate: new Date(),
+            invoiceNo: finalInvoiceData?.invoiceNumber
+        });
+
+
+        return { message: "Invoice stored to S3", invoiceUrl: s3PublicUrl };
+
+    } catch (error: any) {
+        logger.error(`Error generating invoice: ${error.message}`);
+        throw new Error(`Failed to generate invoice: ${error.message}`);
+    }
+};
 
 
 
