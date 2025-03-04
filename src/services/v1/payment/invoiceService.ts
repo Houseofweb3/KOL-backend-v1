@@ -7,6 +7,48 @@ import { convertHtmlToPdfBuffer } from '../../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
 import { Cart, InfluencerCartItem, PackageCartItem } from '../../../entity/cart';
 
+const proposalEmailInfo = (username: string) => {
+    const proposalEmailText = `Hello ${username},
+
+        We are happy to have you onboard.
+
+        Attached, you will find the draft copy of the list.
+
+        The attached PDF is password-protected. Please use the following password to open the file:
+
+        Password: [First 4 characters of your username in lowercase][Current year]  
+        Example: If your username is "JohnSmith", your password will be "john2024".
+
+        Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
+
+        Thank you for your patience and cooperation.
+
+        Best regards,  
+        Ampli5
+        `
+    const proposalEmailHtml = `<p>Hello ${username},</p>
+
+        <p>We are happy to have you onboard.</p>
+
+        <p>Attached, you will find the draft copy of the list.</p>
+
+        <p><b>The attached PDF is password-protected. Please use the following password to open the file:</b></p>
+
+        <p><b>Password:</b> [First 4 characters of your username in lowercase][Current year]</p>
+
+        <p><b>Example:</b> If your username is "JohnSmith", your password will be "john2024".</p>
+
+        <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
+
+        <p>Thank you for your patience and cooperation.</p>
+
+        <p>Best regards,</p>
+
+        <p>Ampli5</p>
+        `
+    return { proposalEmailText, proposalEmailHtml }
+}
+
 function transformData(data: any) {
     const checkoutDetails = {
         projectName: data.user?.fullname || 'Unknown User',
@@ -43,7 +85,7 @@ function transformData(data: any) {
     }));
 
     const influencerSubtotal = data.influencerCartItems
-        .reduce((acc: number, item: any) => acc + parseFloat(item.influencer.price), 0)
+        .reduce((acc: number, item: any) => acc + parseFloat(item.price ? item.price : item.influencer.price), 0)
         .toFixed(2);
     const packageSubtotal = data.packageCartItems
         .reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0)
@@ -150,8 +192,26 @@ export const fetchInvoiceDetails = async (
 
         const pdfBuffer = await convertHtmlToPdfBuffer(html as string, password as string);
 
+        const username = checkoutDetails?.firstName || 'Valued Customer';
+
+        const { proposalEmailText, proposalEmailHtml } = proposalEmailInfo(username)
+
+        const fileName = `Ampli5X${checkoutDetails?.projectName || ""}.pdf`
+
+        const subject = 'Amplify Distribution with Ampli5 (Best Yapping Discovery tool)'
+
         // Send the PDF buffer as an email attachment
-        await sendInvoiceEmail(transformCartData.user, pdfBuffer, additionalEmail, checkoutDetails);
+        await sendInvoiceEmail(
+            transformCartData.user,
+            pdfBuffer,
+            undefined,  // No S3 link, so pass undefined instead of an empty string
+            additionalEmail,
+            proposalEmailText,
+            proposalEmailHtml,
+            fileName,
+            subject
+        );
+
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
         return {

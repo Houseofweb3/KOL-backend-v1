@@ -1,7 +1,7 @@
 import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
-import { createProposal, getProposalDetails, editProposal, generateInvoicePdf } from '../../../services/v1/admin';
+import { createProposal, getProposalDetails, editProposal, generateInvoicePdf, sendInvoiceEmailService } from '../../../services/v1/admin';
 import { fetchInvoiceDetails } from '../../../services/v1/payment';
 
 
@@ -113,6 +113,26 @@ export const generateInvoicePdfController = async (req: Request, res: Response) 
         return res.status(statusCode).json({ error: errorMessage });
     }
 };
+
+// send invoice email 
+
+
+export const sendInvoiceEmailController = async (req: Request, res: Response) => {
+    const { checkoutId } = req.body;
+    try {
+        const response = await sendInvoiceEmailService(checkoutId as string);
+        res.json(response);
+
+    } catch (error: any) {
+        const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        const errorMessage = error.message || 'An unknown error occurred while generating invoice pdf';
+
+        logger.error(`Error while sending invoice pdf (${statusCode}): ${errorMessage}`);
+
+        return res.status(statusCode).json({ error: errorMessage });
+    }
+
+}
 
 
 
