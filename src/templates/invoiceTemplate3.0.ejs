@@ -1,166 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Invoice Template</title>
-</head>
-
-<body style="padding: 40px; color: #333; font-family: Arial, sans-serif; margin: 0;">
-    <div style="max-width: 1200px; margin: 0 auto; padding: 64px;">
-
-        <!-- Header with Logo and Invoice Title -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px;">
-            <div style="width: 50%">
-                <svg xmlns="http://www.w3.org/2000/svg" width="142" height="42" viewBox="0 0 142 42" fill="none">
-                    <path d="M113.306 10.0458L142 1.14062L122.211 18.951L113.306 10.0458Z" fill="#A762FE" />
-                    <path d="M136.063 24.8879L110.337 32.8036L128.148 16.9722L136.063 24.8879Z" fill="#A762FE" />
-                    <path
-                        d="M105.01 6.20533H99.9284L99.8809 0.980957H105.01V6.20533ZM105.058 32.8021H99.9284V9.05499H105.058V32.8021Z"
-                        fill="#313131" />
-                    <path d="M96.6101 32.8021H91.4807V0.980957H96.6101V32.8021Z" fill="#313131" />
-                    <path
-                        d="M70.8036 41.0193H65.7217V9.19809H70.3761V13.0926H70.6136C71.706 10.338 74.4131 8.72314 78.4977 8.72314C85.1469 8.72314 88.8039 13.5201 88.8039 21.0242C88.8039 28.4808 85.2418 33.2777 78.8301 33.2777C74.6031 33.2777 71.9909 31.3304 70.9461 29.1457H70.8036V41.0193ZM70.8036 23.1139C70.8036 27.0559 73.0833 28.9082 77.2628 28.9082C81.7748 28.9082 83.6745 26.8185 83.6745 21.0242C83.6745 15.1824 81.8223 13.0926 77.2628 13.0926C73.0833 13.0926 70.8036 14.9449 70.8036 18.8869V23.1139Z"
-                        fill="#313131" />
-                    <path
-                        d="M29.656 32.8028H24.5266V9.19809H29.2285V13.6151H29.4185C30.5109 11.0979 32.9806 8.72314 37.4926 8.72314C41.6246 8.72314 44.1893 10.6229 45.3291 13.6151H45.4716C46.564 11.1454 48.9862 8.72314 53.6406 8.72314C59.7199 8.72314 62.4271 12.6177 62.4271 17.9845V32.8028H57.2977V19.1244C57.2977 14.8974 56.0153 13.1401 51.7408 13.1401C47.8463 13.1401 46.0415 14.7549 46.0415 19.0769V32.8028H40.9121V19.1244C40.9121 14.8974 39.6298 13.1401 35.3553 13.1401C31.4608 13.1401 29.656 14.7549 29.656 19.0294V32.8028Z"
-                        fill="#313131" />
-                    <path
-                        d="M7.5041 33.2777C3.27711 33.2777 0 31.093 0 26.961C0 23.0664 2.84966 21.0242 7.88406 20.3118L16.1481 19.0769V17.7946C16.1481 14.28 14.5333 13.2351 10.8287 13.2351C7.07665 13.2351 5.60433 14.4225 5.60433 17.5571V18.2695H0.66492V17.7946C0.66492 12.5227 4.79693 8.72314 11.1137 8.72314C17.7154 8.72314 21.04 12.7127 21.04 18.4595V32.8028H16.2905V29.0982H16.0531C14.6757 31.3304 11.9686 33.2777 7.5041 33.2777ZM4.9869 26.581C4.9869 28.4333 6.17426 29.1932 9.1664 29.1932C12.491 29.1932 16.1481 27.8634 16.1481 23.1139V22.6865L8.64396 23.8263C5.93679 24.2063 4.9869 24.8237 4.9869 26.581Z"
-                        fill="#313131" />
-                </svg>
-            </div>
-        </div>
-
-        <div style="width: 50%; text-align: right">
-            <h1 style="font-size: 36px; margin: 0 0 5px 0; font-weight: bold">Invoice</h1>
-            <p style="margin: 0 0 25px 0; color: #666; font-size: 14px"># <%= invoiceNumber %>
-            </p>
-
-            <p style="margin: 0 0 5px 0; color: #666; font-size: 14px">Balance Due</p>
-            <p style="font-size: 24px; font-weight: bold; margin: 0">$<%= balanceDue %>
-            </p>
-        </div>
-    </div>
-
-    <!-- Company & Client Info -->
-    <div style="display: flex; justify-content: space-between; margin-bottom: 40px;">
+  </head>
+  <body
+    style="
+      padding: 40px;
+      color: #333;
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS',
+        sans-serif;
+      margin: 0;
+    "
+  >
+    <div style="max-width: 1200px; margin: 0 auto; padding: 64px">
+      <!-- Header with Logo and Invoice Title -->
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 40px;
+        "
+      >
+        <!-- Logo on left -->
         <div style="width: 50%">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="142"
+            height="42"
+            viewBox="0 0 142 42"
+            fill="none"
+          >
+            <path
+              d="M113.306 10.0458L142 1.14062L122.211 18.951L113.306 10.0458Z"
+              fill="#A762FE"
+            />
+            <path
+              d="M136.063 24.8879L110.337 32.8036L128.148 16.9722L136.063 24.8879Z"
+              fill="#A762FE"
+            />
+            <path
+              d="M105.01 6.20533H99.9284L99.8809 0.980957H105.01V6.20533ZM105.058 32.8021H99.9284V9.05499H105.058V32.8021Z"
+              fill="#313131"
+            />
+            <path
+              d="M96.6101 32.8021H91.4807V0.980957H96.6101V32.8021Z"
+              fill="#313131"
+            />
+            <path
+              d="M70.8036 41.0193H65.7217V9.19809H70.3761V13.0926H70.6136C71.706 10.338 74.4131 8.72314 78.4977 8.72314C85.1469 8.72314 88.8039 13.5201 88.8039 21.0242C88.8039 28.4808 85.2418 33.2777 78.8301 33.2777C74.6031 33.2777 71.9909 31.3304 70.9461 29.1457H70.8036V41.0193ZM70.8036 23.1139C70.8036 27.0559 73.0833 28.9082 77.2628 28.9082C81.7748 28.9082 83.6745 26.8185 83.6745 21.0242C83.6745 15.1824 81.8223 13.0926 77.2628 13.0926C73.0833 13.0926 70.8036 14.9449 70.8036 18.8869V23.1139Z"
+              fill="#313131"
+            />
+            <path
+              d="M29.656 32.8028H24.5266V9.19809H29.2285V13.6151H29.4185C30.5109 11.0979 32.9806 8.72314 37.4926 8.72314C41.6246 8.72314 44.1893 10.6229 45.3291 13.6151H45.4716C46.564 11.1454 48.9862 8.72314 53.6406 8.72314C59.7199 8.72314 62.4271 12.6177 62.4271 17.9845V32.8028H57.2977V19.1244C57.2977 14.8974 56.0153 13.1401 51.7408 13.1401C47.8463 13.1401 46.0415 14.7549 46.0415 19.0769V32.8028H40.9121V19.1244C40.9121 14.8974 39.6298 13.1401 35.3553 13.1401C31.4608 13.1401 29.656 14.7549 29.656 19.0294V32.8028Z"
+              fill="#313131"
+            />
+            <path
+              d="M7.5041 33.2777C3.27711 33.2777 0 31.093 0 26.961C0 23.0664 2.84966 21.0242 7.88406 20.3118L16.1481 19.0769V17.7946C16.1481 14.28 14.5333 13.2351 10.8287 13.2351C7.07665 13.2351 5.60433 14.4225 5.60433 17.5571V18.2695H0.66492V17.7946C0.66492 12.5227 4.79693 8.72314 11.1137 8.72314C17.7154 8.72314 21.04 12.7127 21.04 18.4595V32.8028H16.2905V29.0982H16.0531C14.6757 31.3304 11.9686 33.2777 7.5041 33.2777ZM4.9869 26.581C4.9869 28.4333 6.17426 29.1932 9.1664 29.1932C12.491 29.1932 16.1481 27.8634 16.1481 23.1139V22.6865L8.64396 23.8263C5.93679 24.2063 4.9869 24.8237 4.9869 26.581Z"
+              fill="#313131"
+            />
+          </svg>
+        </div>
+
+        <!-- Invoice Title and Balance on right -->
+        <div style="width: 50%; text-align: right">
+          <h1 style="font-size: 36px; margin: 0 0 5px 0; font-weight: bold">
+            Invoice
+          </h1>
+          <p style="margin: 0 0 25px 0; color: #666; font-size: 14px">
+            # <%= invoiceNumber %>
+          </p>
+
+          <p style="margin: 0 0 5px 0; color: #666; font-size: 14px">
+            Balance Due
+          </p>
+          <p style="font-size: 24px; font-weight: bold; margin: 0">
+            $<%= balanceDue %>
+          </p>
+        </div>
+      </div>
+
+      <!-- Company and Client Info Section -->
+      <div>
+        <!-- Company info on left -->
+        <div style="width: 33%">
+          <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold">
+            <%= companyName %>
+          </h3>
+          <!-- If your address is just one line in data, show it directly;
+               or break it up if you want multi-line like the example: -->
+          <p style="margin: 0 0 5px 0; color: #666">
+            <%= companyAddress %>
+          </p>
+          <p style="margin: 0 0 5px 0; color: #666">
+            <%= companyEmail %>
+          </p>
+        </div>
+
+        <div style="display: flex; margin-bottom: 20px; margin-top: 40px">
+          <!-- Client info in middle -->
+          <div style="width: 50%">
             <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold">
-                <%= companyName %>
+              Bill To
             </h3>
             <p style="margin: 0 0 5px 0; color: #666">
-                <%= companyAddress %>
+              <%= clientName %>
             </p>
             <p style="margin: 0 0 5px 0; color: #666">
-                <%= companyEmail %>
+              <%= clientAddress %>
             </p>
-        </div>
+          </div>
 
-        <div style="width: 50%; text-align: right">
-            <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold">Bill To</h3>
-            <p style="margin: 0 0 5px 0; color: #666">
-                <%= clientName %>
-            </p>
-            <p style="margin: 0 0 5px 0; color: #666">
-                <%= clientAddress %>
-            </p>
+          <!-- Invoice details on right -->
+          <div style="width: 50%; text-align: right">
+            <div style="margin-bottom: 10px">
+              <span
+                style="display: inline-block; color: #666; margin-right: 10px"
+                >Invoice Date :</span
+              >
+              <span><%= invoiceDate %></span>
+            </div>
+            <div style="margin-bottom: 10px">
+              <span
+                style="display: inline-block; color: #666; margin-right: 10px"
+                >Terms :</span
+              >
+              <span>Due On Receipt</span>
+            </div>
+            <div style="margin-bottom: 10px">
+              <span
+                style="display: inline-block; color: #666; margin-right: 10px"
+                >Due Date :</span
+              >
+              <span><%= dueDate %></span>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Invoice Dates -->
-    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-        <div>
-            <p style="margin-bottom: 5px"><strong>Invoice Date:</strong>
-                <%= invoiceDate %>
-            </p>
-            <p style="margin-bottom: 5px"><strong>Due Date:</strong>
-                <%= dueDate %>
-            </p>
-            <p style="margin-bottom: 5px"><strong>Terms:</strong> Due on Receipt</p>
-        </div>
-    </div>
-
-    <!-- Invoice Table -->
-    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <!-- Invoice Table -->
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0">
         <thead>
-            <tr>
-                <th style="background-color: #f5f5f5; padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">
-                    #</th>
-                <th style="background-color: #f5f5f5; padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">
-                    Influencer Name</th>
-                <th style="background-color: #f5f5f5; padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">
-                    Platform</th>
-                <th style="background-color: #f5f5f5; padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">
-                    Content Type</th>
-                <th style="background-color: #f5f5f5; padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">
-                    Price</th>
-            </tr>
+          <tr>
+            <th
+              style="
+                background-color: #f5f5f5;
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+                width: 5%;
+              "
+            >
+              #
+            </th>
+            <th
+              style="
+                background-color: #f5f5f5;
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+                width: 45%;
+              "
+            >
+              Influencer Name
+            </th>
+            <th
+              style="
+                background-color: #f5f5f5;
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+                width: 15%;
+              "
+            >
+              Platform
+            </th>
+            <th
+              style="
+                background-color: #f5f5f5;
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+                width: 15%;
+              "
+            >
+              Content Type
+            </th>
+            <th
+              style="
+                background-color: #f5f5f5;
+                padding: 10px;
+                text-align: right;
+                border-bottom: 1px solid #ddd;
+                width: 15%;
+              "
+            >
+              Price
+            </th>
+          </tr>
         </thead>
         <tbody>
-            <% items.forEach(function(item) { %>
-                <tr>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-                        <%= item.index %>
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-                        <%= item.name %>
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-                        <%= item.platform %>
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-                        <%= item.contentType %>
-                    </td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">$<%= item.price %>
-                    </td>
-                </tr>
-                <% }); %>
+          <% items.forEach(function(item) { %>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd"><%= item.index %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd"><%= item.name %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd"><%= item.platform %></td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd"><%= item.contentType %></td>
+            <td
+              style="
+                padding: 10px;
+                border-bottom: 1px solid #ddd;
+                text-align: right;
+              "
+            >
+              <%= item.price %>
+            </td>
+          </tr>
+          <% }); %>
         </tbody>
-    </table>
+      </table>
 
-    <!-- Invoice Totals -->
-    <div style="margin-left: auto; width: 300px">
-        <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-            <span>Sub Total (Tax Inclusive)</span>
-            <span>$<%= subtotal %></span>
+      <!-- Invoice Totals -->
+      <div style="margin-left: auto; width: 300px">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 16px;
+          "
+        >
+          <span>Sub Total (Tax Inclusive)</span>
+          <span><%= subtotal %></span>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-            <span>Management Fee (5%)</span>
-            <span>$<%= managementFee %></span>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 16px;
+          "
+        >
+          <span>Managment fee (5%)</span>
+          <span><%= managementFee %></span>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-            <span>Airdrop for Influencer Community (5%)</span>
-            <span>$<%= airdropFee %></span>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 16px;
+            gap: 24px;
+          "
+        >
+          <span>Airdrop for influencer community (5% of subtotal)</span>
+          <span><%= airdropFee %></span>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-            <strong>Balance Due</strong>
-            <strong>$<%= balanceDue %></strong>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 16px;
+            background-color: #ebebeb;
+            border-radius: 4px;
+            font-weight: 600;
+          "
+        >
+          <span>Balance Due</span>
+          <span><%= balanceDue %></span>
         </div>
-    </div>
+      </div>
 
-    <!-- Notes Section -->
-    <div style="margin-top: 30px; font-size: 12px;">
-        <h3>Notes</h3>
-        <p>
-            <%= notes %>
+      <!-- Notes Section -->
+      <div style="margin-top: 30px; border-radius: 5px; font-size: 12px">
+        <h3 style="margin-bottom: 10px">Notes</h3>
+        <!-- Replace the static text with your own notes OR keep both: -->
+        <!-- If you want your 'notes' field from data, do: -->
+        <p style="margin-bottom: 10px"><%= notes %></p>
+
+        <!-- Example static note content from the HTML template:
+        <p style="margin-bottom: 10px">
+          In the event a Key Opinion Leader (KOL) becomes unavailable due to
+          schedule changes or brief modifications, we reserve the right to
+          provide a suitable replacement KOL of comparable expertise and
+          standing. The fee paid is non-refundable regardless of such
+          substitutions.
         </p>
-    </div>
-
-    <!-- Terms & Conditions -->
-    <div style="margin-top: 20px; font-size: 12px;">
-        <h3>Terms & Conditions</h3>
-        <p><strong>Payment Information:</strong> USDC/USDT (SOL)</p>
-        <p>
-            <%= cryptoWalletAddress %>
+        <p style="margin-bottom: 10px">
+          By proceeding with the engagement, you acknowledge and agree to these
+          terms.
         </p>
-        <p>For Ethereum payments, an additional $100 gas fee applies.</p>
-        <p>
-            <%= ethWalletAddress %>
-        </p>
-    </div>
-    </div>
-</body>
+        -->
+      </div>
 
+      <!-- Terms Section -->
+      <div style="margin-top: 20px; font-size: 12px">
+        <h3 style="margin-bottom: 10px">Terms & Conditions</h3>
+
+        <div style="margin-top: 10px">
+          <p>Payment Information:</p>
+          <p>USDC/USDT (SOL)</p>
+          <!-- Insert your dynamic wallet address: -->
+          <p style="margin: 0px; line-height: 0px"><%= cryptoWalletAddress %></p>
+        </div>
+
+        <div style="margin-top: 30px">
+          <p>In case of Ethereum, the charges are 100$ extra for gas fees.</p>
+          <!-- Insert your dynamic ETH wallet address: -->
+          <p style="margin: 0px; line-height: 0px"><%= ethWalletAddress %></p>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
