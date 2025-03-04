@@ -18,6 +18,9 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+
+
+
 /**
  * Send an email with the provided details.
  *
@@ -27,13 +30,14 @@ const transporter = nodemailer.createTransport({
  */
 export async function sendInvoiceEmail(
     user: any,
-    pdfBuffer: Buffer,
+    pdfBuffer?: Buffer,  // Optional buffer for direct attachment
+    s3Link?: string,      // Optional S3 link for external attachment
     additionalEmail?: string,
-    checkoutDetails?: any,
+    proposalEmailText?: any,
+    proposalEmailHtml?: any,
+    emailFileName?: any,
+    emailsubject?: any
 ): Promise<any> {
-    // const username = user.fullname || 'Valued Customer';
-    const username = checkoutDetails?.firstName || 'Valued Customer';
-
     // Create an array of email recipients
     const toAddresses = [user.email];
     if (additionalEmail && additionalEmail !== user.email) {
@@ -41,62 +45,37 @@ export async function sendInvoiceEmail(
     }
     const bccEmails = ['kayaash.s@houseofweb3.com', 'mohit.ahuja@houseofweb3.com', 'uditsingh.t@houseofweb3.com'];
 
+    // Build attachments array dynamically
+    const attachments = [];
+
+    if (pdfBuffer) {
+        attachments.push({
+            filename: emailFileName || 'invoice.pdf',
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+        });
+    } else if (s3Link) {
+        attachments.push({
+            filename: emailFileName || 'invoice.pdf',
+            path: s3Link, // Links to the external S3 file
+        });
+    }
+
     const info = await transporter.sendMail({
-        from: '"HOW3 invoice" <partnerships@houseofweb3.com>',
-        to: toAddresses, // Send to both emails
+        from: '"HOW3 Invoice" <partnerships@houseofweb3.com>',
+        to: toAddresses,
         bcc: bccEmails,
-        subject: 'Amplify Distribution with Ampli5 (Best Yapping Discovery tool)',
-        text: `Hello ${username},
-
-        We are happy to have you onboard.
-
-        Attached, you will find the draft copy of the list.
-
-        The attached PDF is password-protected. Please use the following password to open the file:
-
-        Password: [First 4 characters of your username in lowercase][Current year]  
-        Example: If your username is "JohnSmith", your password will be "john2024".
-
-        Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
-
-        Thank you for your patience and cooperation.
-
-        Best regards,  
-        Ampli5
-        `,
-        html: `<p>Hello ${username},</p>
-
-        <p>We are happy to have you onboard.</p>
-
-        <p>Attached, you will find the draft copy of the list.</p>
-
-        <p><b>The attached PDF is password-protected. Please use the following password to open the file:</b></p>
-
-        <p><b>Password:</b> [First 4 characters of your username in lowercase][Current year]</p>
-
-        <p><b>Example:</b> If your username is "JohnSmith", your password will be "john2024".</p>
-
-        <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
-
-        <p>Thank you for your patience and cooperation.</p>
-
-        <p>Best regards,</p>
-
-        <p>Ampli5</p>
-        `,
-        attachments: [
-            {
-                filename: `Ampli5X${checkoutDetails?.projectName || ""}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf',
-            },
-        ],
+        subject: emailsubject,
+        text: proposalEmailText,
+        html: proposalEmailHtml,
+        attachments, // Include attachments if available
     });
 
     console.log('Invoice email sent: %s', info.messageId);
     console.log('Sent to:', toAddresses.join(', '));
     return info;
 }
+
 /**
  * Send a welcome email to the new user.
  *

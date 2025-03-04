@@ -9,6 +9,49 @@ import fs from 'fs/promises'
 import { resolve } from 'path';
 import ejs from 'ejs'
 import { convertHtmlToPdfBuffer, uploadPdfToS3 } from '../../../utils/pdfGenerator';
+import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
+
+const invoiceEmailInfo = (username: string) => {
+    const emailText = `Hello ${username},
+
+        We are happy to have you onboard.
+
+        Attached, you will find the draft copy of the list.
+
+        The attached PDF is password-protected. Please use the following password to open the file:
+
+        Password: [First 4 characters of your username in lowercase][Current year]  
+        Example: If your username is "JohnSmith", your password will be "john2024".
+
+        Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
+
+        Thank you for your patience and cooperation.
+
+        Best regards,  
+        Ampli5
+        `
+    const emailHtml = `<p>Hello ${username},</p>
+
+        <p>We are happy to have you onboard.</p>
+
+        <p>Attached, you will find the draft copy of the list.</p>
+
+        <p><b>The attached PDF is password-protected. Please use the following password to open the file:</b></p>
+
+        <p><b>Password:</b> [First 4 characters of your username in lowercase][Current year]</p>
+
+        <p><b>Example:</b> If your username is "JohnSmith", your password will be "john2024".</p>
+
+        <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
+
+        <p>Thank you for your patience and cooperation.</p>
+
+        <p>Best regards,</p>
+
+        <p>Ampli5</p>
+        `
+    return { emailText, emailHtml }
+}
 
 
 
@@ -371,7 +414,8 @@ export const generateInvoicePdf = async (
         await billingDetailsRepository.update(billingData.id, {
             invoiceS3Link: s3PublicUrl,
             invoiceDate: new Date(),
-            invoiceNo: finalInvoiceData?.invoiceNumber
+            invoiceNo: finalInvoiceData?.invoiceNumber,
+            invoiceStatus: "generated"
         });
 
 
@@ -384,6 +428,64 @@ export const generateInvoicePdf = async (
 };
 
 
+export const sendInvoiceEmailService = async (checkoutId: string) => {
+    const checkoutRepository = AppDataSource.getRepository(Checkout);
+    const billingDetailsRepository = AppDataSource.getRepository(BillingDetails)
+    // ✅ Find BillingDetails by checkoutId (since Checkout does not have a direct reference)
+    try {
+        const billingData = await billingDetailsRepository.findOne({
+            where: { checkout: { id: checkoutId } }
+        });
+
+        if (!billingData) {
+            throw new Error(`No billing details found for checkout ID: ${checkoutId}`);
+        }
+
+        // Fetch cart by id
+        logger.info(`Fetching cart with id: ${checkoutId}`);
+        const data = await checkoutRepository.findOne({
+            where: { id: checkoutId },
+            relations: [
+                'cart',
+                'cart.user'
+            ],
+        });
+
+        if (!data) {
+            throw new Error(`No record found for id: ${checkoutId}`);
+        }
+
+        const userData = data.cart.user
+        
+        const username = billingData?.firstName || 'Valued Customer';
+
+        const { emailText, emailHtml } = invoiceEmailInfo(username)
+
+        const fileName = `Ampli5X${billingData?.invoiceNo || ""}.pdf`
+
+        const s3Link = billingData?.invoiceS3Link
+
+        const subject = 'Amplify Invoice (Best Yapping Discovery tool)'
+
+        const additionalEmail = userData?.email;
+
+        // Send the PDF buffer as an email attachment
+        await sendInvoiceEmail(
+            userData,
+            undefined,  // No S3 link, so pass undefined instead of an empty string
+            s3Link,
+            additionalEmail,
+            emailText,
+            emailHtml,
+            fileName,
+            subject
+        );
+        return data;
+    } catch (error: any) {
+        logger.error(`Error generating invoice: ${error.message}`);
+        throw new Error(`Failed to generate invoice: ${error.message}`);
+    }
+}
 
 
 
