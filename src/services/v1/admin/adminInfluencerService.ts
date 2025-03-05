@@ -70,13 +70,38 @@ export const getInfluencerById = async (id: string) => {
 
 
 // service to create influencer with try catch block
+// service to create influencer with validation for duplicate name and content type
 export const createInfluencer = async (influencers: Influencer[]) => {
     const influencerRepository = AppDataSource.getRepository(Influencer);
     try {
-        const newInfluencer = await influencerRepository.save(influencers);
-        return newInfluencer;
+        // Check for duplicates before saving
+        for (const newInfluencer of influencers) {
+            // Find existing influencers with the same name
+            const existingInfluencers = await influencerRepository.find({
+                where: { 
+                    name: newInfluencer.name,
+                    deleted: false
+                }
+            });
+
+            // Check if any existing influencer has the same content type
+            const duplicateExists = existingInfluencers.some(
+                existing => existing.contentType === newInfluencer.contentType
+            );
+
+            if (duplicateExists) {
+                const error = new Error(`Influencer with name "${newInfluencer.name}" and content type "${newInfluencer.contentType}" already exists`);
+                // Add a status property to the error object for the controller to use
+                (error as any).status = 409; // Conflict status code
+                throw error;
+            }
+        }
+
+        // If no duplicates found, save all new influencers
+        const newInfluencers = await influencerRepository.save(influencers);
+        return newInfluencers;
     } catch (error) {
-        logger.error(`Error while creating influencer`);
+        logger.error(`Error while creating influencer: ${error}`);
         throw error;
     }
 };
