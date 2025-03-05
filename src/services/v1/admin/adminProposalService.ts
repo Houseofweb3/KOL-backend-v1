@@ -456,7 +456,7 @@ export const sendInvoiceEmailService = async (checkoutId: string) => {
         }
 
         const userData = data.cart.user
-        
+
         const username = billingData?.firstName || 'Valued Customer';
 
         const { emailText, emailHtml } = invoiceEmailInfo(username)
@@ -488,6 +488,60 @@ export const sendInvoiceEmailService = async (checkoutId: string) => {
 }
 
 
+export const getDashboardDetails = async () => {
+    const checkoutRepository = AppDataSource.getRepository(Checkout);
+    const billingDetailsRepository = AppDataSource.getRepository(BillingDetails);
+
+    // Placeholder for dashboard metrics
+    const dashboardData = {
+        generatedProposals: 0, // Total proposals generated
+        acceptedProposals: 0,  // Total accepted proposals
+        grossSales: 0,         // Total number of sales
+        avgRevenuePerUser: 0,  // Average revenue per user
+        totalClientsConverted: 0, // Total number of clients converted
+        conversionRate: 0,     // Conversion rate percentage
+        avgTimeToCloseDeal: "0h 0min", // Placeholder for average time
+    };
+
+    // Fetch required data from database
+    try {
+        // Get total proposals generated
+        dashboardData.generatedProposals = await billingDetailsRepository.count();
+
+        // Get total accepted proposals (assuming proposalStatus = 'Accepted')
+        dashboardData.acceptedProposals = await billingDetailsRepository.count({
+            where: { proposalStatus: 'accepted' },
+        });
+
+        // Get total gross sales (assuming successful payments)
+        dashboardData.grossSales = await billingDetailsRepository.count({
+            where: { paymentStatus: 'completed' },
+        });
+
+        // Get total converted clients (assuming invoiceStatus = 'Paid')
+        dashboardData.totalClientsConverted = await billingDetailsRepository.count({
+            where: { invoiceStatus: 'paid' },
+        });
+
+        // Calculate conversion rate (Accepted Proposals / Generated Proposals)
+        if (dashboardData.generatedProposals > 0) {
+            dashboardData.conversionRate = Math.round(
+                (dashboardData.acceptedProposals / dashboardData.generatedProposals) * 100
+            );
+        }
+
+        // Placeholder for average revenue per user
+        dashboardData.avgRevenuePerUser = 1000000; // Static placeholder, needs calculation logic
+
+        // Placeholder for avg time to close a deal
+        dashboardData.avgTimeToCloseDeal = "18h 32min"; // Static placeholder
+
+        return dashboardData;
+    } catch (error) {
+        console.error("Error fetching dashboard details:", error);
+        throw new Error("Failed to fetch dashboard details");
+    }
+};
 
 
 
