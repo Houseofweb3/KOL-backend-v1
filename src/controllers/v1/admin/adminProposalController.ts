@@ -1,8 +1,9 @@
 import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
-import { createProposal, getProposalDetails, editProposal, generateInvoicePdf, sendInvoiceEmailService } from '../../../services/v1/admin';
+import { createProposal, getProposalDetails, editProposal, generateInvoicePdf, sendInvoiceEmailService, getDashboardDetails } from '../../../services/v1/admin';
 import { fetchInvoiceDetails } from '../../../services/v1/payment';
+import { VALID_TIME_RANGES } from '../../../constants';
 
 
 // create proposal
@@ -134,6 +135,30 @@ export const sendInvoiceEmailController = async (req: Request, res: Response) =>
 
 }
 
+// Dashboard details 
+export const dashboardDetails = async (req: Request, res: Response) => {
+    try {
+        const timeRange = (req.query.timeRange as string);
 
+        // Validate time range
+
+        if (!VALID_TIME_RANGES.includes(timeRange)) {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                error: `Invalid time range. Valid values are: ${VALID_TIME_RANGES.join(', ')}`,
+            });
+        }
+
+        const dashboardData = await getDashboardDetails(timeRange);
+        return res.status(HttpStatus.OK).json(dashboardData);
+    } catch (error: any) {
+        const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        const errorMessage =
+            error.message || 'An unknown error occurred while fetching dashboard details';
+
+        logger.error(`Error while fetching dashboard details (${statusCode}): ${errorMessage}`);
+
+        return res.status(statusCode).json({ error: errorMessage });
+    }
+};
 
 
