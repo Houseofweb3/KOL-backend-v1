@@ -10,6 +10,8 @@ import { resolve } from 'path';
 import ejs from 'ejs'
 import { convertHtmlToPdfBuffer, uploadPdfToS3 } from '../../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
+import { Between } from 'typeorm';
+import { getDatesInRange, getStartDateFromTimeRange, getStartOfDay } from '../../../helpers';
 
 const invoiceEmailInfo = (username: string) => {
     const emailText = `Hello ${username},
@@ -488,63 +490,153 @@ export const sendInvoiceEmailService = async (checkoutId: string) => {
 }
 
 
-export const getDashboardDetails = async () => {
-    const checkoutRepository = AppDataSource.getRepository(Checkout);
+// Service
+export const getDashboardDetails = async (timeRange: string) => {
+    // const checkoutRepository = AppDataSource.getRepository(Checkout);
     const billingDetailsRepository = AppDataSource.getRepository(BillingDetails);
 
+    // Calculate start date based on time range
+    const currentDate = new Date();
+    const startDate = getStartDateFromTimeRange(timeRange);
+    
     // Placeholder for dashboard metrics
     const dashboardData = {
-        generatedProposals: 0, // Total proposals generated
-        acceptedProposals: 0,  // Total accepted proposals
-        grossSales: 0,         // Total number of sales
-        avgRevenuePerUser: 0,  // Average revenue per user
-        totalClientsConverted: 0, // Total number of clients converted
-        conversionRate: 0,     // Conversion rate percentage
-        avgTimeToCloseDeal: "0h 0min", // Placeholder for average time
+        generatedProposals: 0,
+        acceptedProposals: 0,
+        grossSales: 0,
+        totalClientsConverted: 0,
+        conversionRate: 0,
+        avgTimeToCloseDeal: "0h 0min",
+        graphData: {
+            proposalGenerated: [] as {timestamp: number, value: number}[],
+            proposalPaid: [] as {timestamp: number, value: number}[]
+        }
     };
 
-    // Fetch required data from database
     try {
-        // Get total proposals generated
-        dashboardData.generatedProposals = await billingDetailsRepository.count();
+        // 2. Get total proposals generated with time range
+        dashboardData.generatedProposals = await billingDetailsRepository.count({
+            where: {
+                createdAt: Between(startDate, currentDate)
+            }
+        });
 
-        // Get total accepted proposals (assuming proposalStatus = 'Accepted')
+        // 3. Get total accepted proposals with time range
         dashboardData.acceptedProposals = await billingDetailsRepository.count({
-            where: { proposalStatus: 'accepted' },
+            where: {
+                proposalStatus: 'approved',
+                createdAt: Between(startDate, currentDate)
+            }
         });
 
-        // Get total gross sales (assuming successful payments)
-        dashboardData.grossSales = await billingDetailsRepository.count({
-            where: { paymentStatus: 'completed' },
+        // 4. Calculate gross sales (sum of totalAmount for completed payments)
+        const completedPayments = await billingDetailsRepository.find({
+            where: {
+                invoiceStatus: 'paid',
+                createdAt: Between(startDate, currentDate)
+            },
+            select: ['totalAmount']
         });
+        
+        dashboardData.grossSales = completedPayments.reduce((sum, item) => {
+            return sum + Number(item.totalAmount || 0);
+        }, 0);
 
-        // Get total converted clients (assuming invoiceStatus = 'Paid')
+        // 5. Get total converted clients with time range
         dashboardData.totalClientsConverted = await billingDetailsRepository.count({
-            where: { invoiceStatus: 'paid' },
+            where: {
+                invoiceStatus: 'paid',
+                createdAt: Between(startDate, currentDate)
+            }
         });
 
-        // Calculate conversion rate (Accepted Proposals / Generated Proposals)
+        // 6. Calculate conversion rate (Paid Invoices / Generated Proposals)
         if (dashboardData.generatedProposals > 0) {
             dashboardData.conversionRate = Math.round(
-                (dashboardData.acceptedProposals / dashboardData.generatedProposals) * 100
+                (dashboardData.totalClientsConverted / dashboardData.generatedProposals) * 100
             );
         }
 
-        // Placeholder for average revenue per user
-        dashboardData.avgRevenuePerUser = 1000000; // Static placeholder, needs calculation logic
+        // 7. Calculate average time to close deal for paid invoices
+        const paidInvoices = await billingDetailsRepository.find({
+            where: {
+                invoiceStatus: 'paid',
+                createdAt: Between(startDate, currentDate)
+            },
+            select: ['createdAt', 'updatedAt']
+        });
 
-        // Placeholder for avg time to close a deal
-        dashboardData.avgTimeToCloseDeal = "18h 32min"; // Static placeholder
+        if (paidInvoices.length > 0) {
+            let totalMinutes = 0;
+            
+            paidInvoices.forEach(invoice => {
+                if (invoice.createdAt && invoice.updatedAt) {
+                    const diffMs = invoice.updatedAt.getTime() - invoice.createdAt.getTime();
+                    const diffMinutes = Math.floor(diffMs / 60000);
+                    totalMinutes += diffMinutes;
+                }
+            });
+            
+            const avgMinutes = Math.round(totalMinutes / paidInvoices.length);
+            const hours = Math.floor(avgMinutes / 60);
+            const minutes = avgMinutes % 60;
+            
+            dashboardData.avgTimeToCloseDeal = `${hours}h ${minutes}min`;
+        }
+
+        // 8. Calculate graph data for daily proposals and paid invoices
+        const dateRange = getDatesInRange(startDate, currentDate);
+        
+        // Initialize empty data points for each day
+        const proposalGeneratedMap = new Map();
+        const proposalPaidMap = new Map();
+        
+        dateRange.forEach(date => {
+            const timestamp = date.getTime();
+            proposalGeneratedMap.set(timestamp, 0);
+            proposalPaidMap.set(timestamp, 0);
+        });
+        
+        // Get all proposals within date range
+        const allProposals = await billingDetailsRepository.find({
+            where: {
+                createdAt: Between(startDate, currentDate)
+            }
+        });
+        
+        // Count proposals by date created
+        allProposals.forEach(proposal => {
+            if (proposal.createdAt) {
+                const dateKey = getStartOfDay(proposal.createdAt).getTime();
+                
+                if (proposalGeneratedMap.has(dateKey)) {
+                    proposalGeneratedMap.set(dateKey, proposalGeneratedMap.get(dateKey) + 1);
+                }
+                
+                // If this proposal is paid, increment the paid count
+                if (proposal.invoiceStatus === 'paid') {
+                    if (proposalPaidMap.has(dateKey)) {
+                        proposalPaidMap.set(dateKey, proposalPaidMap.get(dateKey) + 1);
+                    }
+                }
+            }
+        });
+        
+        // Convert maps to arrays
+        dashboardData.graphData.proposalGenerated = Array.from(proposalGeneratedMap.entries())
+            .map(([timestamp, value]) => ({ timestamp, value }))
+            .sort((a, b) => a.timestamp - b.timestamp);
+            
+        dashboardData.graphData.proposalPaid = Array.from(proposalPaidMap.entries())
+            .map(([timestamp, value]) => ({ timestamp, value }))
+            .sort((a, b) => a.timestamp - b.timestamp);
 
         return dashboardData;
     } catch (error) {
-        console.error("Error fetching dashboard details:", error);
+        logger.error("Error fetching dashboard details:", error);
         throw new Error("Failed to fetch dashboard details");
     }
 };
-
-
-
 
 
 
