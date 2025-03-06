@@ -506,7 +506,7 @@ export const getDashboardDetails = async (timeRange: string) => {
         grossSales: 0,
         totalClientsConverted: 0,
         conversionRate: 0,
-        avgTimeToCloseDeal: "0h 0min",
+        avgTimeToCloseDealInMinutes: 0,
         graphData: {
             proposalGenerated: [] as {timestamp: number, value: number}[],
             proposalPaid: [] as {timestamp: number, value: number}[]
@@ -578,10 +578,9 @@ export const getDashboardDetails = async (timeRange: string) => {
             });
             
             const avgMinutes = Math.round(totalMinutes / paidInvoices.length);
-            const hours = Math.floor(avgMinutes / 60);
-            const minutes = avgMinutes % 60;
+         
             
-            dashboardData.avgTimeToCloseDeal = `${hours}h ${minutes}min`;
+            dashboardData.avgTimeToCloseDealInMinutes = avgMinutes;
         }
 
         // 8. Calculate graph data for daily proposals and paid invoices
