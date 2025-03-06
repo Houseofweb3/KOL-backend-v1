@@ -32,6 +32,7 @@ import { adminInfluencerRoutes } from './routes';
 import { adminClientRoutes } from './routes';
 import { adminAuthRoutes } from './routes';
 import { adminProposalRoutes } from './routes';
+import { adminDashboardRoutes } from './routes/v1/admin/adminDashboardRoutes';
 
 
 const app: Application = express();
@@ -95,6 +96,8 @@ app.use(`/api/v${ENV.VERSION}/admin/client`, adminClientRoutes);
 app.use(`/api/v${ENV.VERSION}/admin/auth`, adminAuthRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/proposal`, adminProposalRoutes);
+
+app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
 
 // Dummy API
 app.get('/', (req: Request, res: Response) => {
