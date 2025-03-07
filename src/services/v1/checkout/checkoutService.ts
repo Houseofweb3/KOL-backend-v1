@@ -158,29 +158,85 @@ export const getCheckouts = async (
             .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
             .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')
             .leftJoinAndSelect('cart.user', 'user')
-            .where(searchTerm ?
-                `(user.fullname ILIKE :searchTerm)`
-                : '1=1',
-                { searchTerm: `%${searchTerm}%` });
+            .where(searchTerm ? `(user.fullname ILIKE :searchTerm)` : '1=1', {
+                searchTerm: `%${searchTerm}%`,
+            });
 
         // Apply filters
         filters.forEach((filter, index) => {
             // Get the key and value from the filter object
             const key = Object.keys(filter)[0];
             const value = filter[key];
-            
-            // Only process if key is proposalStatus or invoiceStatus
-            if (key === 'proposalStatus' || key === 'invoiceStatus') {
+
+            if (key === 'proposalStatus') {
                 if (Array.isArray(value)) {
-                    // Handle array of values (multiple selection)
-                    queryBuilder = queryBuilder.andWhere(`billingDetails.${key} IN (:...${key}${index})`, {
-                        [`${key}${index}`]: value
-                    });
+                    // If array includes 'sent', also consider null/undefined values
+                    if (value.includes('sent')) {
+                        queryBuilder = queryBuilder.andWhere(
+                            `(billingDetails.${key} IN (:...${key}${index}) OR billingDetails.${key} IS NULL)`,
+                            {
+                                [`${key}${index}`]: value,
+                            },
+                        );
+                    } else {
+                        queryBuilder = queryBuilder.andWhere(
+                            `billingDetails.${key} IN (:...${key}${index})`,
+                            {
+                                [`${key}${index}`]: value,
+                            },
+                        );
+                    }
+                } else if (value === 'sent') {
+                    // If value is 'sent', also consider null/undefined values
+                    queryBuilder = queryBuilder.andWhere(
+                        `(billingDetails.${key} = :${key}${index} OR billingDetails.${key} IS NULL)`,
+                        {
+                            [`${key}${index}`]: value,
+                        },
+                    );
                 } else {
-                    // Handle single value
-                    queryBuilder = queryBuilder.andWhere(`billingDetails.${key} = :${key}${index}`, {
-                        [`${key}${index}`]: value
-                    });
+                    // For other values (approved, rejected, asked_for_change), don't include null
+                    queryBuilder = queryBuilder.andWhere(
+                        `billingDetails.${key} = :${key}${index}`,
+                        {
+                            [`${key}${index}`]: value,
+                        },
+                    );
+                }
+            } else if (key === 'invoiceStatus') {
+                if (Array.isArray(value)) {
+                    // If array includes 'not_generated', also consider null/undefined values
+                    if (value.includes('not_generated')) {
+                        queryBuilder = queryBuilder.andWhere(
+                            `(billingDetails.${key} IN (:...${key}${index}) OR billingDetails.${key} IS NULL)`,
+                            {
+                                [`${key}${index}`]: value,
+                            },
+                        );
+                    } else {
+                        queryBuilder = queryBuilder.andWhere(
+                            `billingDetails.${key} IN (:...${key}${index})`,
+                            {
+                                [`${key}${index}`]: value,
+                            },
+                        );
+                    }
+                } else if (value === 'not_generated') {
+                    // If value is 'not_generated', also consider null/undefined values
+                    queryBuilder = queryBuilder.andWhere(
+                        `(billingDetails.${key} = :${key}${index} OR billingDetails.${key} IS NULL)`,
+                        {
+                            [`${key}${index}`]: value,
+                        },
+                    );
+                } else {
+                    // For other values (generated, paid), don't include null
+                    queryBuilder = queryBuilder.andWhere(
+                        `billingDetails.${key} = :${key}${index}`,
+                        {
+                            [`${key}${index}`]: value,
+                        },
+                    );
                 }
             }
         });
@@ -192,7 +248,7 @@ export const getCheckouts = async (
 
         const [billingDetails, total] = await queryBuilder.getManyAndCount();
 
-        /// retrn the response with pagination
+        // return the response with pagination
         return {
             billingDetails,
             pagination: {
@@ -202,7 +258,6 @@ export const getCheckouts = async (
                 totalPages: limit ? Math.ceil(total / limit) : 1,
             },
         };
-
     } catch (error) {
         logger.error(`Error fetching all checkouts: ${error}`);
         throw new Error('Error fetching all checkouts');
