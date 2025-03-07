@@ -234,6 +234,17 @@ export const editProposal = async (
 
             if (!billingDetails) throw new Error(`BillingDetails not found for checkout ID: ${checkoutId}`);
 
+            if (billingDetails.proposalStatus === 'approved'){
+                throw new Error(
+                    `can not edit a proposal which is already approved checkout ID: ${checkoutId}`,
+                );
+            }
+            if (billingDetails.invoiceStatus === 'generated'){
+                throw new Error(
+                    `can not edit a proposal whose invoice is generated checkout ID: ${checkoutId}`,
+                );
+            }
+
             /** ✅ Step 3: Update Billing Details (Only if provided) **/
             Object.assign(billingDetails, {
                 managementFeePercentage: updatedBillingInfo.managementFeePercentage ?? billingDetails.managementFeePercentage,
@@ -290,6 +301,67 @@ export const editProposal = async (
         } catch (error: any) {
             logger.error(`Error editing proposal: ${error.message}`);
             throw new Error(`Failed to edit proposal: ${error.message}`);
+        }
+    });
+};
+
+// Service function for deleting a proposal
+export const deleteProposal = async (checkoutId: string) => {
+    return await AppDataSource.transaction(async (transactionalEntityManager) => {
+        try {
+            /** Step 1: Fetch Checkout & Related Entities **/
+            const checkout = await transactionalEntityManager.findOne(Checkout, {
+                where: { id: checkoutId },
+                relations: ['cart', 'cart.influencerCartItems', 'cart.user'],
+            });
+            
+            if (!checkout) throw new Error(`Checkout not found for ID: ${checkoutId}`);
+            const cart = checkout.cart;
+            if (!cart) throw new Error(`Cart not found for checkout ID: ${checkoutId}`);
+
+
+            /** Step 2: Fetch BillingDetails Separately **/
+            const billingDetails = await transactionalEntityManager.findOne(BillingDetails, {
+                where: { checkout: { id: checkoutId } },
+            });
+
+            if (!billingDetails) throw new Error(`BillingDetails not found for checkout ID: ${checkoutId}`);
+
+            /** Step 3: Validate deletion conditions **/
+            // Check if proposal is already approved
+            if (billingDetails.proposalStatus === 'approved') {
+                throw new Error(`Cannot delete a proposal which is already approved (checkout ID: ${checkoutId})`);
+            }
+            
+            // Check if invoice is already generated
+            if (billingDetails.invoiceStatus === 'generated') {
+                throw new Error(`Cannot delete a proposal whose invoice is generated (checkout ID: ${checkoutId})`);
+            }
+
+            /** Step 4: Delete related InfluencerCartItems first (to maintain referential integrity) **/
+            await transactionalEntityManager.delete(InfluencerCartItem, { cart: { id: cart.id } });
+            logger.info(`Removed influencer cart items for cart ID: ${cart.id}`);
+
+            /** Step 5: Delete BillingDetails **/
+            await transactionalEntityManager.delete(BillingDetails, { id: billingDetails.id });
+            logger.info(`Deleted BillingDetails for checkout ID: ${checkoutId}`);
+
+            /** Step 6: Delete Checkout **/
+            await transactionalEntityManager.delete(Checkout, { id: checkoutId });
+            logger.info(`Deleted Checkout with ID: ${checkoutId}`);
+
+            /** Step 7: Delete Cart **/
+            await transactionalEntityManager.delete(Cart, { id: cart.id });
+            logger.info(`Deleted Cart with ID: ${cart.id}`);
+
+            return {
+                message: 'Proposal deleted successfully',
+                deletedCheckoutId: checkoutId,
+            };
+
+        } catch (error: any) {
+            logger.error(`Error deleting proposal: ${error.message}`);
+            throw new Error(`Failed to delete proposal: ${error.message}`);
         }
     });
 };

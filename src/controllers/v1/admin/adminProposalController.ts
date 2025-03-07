@@ -1,7 +1,7 @@
 import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
-import { createProposal, getProposalDetails, editProposal, generateInvoicePdf, sendInvoiceEmailService, getDashboardDetails } from '../../../services/v1/admin';
+import { createProposal, getProposalDetails, editProposal, generateInvoicePdf, sendInvoiceEmailService, getDashboardDetails, deleteProposal } from '../../../services/v1/admin';
 import { fetchInvoiceDetails } from '../../../services/v1/payment';
 import { VALID_TIME_RANGES } from '../../../constants';
 
@@ -92,6 +92,28 @@ export const editProposalController = async (req: Request, res: Response) => {
         const errorMessage = error.message || 'An unknown error occurred while updating proposal';
 
         logger.error(`Error while updating proposal (${statusCode}): ${errorMessage}`);
+
+        return res.status(statusCode).json({ error: errorMessage });
+    }
+};
+
+// Controller function for the delete proposal endpoint
+export const deleteProposalController = async (req: Request, res: Response) => {
+    const { checkoutId } = req.params; // Get checkoutId from URL parameters
+    
+    try {
+        const { message, deletedCheckoutId } = await deleteProposal(checkoutId);
+        
+        res.status(HttpStatus.OK).json({
+            message,
+            deletedCheckoutId
+        });
+
+    } catch (error: any) {
+        const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        const errorMessage = error.message || 'An unknown error occurred while deleting the proposal';
+
+        logger.error(`Error while deleting proposal (${statusCode}): ${errorMessage}`);
 
         return res.status(statusCode).json({ error: errorMessage });
     }
