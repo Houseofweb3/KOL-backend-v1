@@ -379,6 +379,7 @@ interface InvoiceData {
     items: InvoiceItem[];
     subtotal: string;
     managementFee: string;
+    managementFeePercentage:number;
     airdropFee: string;
     cryptoWalletAddress: string;
     ethWalletAddress: string;
@@ -399,15 +400,14 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
     const formattedInvoiceNo = `INV-${apiData.id.slice(-4)}`; // last four digits of checkout id 
     const airdropFee = (parseFloat(apiData.totalAmount)) * 0.05
     const managementFee =
-        (parseFloat(apiData.totalAmount) * managementFeePercentage) ||
+        (parseFloat(apiData.totalAmount) * managementFeePercentage/100) ||
         (parseFloat(apiData.totalAmount) * 0.05); //  take from argument managementFeePercentage or fallback to 5
 
     return {
         invoiceNumber: formattedInvoiceNo,
         invoiceDate: invoiceDate,
         dueDate: dueDate,
-        balanceDue:(apiData.totalAmount + airdropFee + managementFee) || 0, // sum post all fees 
-
+        balanceDue: (Number(apiData.totalAmount) + Number(airdropFee) + Number( managementFee)).toFixed(2), // sum post all fees 
         // Hardcoded Company Details
         companyName: 'HOW3 Pte. Ltd.',
         companyAddress: '68 CIRCULAR ROAD #02-01, Singapore 049422',
@@ -431,7 +431,7 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
         subtotal: apiData.totalAmount || '0.00',
         managementFee:managementFee.toFixed(2),
         airdropFee: airdropFee.toFixed(2),
-
+        managementFeePercentage:managementFeePercentage || 5, // fallback to 5% managment fee 
         // Payment Information (Hardcoded)
         cryptoWalletAddress: 'BF46k8HylFy...',
         ethWalletAddress: '0x7aAa41403Ec...',
