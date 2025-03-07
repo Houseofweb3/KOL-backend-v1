@@ -43,3 +43,15 @@ export function getStartDateFromTimeRange(timeRange: string): Date {
 
     return startDate;
 }
+
+export const formatClientAddress = (address: Record<string, string>): string => {
+  // Filter out empty values
+  const validValues = Object.values(address).filter(value => 
+    value !== undefined && 
+    value !== null && 
+    value.trim() !== ''
+  );
+  
+  // Join all valid values with commas
+  return validValues.join(', ');
+};

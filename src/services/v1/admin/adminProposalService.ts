@@ -11,7 +11,7 @@ import ejs from 'ejs'
 import { convertHtmlToPdfBuffer, uploadPdfToS3 } from '../../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
 import { Between } from 'typeorm';
-import { getDatesInRange, getStartDateFromTimeRange, getStartOfDay } from '../../../helpers';
+import { formatClientAddress, getDatesInRange, getStartDateFromTimeRange, getStartOfDay } from '../../../helpers';
 
 const invoiceEmailInfo = (username: string) => {
     const emailText = `Hello ${username},
@@ -407,7 +407,11 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
         invoiceNumber: formattedInvoiceNo,
         invoiceDate: invoiceDate,
         dueDate: dueDate,
-        balanceDue: (Number(apiData.totalAmount) + Number(airdropFee) + Number( managementFee)).toFixed(2), // sum post all fees 
+        balanceDue: (
+            Number(apiData.totalAmount) +
+            Number(airdropFee) +
+            Number(managementFee)
+        ).toFixed(2), // sum post all fees
         // Hardcoded Company Details
         companyName: 'HOW3 Pte. Ltd.',
         companyAddress: '68 CIRCULAR ROAD #02-01, Singapore 049422',
@@ -415,8 +419,7 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
 
         // Client Details
         clientName: apiData.cart?.user?.fullname || 'Unknown Client',
-        clientAddress: 'British Virgin Islands, VG110', // Hardcoded
-
+        clientAddress: formatClientAddress(apiData.cart?.user?.addressInfo),
         // Extracting Influencer Cart Items
         items:
             apiData.cart?.influencerCartItems?.map((item: any, index: number) => ({
@@ -424,14 +427,14 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
                 name: item.influencer?.name || 'Unknown Influencer',
                 platform: item.influencer?.platform || 'Unknown',
                 contentType: item.influencer?.contentType || 'Unknown',
-                price: item.price || item?.influencer?.price, // fallback to infleuncer price 
+                price: item.price || item?.influencer?.price, // fallback to infleuncer price
             })) || [],
 
         // Summary Calculations (Hardcoded Fees)
         subtotal: apiData.totalAmount || '0.00',
-        managementFee:managementFee.toFixed(2),
+        managementFee: managementFee.toFixed(2),
         airdropFee: airdropFee.toFixed(2),
-        managementFeePercentage:managementFeePercentage || 5, // fallback to 5% managment fee 
+        managementFeePercentage: managementFeePercentage || 5, // fallback to 5% managment fee
         // Payment Information (Hardcoded)
         cryptoWalletAddress: 'BF46k8HylFy...',
         ethWalletAddress: '0x7aAa41403Ec...',
@@ -535,6 +538,10 @@ export const sendInvoiceEmailService = async (checkoutId: string) => {
         }
 
         const userData = data.cart.user
+
+        if(!userData?.addressInfo) {
+        throw new Error(`can not generate an invoice for client with no address`);
+        }
 
         const username = billingData?.firstName || 'Valued Customer';
 
