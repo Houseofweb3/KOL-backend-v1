@@ -234,16 +234,6 @@ export const editProposal = async (
 
             if (!billingDetails) throw new Error(`BillingDetails not found for checkout ID: ${checkoutId}`);
 
-            if (billingDetails.proposalStatus === 'approved'){
-                throw new Error(
-                    `can not edit a proposal which is already approved checkout ID: ${checkoutId}`,
-                );
-            }
-            if (billingDetails.invoiceStatus === 'generated'){
-                throw new Error(
-                    `can not edit a proposal whose invoice is generated checkout ID: ${checkoutId}`,
-                );
-            }
 
             /** ✅ Step 3: Update Billing Details (Only if provided) **/
             Object.assign(billingDetails, {
