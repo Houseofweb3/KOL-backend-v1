@@ -17,6 +17,7 @@ router.put('/', editProposalController);
 
 // delete proposal route
 
+
 router.delete('/proposal/:checkoutId', deleteProposalController);
 
 // generate invoice pdf route
