@@ -147,12 +147,21 @@ export const deleteCheckoutHandler = async (req: Request, res: Response) => {
 export const getCheckoutsHandler = async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
-    const sortField = req.query.sortField as string || 'createdAt';
-    const sortOrder = req.query.sortOrder as 'ASC' | 'DESC' || 'DESC';
+    const sortField = (req.query.sortField as string) || 'createdAt';
+    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
     const searchTerm = req.query.searchTerm as string;
+    // Parse filters from the request in the format [{field:value},..]
+    const filters = req.query.filter ? JSON.parse(req.query.filter as string) : [];
 
     try {
-        const { billingDetails, pagination } = await getCheckouts(page, limit, sortField, sortOrder, searchTerm);
+        const { billingDetails, pagination } = await getCheckouts(
+            page,
+            limit,
+            sortField,
+            sortOrder,
+            searchTerm,
+            filters,
+        );
         return res.status(HttpStatus.OK).json({
             billingDetails,
             pagination

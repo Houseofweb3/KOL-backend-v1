@@ -139,6 +139,8 @@ export const deleteCheckout = async (id: string): Promise<void> => {
 
 
 // Get all Checkouts with pagination and its billing details
+// Define filter type for the simplified format
+type Filters = Array<Record<string, string | string[]>>;
 
 export const getCheckouts = async (
     page: number = 1,
@@ -146,6 +148,7 @@ export const getCheckouts = async (
     sortField: string = 'createdAt',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
     searchTerm?: string,
+    filters: Filters = [],
 ) => {
     try {
         let queryBuilder = billingDetailsRepository
@@ -160,7 +163,27 @@ export const getCheckouts = async (
                 : '1=1',
                 { searchTerm: `%${searchTerm}%` });
 
-
+        // Apply filters
+        filters.forEach((filter, index) => {
+            // Get the key and value from the filter object
+            const key = Object.keys(filter)[0];
+            const value = filter[key];
+            
+            // Only process if key is proposalStatus or invoiceStatus
+            if (key === 'proposalStatus' || key === 'invoiceStatus') {
+                if (Array.isArray(value)) {
+                    // Handle array of values (multiple selection)
+                    queryBuilder = queryBuilder.andWhere(`billingDetails.${key} IN (:...${key}${index})`, {
+                        [`${key}${index}`]: value
+                    });
+                } else {
+                    // Handle single value
+                    queryBuilder = queryBuilder.andWhere(`billingDetails.${key} = :${key}${index}`, {
+                        [`${key}${index}`]: value
+                    });
+                }
+            }
+        });
 
         queryBuilder = queryBuilder
             .orderBy(`billingDetails.${sortField}`, sortOrder)
@@ -169,7 +192,7 @@ export const getCheckouts = async (
 
         const [billingDetails, total] = await queryBuilder.getManyAndCount();
 
-        // retrn the response with pagination
+        /// retrn the response with pagination
         return {
             billingDetails,
             pagination: {
