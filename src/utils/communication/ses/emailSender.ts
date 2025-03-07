@@ -40,6 +40,8 @@ export async function sendInvoiceEmail(
 ): Promise<any> {
     // Create an array of email recipients
     const toAddresses = [user.email];
+    console.log('user.email', user.email);
+    console.log('additionalEmail', additionalEmail);
     if (additionalEmail && additionalEmail !== user.email) {
         toAddresses.push(additionalEmail);
     }
