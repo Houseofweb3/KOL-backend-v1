@@ -123,8 +123,10 @@ export const deleteProposalController = async (req: Request, res: Response) => {
 
 export const generateInvoicePdfController = async (req: Request, res: Response) => {
     const { checkoutId } = req.query;
+    const {   terms_and_conditions } = req.body;
+
     try {
-        const pdf = await generateInvoicePdf(checkoutId as string);
+        const pdf = await generateInvoicePdf(checkoutId as string, terms_and_conditions);
         res.json(pdf);
 
     } catch (error: any) {
