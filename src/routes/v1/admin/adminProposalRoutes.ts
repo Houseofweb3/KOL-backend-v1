@@ -21,7 +21,7 @@ router.put('/', editProposalController);
 router.delete('/:checkoutId', deleteProposalController);
 
 // generate invoice pdf route
-router.get('/generate-invoice-pdf', generateInvoicePdfController);
+router.post('/generate-invoice-pdf', generateInvoicePdfController);
 
 // Send invoice pdf
 router.post('/invoices/send', sendInvoiceEmailController);
