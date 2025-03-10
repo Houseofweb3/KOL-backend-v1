@@ -95,12 +95,15 @@ function transformData(data: any) {
     // calc management fee based on total amount
     const managementFee = (parseFloat(totalPrice) * (data.managementFeePercentage / 100)).toFixed(2);
 
-    const discount = data.discount || 5; // Default to 5% if no discount is provided
+const airDropFeePercentage = 5; // 5% airdrop fee
 
-    // Apply dynamic discount to subtotal before adding the management fee
-    const totalPriceWithFee = ((parseFloat(totalPrice) * ((100 - discount) / 100)) + parseFloat(managementFee)).toFixed(2);
+// Calculate the airdrop fee amount by
+const airDropFee = (parseFloat(totalPrice) * airDropFeePercentage) / 100;
 
-    const discountVal = (parseFloat(totalPrice) * parseFloat(discount)) / 100
+// Add the airdrop fee to the total price, then add the management fee
+const totalPriceWithFee = (parseFloat(totalPrice) + airDropFee + parseFloat(managementFee)).toFixed(
+    2,
+);
 
 
 
@@ -117,9 +120,9 @@ function transformData(data: any) {
         totalPriceWithFee,
         showInfluencersList: influencerPRs.length > 0,
         showPackagesList: packageHeaders.length > 0,
-        discount: discount,
+        airDropFeePercentage: airDropFeePercentage,
         influencerLength: influencerPRs.length,
-        discountVal
+        airDropFee,
     };
 }
 
