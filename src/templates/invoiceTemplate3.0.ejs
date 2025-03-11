@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Invoice Template</title>
   </head>
-  <body
-    style="
+  <body style="
       padding: 40px;
       color: #333;
-      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS',
-        sans-serif;
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
       margin: 0;
-    "
-  >
-    <div style="max-width: 1200px; margin: 0 auto; padding: 64px">
+    ">
+    <div style="
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 64px;
+        padding-bottom: 100px;
+      ">
       <!-- Header with Logo and Invoice Title -->
       <div
         style="
@@ -89,8 +91,6 @@
           <h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold">
             <%= companyName %>
           </h3>
-          <!-- If your address is just one line in data, show it directly;
-               or break it up if you want multi-line like the example: -->
           <p style="margin: 0 0 5px 0; color: #666">
             <%= companyAddress %>
           </p>
@@ -270,43 +270,17 @@
         </div>
       </div>
 
-      <!-- Notes Section -->
-      <div style="margin-top: 30px; border-radius: 5px; font-size: 12px">
+      <!-- Notes Section with better spacing -->
+      <div style="margin-top: 60px; border-radius: 5px; font-size: 12px; page-break-inside: avoid;">
         <h3 style="margin-bottom: 10px">Notes</h3>
-        <!-- Replace the static text with your own notes OR keep both: -->
-        <!-- If you want your 'notes' field from data, do: -->
         <p style="margin-bottom: 10px"><%= notes %></p>
-
-        <!-- Example static note content from the HTML template:
-        <p style="margin-bottom: 10px">
-          In the event a Key Opinion Leader (KOL) becomes unavailable due to
-          schedule changes or brief modifications, we reserve the right to
-          provide a suitable replacement KOL of comparable expertise and
-          standing. The fee paid is non-refundable regardless of such
-          substitutions.
-        </p>
-        <p style="margin-bottom: 10px">
-          By proceeding with the engagement, you acknowledge and agree to these
-          terms.
-        </p>
-        -->
       </div>
 
-      <!-- Terms Section -->
-      <div style="margin-top: 20px; font-size: 12px">
+      <!-- Terms Section with page break prevention -->
+      <div style="margin-top: 30px; font-size: 12px; page-break-inside: avoid; padding-bottom: 80px;">
         <h3 style="margin-bottom: 10px">Terms & Conditions</h3>
-
         <div style="margin-top: 10px">
-          <p>Payment Information:</p>
-          <p>USDC/USDT (SOL)</p>
-          <!-- Insert your dynamic wallet address: -->
-          <p style="margin: 0px; line-height: 0px"><%= cryptoWalletAddress %></p>
-        </div>
-
-        <div style="margin-top: 30px">
-          <p>In case of Ethereum, the charges are 100$ extra for gas fees.</p>
-          <!-- Insert your dynamic ETH wallet address: -->
-          <p style="margin: 0px; line-height: 0px"><%= ethWalletAddress %></p>
+          <p style="margin: 0px; line-height: 1.5;"><%= terms_and_conditions %></p>
         </div>
       </div>
     </div>

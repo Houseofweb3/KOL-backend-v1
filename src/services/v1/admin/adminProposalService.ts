@@ -369,11 +369,10 @@ interface InvoiceData {
     items: InvoiceItem[];
     subtotal: string;
     managementFee: string;
-    managementFeePercentage:number;
+    managementFeePercentage: number;
     airdropFee: string;
-    cryptoWalletAddress: string;
-    ethWalletAddress: string;
     notes: string;
+    terms_and_conditions:string
 }
 
 interface InvoiceItem {
@@ -384,7 +383,7 @@ interface InvoiceItem {
     price: string;
 }
 // take another param for  managemnt fee
-function extractInvoiceData(apiData: any,managementFeePercentage:number): InvoiceData {
+function extractInvoiceData(apiData: any,managementFeePercentage:number,terms_and_conditions:string): InvoiceData {
     const invoiceDate = new Date(apiData.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' });
     const dueDate = new Date(apiData.updatedAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' });
     const formattedInvoiceNo = `INV-${apiData.id.slice(-4)}`; // last four digits of checkout id 
@@ -426,9 +425,7 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
         airdropFee: airdropFee.toFixed(2),
         managementFeePercentage: managementFeePercentage || 5, // fallback to 5% managment fee
         // Payment Information (Hardcoded)
-        cryptoWalletAddress: 'BF46k8HylFy...',
-        ethWalletAddress: '0x7aAa41403Ec...',
-
+        terms_and_conditions:terms_and_conditions,
         // Notes
         notes: 'Payments are final. No refunds or adjustments after confirmation.',
     };
@@ -437,6 +434,7 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number): Invoic
 // Generate invoice details for a given checkoutId and store it to s3 and billing details
 export const generateInvoicePdf = async (
     checkoutId: string,
+    terms_and_conditions:string
 ) => {
     const checkoutRepository = AppDataSource.getRepository(Checkout);
     const billingDetailsRepository = AppDataSource.getRepository(BillingDetails)
@@ -469,7 +467,7 @@ export const generateInvoicePdf = async (
         const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate3.0.ejs');
         const templateContent = await fs.readFile(templatePath, { encoding: 'utf8' });
 
-        const finalInvoiceData = extractInvoiceData(data, billingData.managementFeePercentage || 5);
+        const finalInvoiceData = extractInvoiceData(data, billingData.managementFeePercentage || 5,terms_and_conditions);
         const renderedHTML = ejs.render(templateContent, finalInvoiceData);
 
         const pdfBuffer = await convertHtmlToPdfBuffer(renderedHTML as string);
