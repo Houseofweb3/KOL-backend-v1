@@ -52,6 +52,11 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
       }
+      .notes-cell {
+        font-size: 0.85em;
+        color: #555;
+        font-style: italic;
+      }
     </style>
   </head>
   <body>
@@ -179,6 +184,16 @@
         </div>
       </div>
 
+      <!-- Check if any influencer has notes -->
+      <% 
+      let hasAnyNotes = false;
+      items.forEach(function(item) {
+        if (item.notes && item.notes.trim() !== '') {
+          hasAnyNotes = true;
+        }
+      });
+      %>
+
       <!-- Invoice Table with fixed layout for better word wrapping -->
       <div class="avoid-break">
         <table style="border-collapse: collapse; margin: 20px 0">
@@ -201,7 +216,7 @@
                   padding: 10px;
                   text-align: left;
                   border-bottom: 1px solid #ddd;
-                  width: 45%;
+                  width: <%= hasAnyNotes ? '30%' : '45%' %>;
                 "
               >
                 Influencer Name
@@ -228,6 +243,19 @@
               >
                 Content Type
               </th>
+              <% if (hasAnyNotes) { %>
+              <th
+                style="
+                  background-color: #f5f5f5;
+                  padding: 10px;
+                  text-align: left;
+                  border-bottom: 1px solid #ddd;
+                  width: 20%;
+                "
+              >
+                Notes
+              </th>
+              <% } %>
               <th
                 style="
                   background-color: #f5f5f5;
@@ -248,6 +276,9 @@
               <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.name %></td>
               <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.platform %></td>
               <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.contentType %></td>
+              <% if (hasAnyNotes) { %>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-cell"><%= item.notes %></td>
+              <% } %>
               <td
                 style="
                   padding: 10px;
@@ -312,34 +343,10 @@
         </div>
       </div>
 
-      <!-- Notes Section with better spacing and individual influencer notes -->
-      <% 
-      // Check if any items have notes
-      let hasNotes = false;
-      items.forEach(function(item) {
-        if (item.notes && item.notes.trim() !== '') {
-          hasNotes = true;
-        }
-      });
-      %>
-
-      <!-- General Notes Section -->
+      <!-- Notes Section with better spacing -->
       <div class="notes-container avoid-break">
         <h3 style="margin-bottom: 10px">Notes</h3>
-        <!-- General notes -->
         <p style="margin-bottom: 15px"><%= notes %></p>
-        
-        <!-- Influencer specific notes -->
-        <% if (hasNotes) { %>
-        <h4 style="margin-top: 15px; margin-bottom: 10px">Influencer Notes:</h4>
-        <% items.forEach(function(item) { 
-          if (item.notes && item.notes.trim() !== '') { %>
-          <p style="margin: 5px 0; padding-left: 15px">
-            <strong><%= item.name %>:</strong> <%= item.notes %>
-          </p>
-        <% }
-        }); %>
-        <% } %>
       </div>
 
       <!-- Terms Section with page break prevention -->
