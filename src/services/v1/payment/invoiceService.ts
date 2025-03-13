@@ -70,7 +70,13 @@ function transformData(data: any) {
         contentType: item.influencer.contentType,
         price: item.price ? item.price : item.influencer.price,
         socialMediaLink: item.influencer.socialMediaLink,
+        notes: item.note || '', // Ensure notes is always at least an empty string
     }));
+
+    // Check if any influencer has notes
+    const hasAnyNotes = influencerPRs.some(
+        (influencer:any) => influencer.notes && influencer.notes.trim() !== '',
+    );
 
     const packageHeaders = data.packageCartItems.map((item: any) => ({
         header: item.package.header,
@@ -123,6 +129,7 @@ const totalPriceWithFee = (parseFloat(totalPrice) + airDropFee + parseFloat(mana
         airDropFeePercentage: airDropFeePercentage,
         influencerLength: influencerPRs.length,
         airDropFee,
+        hasAnyNotes,
     };
 }
 
@@ -177,7 +184,7 @@ export const fetchInvoiceDetails = async (
             totalAmount,
             discount,
         };
-
+        console.log("semndng mail transofrming dataa ")
         const transformCartData = transformData(data);
 
         // Generate HTML from EJS template using an absolute path
