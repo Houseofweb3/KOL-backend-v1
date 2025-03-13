@@ -184,7 +184,7 @@ export const fetchInvoiceDetails = async (
             totalAmount,
             discount,
         };
-        console.log("semndng mail transofrming dataa ")
+
         const transformCartData = transformData(data);
 
         // Generate HTML from EJS template using an absolute path
