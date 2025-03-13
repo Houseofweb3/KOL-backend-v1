@@ -5,16 +5,61 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AMPLI5.AI</title>
+    <style>
+        @page {
+            margin: 0;
+            size: A4;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .main-container {
+            width: 80%;
+            background-color: #ffffff;
+            padding: 32px;
+            margin: 0 auto;
+            overflow: hidden;
+            page-break-inside: avoid;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .table-cell {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        .table-header {
+            display: grid;
+            gap: 1.5rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        .table-row {
+            display: grid;
+            gap: 1.5rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            border-left: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+        }
+        .summary-section {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 32px;
+            page-break-inside: avoid;
+        }
+    </style>
 </head>
 
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif">
-    <div style="
-        width: 80%;
-        min-height: 110vh;
-        background-color: #ffffff;
-        padding: 32px;
-        margin: 0 auto;
-      ">
+<body>
+    <div class="main-container">
         <!-- Logo and Header Section -->
         <header style="margin-bottom: 40px">
             <svg xmlns="http://www.w3.org/2000/svg" width="207" height="76" viewBox="0 0 207 76" fill="none">
@@ -139,6 +184,9 @@
             </section>
         </div>
 
+        <!-- Page break before project investment -->
+        <div class="page-break"></div>
+
         <!-- Investment Section Header -->
         <div style="text-align: center">
             <h2 style="
@@ -146,12 +194,12 @@
             color: #a762fe;
             font-weight: bold;
             margin-bottom: 20px;
-            margin-Top: 275px;
+            margin-top: 40px;
           ">
                 Project Investment
             </h2>
             <p style="font-size: 22px; font-weight: normal">
-                The below proposal contains the cost of <% influencerLength %> influencers
+                The below proposal contains the cost of <%= influencerLength %> influencers
             </p>
         </div>
 
@@ -181,19 +229,34 @@
 
             <!-- Table Container -->
             <div id="tableContainer">
+                <!-- Check if any influencer has notes to determine column count -->
+                <% 
+                let hasAnyNotes = false;
+                influencerPRs.forEach(function(influencer) {
+                    if (influencer.notes && influencer.notes.trim() !== '') {
+                        hasAnyNotes = true;
+                    }
+                });
+                %>
+
                 <!-- Table Header -->
-                <div class="table-header"
-                    style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding: 1rem; border-bottom: 1px solid #e5e7eb; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; background-color: #f9fafb;">
+                <div class="table-header" style="
+                    grid-template-columns: <%= hasAnyNotes ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)' %>;
+                ">
                     <div style="color: #374151; grid-column: span 2; font-weight: 500">Description</div>
                     <div style="color: #374151; font-weight: 500; text-align: start">Content Type</div>
                     <div style="color: #374151; font-weight: 500; text-align: end">Price</div>
+                    <% if (hasAnyNotes) { %>
+                    <div style="color: #374151; font-weight: 500; text-align: start">Notes</div>
+                    <% } %>
                 </div>
                 <div id="tableBody">
                     <% influencerPRs.forEach(function(influencer) { %>
                         <!-- Table Row -->
-                        <div
-                            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding: 1rem; border-bottom: 1px solid #e5e7eb; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
-                            <div style="grid-column: span 2">
+                        <div class="table-row" style="
+                            grid-template-columns: <%= hasAnyNotes ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)' %>;
+                        ">
+                            <div class="table-cell" style="grid-column: span 2">
                                 <p style="font-weight: 500; color: #111827; margin: 0 0 4px 0">
                                     <%= influencer.name %>
                                 </p>
@@ -207,18 +270,23 @@
                                     <%= influencer.integratedVideos %> Integrated Video
                                 </p> -->
                             </div>
-                            <div style="text-align: start; color: #111827">
+                            <div class="table-cell" style="text-align: start; color: #111827">
                                 <%= influencer.contentType %>
                             </div>
-                            <div style="text-align: end; font-weight: 500; color: #111827">$<%= influencer.price %>
+                            <div class="table-cell" style="text-align: end; font-weight: 500; color: #111827">$<%= influencer.price %>
                             </div>
+                            <% if (hasAnyNotes) { %>
+                            <div class="table-cell" style="text-align: start; color: #111827">
+                                <%= influencer.notes ? influencer.notes : '' %>
+                            </div>
+                            <% } %>
                         </div>
                         <% }); %>
                 </div>
             </div>
 
             <!-- Summary Section -->
-            <div style="width: 100%; display: flex; justify-content: center; margin-top: 32px;">
+            <div class="summary-section">
                 <div style="background-color: #a762fe; color: #ffffff; border-radius: 8px; padding: 24px; width: 50%;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                         <span>Total Excluding Tax</span>
@@ -241,7 +309,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </body>
