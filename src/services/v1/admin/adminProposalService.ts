@@ -372,7 +372,8 @@ interface InvoiceData {
     managementFeePercentage: number;
     airdropFee: string;
     notes: string;
-    terms_and_conditions:string
+    terms_and_conditions: string;
+    hasNotes:boolean
 }
 
 interface InvoiceItem {
@@ -383,14 +384,40 @@ interface InvoiceItem {
     price: string;
 }
 // take another param for  managemnt fee
-function extractInvoiceData(apiData: any,managementFeePercentage:number,terms_and_conditions:string): InvoiceData {
-    const invoiceDate = new Date(apiData.createdAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' });
-    const dueDate = new Date(apiData.updatedAt).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: '2-digit' });
-    const formattedInvoiceNo = `INV-${apiData.id.slice(-4)}`; // last four digits of checkout id 
-    const airdropFee = (parseFloat(apiData.totalAmount)) * 0.05
+function extractInvoiceData(
+    apiData: any,
+    managementFeePercentage: number,
+    terms_and_conditions: string,
+): InvoiceData {
+    const invoiceDate = new Date(apiData.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+    });
+    const dueDate = new Date(apiData.updatedAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+    });
+    const formattedInvoiceNo = `INV-${apiData.id.slice(-4)}`; // last four digits of checkout id
+    const airdropFee = parseFloat(apiData.totalAmount) * 0.05;
     const managementFee =
-        (parseFloat(apiData.totalAmount) * managementFeePercentage/100) ||
-        (parseFloat(apiData.totalAmount) * 0.05); //  take from argument managementFeePercentage or fallback to 5
+        (parseFloat(apiData.totalAmount) * managementFeePercentage) / 100 ||
+        parseFloat(apiData.totalAmount) * 0.05; //  take from argument managementFeePercentage or fallback to 5
+
+    // Extract influencer items with notes
+    const items =
+        apiData.cart?.influencerCartItems?.map((item: any, index: number) => ({
+            index: index + 1,
+            name: item.influencer?.name || 'Unknown Influencer',
+            platform: item.influencer?.platform || 'Unknown',
+            contentType: item.influencer?.contentType || 'Unknown',
+            price: item.price || item?.influencer?.price, // fallback to influencer price
+            notes: item.note || '', // Include the notes for each influencer
+        })) || [];
+
+    // Check if any influencer has notes
+    const hasNotes = items.some((item:any) => item.notes && item.notes.trim() !== '');
 
     return {
         invoiceNumber: formattedInvoiceNo,
@@ -409,24 +436,19 @@ function extractInvoiceData(apiData: any,managementFeePercentage:number,terms_an
         // Client Details
         clientName: apiData.cart?.user?.fullname || 'Unknown Client',
         clientAddress: formatClientAddress(apiData.cart?.user?.addressInfo),
-        // Extracting Influencer Cart Items
-        items:
-            apiData.cart?.influencerCartItems?.map((item: any, index: number) => ({
-                index: index + 1,
-                name: item.influencer?.name || 'Unknown Influencer',
-                platform: item.influencer?.platform || 'Unknown',
-                contentType: item.influencer?.contentType || 'Unknown',
-                price: item.price || item?.influencer?.price, // fallback to infleuncer price
-            })) || [],
 
-        // Summary Calculations (Hardcoded Fees)
+        // Items with notes
+        items: items,
+        hasNotes: hasNotes,
+
+        // Summary Calculations
         subtotal: apiData.totalAmount || '0.00',
         managementFee: managementFee.toFixed(2),
         airdropFee: airdropFee.toFixed(2),
-        managementFeePercentage: managementFeePercentage || 5, // fallback to 5% managment fee
-        // Payment Information (Hardcoded)
-        terms_and_conditions:terms_and_conditions,
-        // Notes
+        managementFeePercentage: managementFeePercentage || 5, // fallback to 5% management fee
+
+        // Payment Information and Notes
+        terms_and_conditions: terms_and_conditions,
         notes: 'Payments are final. No refunds or adjustments after confirmation.',
     };
 }
