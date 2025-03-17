@@ -13,47 +13,62 @@ import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
 import { Between } from 'typeorm';
 import { formatClientAddress, getDatesInRange, getStartDateFromTimeRange, getStartOfDay } from '../../../helpers';
 
-const invoiceEmailInfo = (username: string) => {
-    const emailText = `Hello ${username},
+const invoiceEmailInfo = (
+    clientName: string,
+) => {
+    const emailText = `Dear ${clientName},
 
-        We are happy to have you onboard.
+Please find attached the invoice for your recent subscription to Ampli5.AI's KOL SaaS platform. We're excited to continue supporting your influencer marketing initiatives with our industry-leading solution.
 
-        Attached, you will find the draft copy of the list.
+Payment Methods: Crypto wallet address mentioned in T&C, please proceed with a $10 test transaction first
 
-        The attached PDF is password-protected. Please use the following password to open the file:
+WHY CLIENTS CHOOSE AMPLI5.AI
 
-        Password: [First 4 characters of your username in lowercase][Current year]  
-        Example: If your username is "JohnSmith", your password will be "john2024".
+Our commitment to excellence is reflected in our core strengths:
+* Rapid Turnaround Time: Under 72 working hours for campaign setup and implementation, ensuring your influencer campaigns launch quickly and efficiently
+* KPI-Driven Approach: All campaigns are built around your specific performance metrics, with customizable dashboards and real-time tracking
+* Transparent Pricing: No hidden fees or surprise costs—what you see is what you pay
+* Data-Driven Results: Comprehensive analytics and performance insights throughout your campaign
+* Post-Campaign Case Studies: Detailed analysis and performance reports after campaign completion to demonstrate ROI and inform future strategies
 
-        Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.
+NEXT STEPS
+1. Please process payment by 3 days within invoice generation date.
+2. Your dedicated account manager, Kayaash - kayaash.s@houseofweb3.com, will schedule your next strategic review call
 
-        Thank you for your patience and cooperation.
+Best regards,
+Ampli5 Team
+`;
 
-        Best regards,  
-        Ampli5
-        `
-    const emailHtml = `<p>Hello ${username},</p>
+    const emailHtml = `<p>Dear ${clientName},</p>
 
-        <p>We are happy to have you onboard.</p>
+<p>Please find attached the invoice for your recent subscription to Ampli5.AI's KOL SaaS platform. We're excited to continue supporting your influencer marketing initiatives with our industry-leading solution.</p>
 
-        <p>Attached, you will find the draft copy of the list.</p>
+<p><strong>Payment Methods:</strong> Crypto wallet address mentioned in T&C, please proceed with a $10 test transaction first</p>
 
-        <p><b>The attached PDF is password-protected. Please use the following password to open the file:</b></p>
+<h3>WHY CLIENTS CHOOSE AMPLI5.AI</h3>
 
-        <p><b>Password:</b> [First 4 characters of your username in lowercase][Current year]</p>
+<p>Our commitment to excellence is reflected in our core strengths:</p>
+<ul>
+  <li><strong>Rapid Turnaround Time:</strong> Under 72 working hours for campaign setup and implementation, ensuring your influencer campaigns launch quickly and efficiently</li>
+  <li><strong>KPI-Driven Approach:</strong> All campaigns are built around your specific performance metrics, with customizable dashboards and real-time tracking</li>
+  <li><strong>Transparent Pricing:</strong> No hidden fees or surprise costs—what you see is what you pay</li>
+  <li><strong>Data-Driven Results:</strong> Comprehensive analytics and performance insights throughout your campaign</li>
+  <li><strong>Post-Campaign Case Studies:</strong> Detailed analysis and performance reports after campaign completion to demonstrate ROI and inform future strategies</li>
+</ul>
 
-        <p><b>Example:</b> If your username is "JohnSmith", your password will be "john2024".</p>
+<h3>NEXT STEPS</h3>
+<ol>
+  <li>Please process payment by 3 days within invoice generation date.</li>
+  <li>Your dedicated account manager, Kayaash - kayaash.s@houseofweb3.com, will schedule your next strategic review call</li>
+</ol>
 
-        <p>Our team is currently reviewing the list to ensure it meets our stringent quality standards. You can expect to receive the final list within the next 24 business hours.</p>
+<p>Best regards,<br>
+Ampli5 Team</p>`;
 
-        <p>Thank you for your patience and cooperation.</p>
+    return { emailText, emailHtml };
+};
 
-        <p>Best regards,</p>
-
-        <p>Ampli5</p>
-        `
-    return { emailText, emailHtml }
-}
+export default invoiceEmailInfo;
 
 
 
@@ -561,7 +576,7 @@ export const sendInvoiceEmailService = async (checkoutId: string) => {
 
         const s3Link = billingData?.invoiceS3Link
 
-        const subject = 'Amplify Invoice (Best Yapping Discovery tool)'
+        const subject = `Invoice from ampli5.ai (HOW3 Pte LTD) for ${username}`;
 
         const additionalEmail = userData?.email;
 

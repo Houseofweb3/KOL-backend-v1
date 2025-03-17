@@ -7,7 +7,7 @@
     <title>AMPLI5.AI</title>
     <style>
         @page {
-            margin: 0;
+            margin: 40px;
             size: A4;
         }
         body {
@@ -16,12 +16,10 @@
             font-family: Arial, sans-serif;
         }
         .main-container {
-            width: 80%;
+            width: 100%;
             background-color: #ffffff;
-            padding: 32px;
             margin: 0 auto;
             overflow: hidden;
-            page-break-inside: avoid;
         }
         .page-break {
             page-break-before: always;
@@ -53,7 +51,12 @@
             display: flex;
             justify-content: center;
             margin-top: 32px;
-            page-break-inside: avoid;
+        }
+        thead {
+            display: table-header-group;
+        }
+        tfoot {
+            display: table-footer-group;
         }
     </style>
 </head>
@@ -85,7 +88,7 @@
         </header>
 
         <!-- Pitch Section -->
-        <div style="margin-top: 80px; margin-bottom: 80px">
+        <div style="margin-top: 60px; margin-bottom: 60px">
             <h1 style="
             font-size: 36px;
             font-weight: 600;
@@ -165,7 +168,7 @@
         </div>
 
         <!-- Overview Section -->
-        <div style="margin-top: 80px; margin-bottom: 80px">
+        <div style="margin-top: 60px; margin-bottom: 60px">
             <section style="margin-bottom: 32px">
                 <h1 style="
               font-size: 36px;
@@ -194,7 +197,7 @@
             color: #a762fe;
             font-weight: bold;
             margin-bottom: 20px;
-            margin-top: 40px;
+            margin-top: 0;
           ">
                 Project Investment
             </h2>
@@ -204,11 +207,11 @@
         </div>
 
         <!-- Investment Section -->
-        <div style="width: 100%; margin: 0 auto; padding: 24px">
+        <div style="width: 100%; margin: 0 auto">
             <div style="
             background-color: #a762fe;
             border-radius: 8px 8px 0 0;
-            padding: 32px;
+            padding: 24px;
           ">
                 <div style="
               display: flex;
@@ -245,7 +248,7 @@
                 ">
                     <div style="color: #374151; grid-column: span 2; font-weight: 500">Description</div>
                     <div style="color: #374151; font-weight: 500; text-align: start">Content Type</div>
-                    <div style="color: #374151; font-weight: 500; text-align: end">Price</div>
+                    <div style="color: #374151; font-weight: 500; text-align: start">Price</div>
                     <% if (hasAnyNotes) { %>
                     <div style="color: #374151; font-weight: 500; text-align: start">Notes</div>
                     <% } %>
@@ -273,7 +276,7 @@
                             <div class="table-cell" style="text-align: start; color: #111827">
                                 <%= influencer.contentType %>
                             </div>
-                            <div class="table-cell" style="text-align: end; font-weight: 500; color: #111827">$<%= influencer.price %>
+                            <div class="table-cell" style="text-align: start; font-weight: 500; color: #111827">$<%= influencer.price %>
                             </div>
                             <% if (hasAnyNotes) { %>
                             <div class="table-cell" style="text-align: start; color: #111827">
