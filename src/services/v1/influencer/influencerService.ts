@@ -284,7 +284,41 @@ export const getInfluencersWithHiddenPrices = async (
 
     // Apply niche filter
     if (nicheFilter) {
-        query.andWhere('influencer.niche ILIKE :nicheFilter', { nicheFilter: `%${nicheFilter}%` });
+        query.andWhere(
+            new Brackets((qb) => {
+                qb.where('influencer.niche ILIKE :nicheFilter', {
+                    nicheFilter: `%${nicheFilter}%`,
+                }).orWhere('influencer.niche2 ILIKE :nicheFilter', {
+                    nicheFilter: `%${nicheFilter}%`,
+                });
+            }),
+        );
+    }
+
+    // Apply niche filter from request filters
+    if (filters.niche && filters.niche.length > 0) {
+        query.andWhere(
+            new Brackets((qb) => {
+                // For each niche value in the filter, check both niche and niche2 columns
+                filters.niche.forEach((nicheValue: string, index: number) => {
+                    const paramName = `niche${index}`;
+                    qb.orWhere(
+                        new Brackets((innerQb) => {
+                            innerQb
+                                .where(`influencer.niche ILIKE :${paramName}`, {
+                                    [paramName]: `%${nicheValue}%`,
+                                })
+                                .orWhere(`influencer.niche2 ILIKE :${paramName}`, {
+                                    [paramName]: `%${nicheValue}%`,
+                                });
+                        }),
+                    );
+                });
+            }),
+        );
+
+        // Remove niche from filters since we've processed it specially
+        delete filters.niche;
     }
 
     // Apply investor type filter
@@ -353,7 +387,7 @@ export const getInfluencersWithHiddenPrices = async (
         dpLink: influencer.dpLink,
         tweetScoutScore: influencer.tweetScoutScore,
         contentType: influencer.contentType,
-        deleted: influencer.deleted
+        deleted: influencer.deleted,
     }));
 
     logger.info(
