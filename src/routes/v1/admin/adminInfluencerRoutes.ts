@@ -4,13 +4,18 @@ import {
     createInfluencerController,
     updateInfluencerController,
     deleteInfluencerController,
-    getInfluencerByIdController
+    getInfluencerByIdController,
+    getUniqueInfluencersHandler
 } from '../../../controllers/v1/admin/adminInfluencerController';
 
 const router = express.Router();
 
 // get all influencers route
 router.get('/', getAllInfluencersController);
+
+// get all unique influencers route
+router.get('/unique', getUniqueInfluencersHandler);
+
 
 // get influencer by id route
 router.get('/:id', getInfluencerByIdController);
