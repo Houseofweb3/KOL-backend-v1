@@ -14,10 +14,10 @@ import { get } from 'http';
 import { Brackets } from 'typeorm';
 
 // Define default values for pagination and sorting
-const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
-const DEFAULT_SORT_FIELD = 'tweetScoutScore';
-const DEFAULT_SORT_ORDER = 'DESC';
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_LIMIT = 10;
+export const DEFAULT_SORT_FIELD = 'tweetScoutScore';
+export const DEFAULT_SORT_ORDER = 'DESC';
 
 // range formation for subscribers
 const categorizeFollowers = (count: any) => {
@@ -31,7 +31,7 @@ const categorizeFollowers = (count: any) => {
 };
 
 // Range condition to fetch the subcriber list
-const getFollowerRangeCondition = (range: string) => {
+export const getFollowerRangeCondition = (range: string) => {
     switch (range) {
         case '1-10':
             return 'influencer.subscribers BETWEEN 1 AND 10';
@@ -52,7 +52,7 @@ const getFollowerRangeCondition = (range: string) => {
     }
 };
 
-const getPriceRangeCondition = (range: string) => {
+export const getPriceRangeCondition = (range: string) => {
     switch (range) {
         case '$':
             return 'influencer.price <= 1000';
@@ -522,7 +522,7 @@ export const getFilterOptions = async () => {
     }
 };
 
-const getHiddenPrice = (price: number): string => {
+export const getHiddenPrice = (price: number): string => {
     if (price <= 1000) return '$';
     if (price > 1000 && price <= 2000) return '$$';
     if (price > 2000 && price <= 3000) return '$$$';
