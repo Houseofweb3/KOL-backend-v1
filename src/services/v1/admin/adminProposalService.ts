@@ -420,9 +420,14 @@ function extractInvoiceData(
         (parseFloat(apiData.totalAmount) * managementFeePercentage) / 100 ||
         parseFloat(apiData.totalAmount) * 0.05; //  take from argument managementFeePercentage or fallback to 5
 
+
+    // sort infleuncer in descending order of how3 score
+     const influencers = apiData.cart?.influencerCartItems.sort(
+         (a:any, b:any) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore,
+     );    
     // Extract influencer items with notes
     const items =
-        apiData.cart?.influencerCartItems?.map((item: any, index: number) => ({
+        influencers?.map((item: any, index: number) => ({
             index: index + 1,
             name: item.influencer?.name || 'Unknown Influencer',
             platform: item.influencer?.platform || 'Unknown',
