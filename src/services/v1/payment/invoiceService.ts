@@ -162,10 +162,12 @@ export const fetchInvoiceDetails = async (
         // Fetch related influencerCartItems and packageCartItems
         logger.info(`Fetching influencerCartItems for cart id: ${id}`);
 
-        const influencerCartItems = await influencerCartItemRepository.find({
+        const influencers = await influencerCartItemRepository.find({
             where: { cart: { id } },
             relations: ['influencer'],
         });
+        const influencerCartItems = influencers.sort((a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore);
+
 
         logger.info(`Fetching packageCartItems for cart id: ${id}`);
         const packageCartItems = await packageCartItemRepository.find({
