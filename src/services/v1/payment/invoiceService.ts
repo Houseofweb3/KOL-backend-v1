@@ -75,7 +75,7 @@ function transformData(data: any) {
 
     // Check if any influencer has notes
     const hasAnyNotes = influencerPRs.some(
-        (influencer:any) => influencer.notes && influencer.notes.trim() !== '',
+        (influencer: any) => influencer.notes && influencer.notes.trim() !== '',
     );
 
     const packageHeaders = data.packageCartItems.map((item: any) => ({
@@ -101,15 +101,17 @@ function transformData(data: any) {
     // calc management fee based on total amount
     const managementFee = (parseFloat(totalPrice) * (data.managementFeePercentage / 100)).toFixed(2);
 
-const airDropFeePercentage = 5; // 5% airdrop fee
+    const airDropFeePercentage = 5; // 5% airdrop fee
 
-// Calculate the airdrop fee amount by
-const airDropFee = (parseFloat(totalPrice) * airDropFeePercentage) / 100;
+    // Calculate the airdrop fee amount by
+    const airDropFee = (parseFloat(totalPrice) * airDropFeePercentage) / 100;
 
-// Add the airdrop fee to the total price, then add the management fee
-const totalPriceWithFee = (parseFloat(totalPrice) + airDropFee + parseFloat(managementFee)).toFixed(
-    2,
-);
+    // Add the airdrop fee to the total price, then add the management fee
+    const totalPriceWithFee = (parseFloat(totalPrice) +
+        // airDropFee +
+        parseFloat(managementFee)).toFixed(
+            2,
+        );
 
 
 

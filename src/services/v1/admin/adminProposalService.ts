@@ -445,7 +445,7 @@ function extractInvoiceData(
         dueDate: dueDate,
         balanceDue: (
             Number(apiData.totalAmount) +
-            Number(airdropFee) +
+            // Number(airdropFee) +
             Number(managementFee)
         ).toFixed(2), // sum post all fees
         // Hardcoded Company Details
