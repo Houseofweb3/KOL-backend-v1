@@ -18,6 +18,8 @@ import {
     UserOnboardingSelection,
 } from '../entity/onboarding';
 import { CouponCode, UserCoupon } from '../entity/couponCode';
+import { Bounty, BountySubmission } from '../entity/bounty';
+
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -45,7 +47,9 @@ export const AppDataSource = new DataSource({
         BillingDetails,
         UserCoupon,
         CouponCode,
-        OTP
+        OTP,
+        Bounty,
+        BountySubmission
     ],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],

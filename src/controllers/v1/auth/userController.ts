@@ -8,7 +8,9 @@ import {
 	refreshTokenService,
 	getUserDetailsAndOrderHistoryById,
 	generateAndSendOTP,
-	validateOTP
+	validateOTP,
+	generateAndSendEmailOTP,
+	validateEmailOTP
 } from '../../../services/v1/auth/user-service';
 import { ENV } from '../../../config/env';
 import { RefreshToken } from '../../../entity/auth';
@@ -253,6 +255,34 @@ export const generateOTP = async (req: Request, res: Response) => {
 	}
 };
 
+// Generate Email OTP
+export const generateEmailOTP = async (req: Request, res: Response) => {
+	try {
+		// Extract userId from the request body and validate
+		const { email } = req.body;
+
+		// add checks for phone number and country code
+		if (!email) {
+			logger.warn('Invalid or missing email in request body');
+			return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Invalid or missing email' });
+		}
+
+		// Generate OTP and send to user
+		const { message, status } = await generateAndSendEmailOTP(email);
+
+		logger.info(`OTP generated and sent to user: ${email}`);
+
+		return res.status(HttpStatus.OK).json({ message, status });
+	} catch (error: any) {
+		const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+		const errorMessage = error.message || 'An unknown error occurred during login';
+
+		logger.error(`Login error (${statusCode}): ${errorMessage}`);
+
+		return res.status(statusCode).json({ error: errorMessage });
+	}
+}
+
 
 // Validate OTP
 export const validateOTPController = async (req: Request, res: Response) => {
@@ -270,6 +300,35 @@ export const validateOTPController = async (req: Request, res: Response) => {
 		const { message, token, refreshToken, userId } = await validateOTP(phoneNumber, otpCode, countryCode);
 
 		logger.info(`OTP validated successfully for user: ${phoneNumber}`);
+
+		return res.status(HttpStatus.OK).json({ message, accessToken: token, refreshToken, userId });
+	} catch (error: any) {
+		const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+		const errorMessage = error.message || 'An unknown error occurred during OTP validation';
+
+		logger.error(`OTP validation error (${statusCode}): ${errorMessage}`);
+
+		return res.status(statusCode).json({ error: errorMessage });
+	}
+};
+
+// Validate Email OTP
+
+export const validateEmailOTPController = async (req: Request, res: Response) => {
+	try {
+		// Extract userId from the request body and validate
+		const { email, otpCode } = req.body;
+
+		// add checks for phone number and email
+		if (!email || !otpCode) {
+			logger.warn('Invalid or missing email or OTP in request body');
+			return res.status(HttpStatus.BAD_REQUEST).json({ error: 'Invalid or missing email or OTP' });
+		}
+
+		// Validate OTP and send to user
+		const { message, token, refreshToken, userId } = await validateEmailOTP(email, otpCode);
+
+		logger.info(`OTP validated successfully for user: ${email}`);
 
 		return res.status(HttpStatus.OK).json({ message, accessToken: token, refreshToken, userId });
 	} catch (error: any) {

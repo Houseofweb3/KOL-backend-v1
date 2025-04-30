@@ -9,8 +9,13 @@ export class OTP extends BaseModel {
     id!: string;
 
     @Index()
-    @Column({ name: "phone_number" })
+    @Column({ name: "phone_number", nullable: true })
     phoneNumber!: string;
+
+    // add email column
+    @Index()
+    @Column({ name: "email", nullable: true })
+    email!: string;
 
     @Index()
     @Column({ name: "otp_code" })

@@ -1,8 +1,9 @@
-import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn, Index } from 'typeorm';
 import { Cart } from '../cart';
 import { BaseModel } from '../../utils/baseEntities/BaseModel';
 import { UserCoupon } from '../couponCode/userCoupon.entity';
 import { UserOnboardingSelection } from '../onboarding/UserOnboardingSelection.entity';
+import { BountySubmission } from '../bounty/bountyRelation.entity';
 
 export enum UserType {
     USER = 'user',
@@ -21,6 +22,7 @@ export class User extends BaseModel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
+    @Index()
     @Column({ unique: true })
     email!: string;
 
@@ -85,4 +87,8 @@ export class User extends BaseModel {
 
     @OneToMany(() => UserCoupon, (userCoupon) => userCoupon.user)
     userCoupons!: UserCoupon[];
+
+    @OneToMany(() => BountySubmission, (submission) => submission.user)
+    bountySubmissions!: BountySubmission[];
+
 }

@@ -114,3 +114,34 @@ export async function sendWelcomeEmail(email: string): Promise<any> {
     console.log('Welcome email sent: %s', info.messageId);
     return info;
 }
+
+// send otp email
+export async function sendOtpEmail(email: string, otp: string): Promise<any> {
+    const info = await transporter.sendMail({
+        from: '"Ampli5" <partnerships@houseofweb3.com>',
+        to: email,
+        subject: "Your OTP Verification Code",
+        text: `Your verification code is: ${otp}. This code will expire in 5 minutes.`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background-color: #007bff; padding: 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0;">Ampli5</h1>
+                </div>
+                <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
+                    <h2>Verification Code</h2>
+                    <p>Please use the following code to complete your verification:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 10px 20px; background-color: #f4f4f4; border-radius: 5px;">${otp}</span>
+                    </div>
+                    <p>This code will expire in <strong>5 minutes</strong>.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                    <p style="font-size: 12px; color: #666;">This is an automated email. Please do not reply to this message.</p>
+                </div>
+            </div>
+        `
+    });
+
+    console.log(`OTP email sent to ${email}: ${info.messageId}`);
+    return info;
+}
