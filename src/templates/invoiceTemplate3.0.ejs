@@ -63,6 +63,9 @@
       tfoot {
         display: table-footer-group;
       }
+      .notes-row{
+        width: 100%;
+      }
     </style>
   </head>
   <body>
@@ -222,7 +225,7 @@
                   padding: 10px;
                   text-align: left;
                   border-bottom: 1px solid #ddd;
-                  width: <%= hasAnyNotes ? '30%' : '45%' %>;
+                  width: <%= hasAnyNotes ? '40%' : '45%' %>;
                 "
               >
                 Influencer Name
@@ -249,7 +252,7 @@
               >
                 Content Type
               </th>
-              <% if (hasAnyNotes) { %>
+              <!-- <% if (hasAnyNotes) { %>
               <th
                 style="
                   background-color: #f5f5f5;
@@ -261,7 +264,7 @@
               >
                 Notes
               </th>
-              <% } %>
+              <% } %> -->
               <th
                 style="
                   background-color: #f5f5f5;
@@ -278,23 +281,33 @@
           <tbody>
             <% items.forEach(function(item) { %>
             <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.index %></td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.name %></td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.platform %></td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.contentType %></td>
-              <% if (hasAnyNotes) { %>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-cell"><%= item.notes %></td>
-              <% } %>
-              <td
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.index %></td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.name %></td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.platform %></td>
+                <!-- <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.contentType %></td>
+                <% if (hasAnyNotes) { %>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-cell"><%= item.notes %></td>
+                <% } %> -->
+                <td
                 style="
                   padding: 10px;
                   border-bottom: 1px solid #ddd;
                   text-align: left;
-                "
+                  "
                 class="table-cell"
-              >
+                >
                 $<%= item.price %>
               </td>
+            </tr>
+            <tr>
+ 
+                   <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-row"><%= item.contentType %></td>
+              <% if (hasAnyNotes) { %>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-cell"><%= item.notes %></td>
+              <% } %>
+
+            </tr>
             </tr>
             <% }); %>
           </tbody>
