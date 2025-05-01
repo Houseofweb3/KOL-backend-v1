@@ -40,8 +40,10 @@
         }
         .table-row-container{
             width: 100%;
-                 padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
+        }
+        .notes-row{
+                   padding: 1rem;
+                           border-bottom: 1px solid #e5e7eb;
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
         }
@@ -49,9 +51,9 @@
             display: grid;
             gap: 1.5rem;
             padding: 1rem;
-            /* border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
             border-left: 1px solid #e5e7eb;
-            border-right: 1px solid #e5e7eb; */
+            border-right: 1px solid #e5e7eb;
         }
         .summary-section {
             width: 100%;
@@ -295,7 +297,7 @@
                             <% } %> -->
                         </div>
                              <% if (hasAnyNotes) { %>
-                            <div class="table-cell" style="text-align: start; color: #111827">
+                            <div class="table-cell notes-row" style="text-align: start; color: #111827">
                                 <%= influencer.notes ? influencer.notes : '' %>
                             </div>
                             <% } %>
