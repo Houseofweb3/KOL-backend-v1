@@ -225,7 +225,7 @@
                   padding: 10px;
                   text-align: left;
                   border-bottom: 1px solid #ddd;
-                  width: <%= hasAnyNotes ? '40%' : '45%' %>;
+                  width: <%= hasAnyNotes ? '45%' : '45%' %>;
                 "
               >
                 Influencer Name
@@ -247,7 +247,7 @@
                   padding: 10px;
                   text-align: left;
                   border-bottom: 1px solid #ddd;
-                  width: 15%;
+                  width: 20%;
                 "
               >
                 Content Type
@@ -280,7 +280,7 @@
           </thead>
           <tbody>
             <% items.forEach(function(item) { %>
-            <tr>
+            <tr style="width: 100%;" >
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.index %></td>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell"><%= item.name %></td>
@@ -300,9 +300,9 @@
                 $<%= item.price %>
               </td>
             </tr>
-            <tr>
+          <tr style="width: 100%;" >
  
-                   <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-row"><%= item.contentType %></td>
+                   <td style="padding: 10px; width: 100%; border-bottom: 1px solid #ddd" class="table-cell notes-row"><%= item.contentType %></td>
               <% if (hasAnyNotes) { %>
               <td style="padding: 10px; border-bottom: 1px solid #ddd" class="table-cell notes-cell"><%= item.notes %></td>
               <% } %>
