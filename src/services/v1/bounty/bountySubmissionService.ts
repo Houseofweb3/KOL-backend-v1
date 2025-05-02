@@ -102,7 +102,6 @@ export async function fetchBountySubmissions(bountyId: string): Promise<BountySu
 }
 
 // editBountySubmission function to edit a submission, with link, sbmittedAt and reviewedAt
-
 export async function editBountySubmission(
     submissionId: string,
     updates: Partial<BountySubmission>
@@ -133,18 +132,51 @@ export async function editBountySubmission(
     }
 }
 
-/**
- * Usage example:
- * 
- * try {
- *   const submission = await createBountySubmission({
- *     userId: '550e8400-e29b-41d4-a716-446655440000',
- *     bountyId: '550e8400-e29b-41d4-a716-446655440001',
- *     submissionLink: 'https://github.com/username/repo/pull/123'
- *   });
- *   
- *   console.log('Submission created:', submission.id);
- * } catch (error) {
- *   console.error('Failed to create submission:', error.message);
- * }
- */
+import * as ExcelJS from "exceljs";
+import { Response } from "express"; // assuming you're using express
+
+export class BountySubmissionService {
+    static async exportSubmissionsAsExcel(bountyId: string, res: Response) {
+        const repo = AppDataSource.getRepository(BountySubmission);
+
+        const submissions = await repo.find({
+            where: { bountyId },
+            relations: ["user"],
+            order: { submittedAt: "ASC" }
+        });
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Bounty Submissions");
+
+        sheet.columns = [
+            { header: "User ID", key: "userId", width: 36 },
+            { header: "User Email", key: "userEmail", width: 30 },
+            { header: "Submission Link", key: "submissionLink", width: 50 },
+            { header: "Status", key: "status", width: 15 },
+            { header: "Ranking", key: "ranking", width: 10 },
+            { header: "Submitted At", key: "submittedAt", width: 25 },
+            { header: "Reviewed At", key: "reviewedAt", width: 25 },
+            { header: "Feedback (JSON)", key: "feedback", width: 50 },
+        ];
+
+        submissions.forEach(sub => {
+            sheet.addRow({
+                userId: sub.userId,
+                userEmail: sub.user?.email ?? "N/A",
+                submissionLink: sub.submissionLink,
+                status: sub.status,
+                ranking: sub.ranking ?? "N/A",
+                submittedAt: sub.submittedAt,
+                reviewedAt: sub.reviewedAt ?? "N/A",
+                feedback: sub.feedback ? JSON.stringify(sub.feedback) : "N/A"
+            });
+        });
+
+        // Set the headers for file download
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename=bounty_${bountyId}_submissions.xlsx`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+    }
+}
