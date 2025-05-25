@@ -32,6 +32,9 @@ export class User extends BaseModel {
     @Column({ nullable: true })
     fullname?: string;
 
+    @Column({ nullable: true})
+    profilePicture?: string;
+
     // Add first name column
     @Column({ nullable: true, name: 'first_name' })
     firstName?: string;
@@ -90,5 +93,4 @@ export class User extends BaseModel {
 
     @OneToMany(() => BountySubmission, (submission) => submission.user)
     bountySubmissions!: BountySubmission[];
-
 }

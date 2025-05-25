@@ -96,7 +96,7 @@ const influencerRepository = AppDataSource.getRepository(Influencer);
 export const uploadCSV = async (filePath: string) => {
     let insertedRows = 0;
     let skippedRows = 0;
-    let skippedReasons: { [key: string]: number } = {};
+    const skippedReasons: { [key: string]: number } = {};
 
     try {
         const readStream = fs.createReadStream(filePath).pipe(csv());

@@ -11,13 +11,11 @@ import { generateAccessToken, generateRefreshToken } from '../../../middleware/a
 import { sendWelcomeEmail, sendOtpEmail } from '../../../utils/communication/ses/emailSender';
 import { create } from 'domain';
 import { FindOperator, ILike } from 'typeorm';
-import { MessageApiClient } from "@cmdotcom/text-sdk";
+import { MessageApiClient } from '@cmdotcom/text-sdk';
 
 const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET;
 
-
-
-const yourProductToken: string = "75e8512a-6ba0-41f3-9204-c4b28354dd67"; // TODO: store this in env anf githbs secrets var
+const yourProductToken: string = '75e8512a-6ba0-41f3-9204-c4b28354dd67'; // TODO: store this in env anf githbs secrets var
 // Initialize the messaging API client
 const myMessageApi = new MessageApiClient(yourProductToken);
 
@@ -25,7 +23,7 @@ const myMessageApi = new MessageApiClient(yourProductToken);
 export async function sendSms(to: string[], senderId: string, message: string): Promise<void> {
     try {
         const result = await myMessageApi.sendTextMessage(to, senderId, message);
-        console.log("SMS sent successfully by CM:", result.statusText);
+        console.log('SMS sent successfully by CM:', result.statusText);
     } catch (error: any) {
         if (error.response) {
             console.error('Error sending SMS:', error.response.data);
@@ -41,13 +39,17 @@ function generateOTP(): string {
     return randomInt(100000, 999999).toString(); // Securely generate a 6-digit OTP
 }
 
-
-export async function generateAndSendOTP(phoneNumber: string, countryCode: string): Promise<{ message: string, status: number }> {
+export async function generateAndSendOTP(
+    phoneNumber: string,
+    countryCode: string,
+): Promise<{ message: string; status: number }> {
     try {
         // Find user by email or phone number
         const normalizedPhoneNumber = `+${countryCode}${phoneNumber}`;
         console.log(normalizedPhoneNumber);
-        let user = await AppDataSource.getRepository(User).findOne({ where: [{ phoneNumber: normalizedPhoneNumber }] });
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: [{ phoneNumber: normalizedPhoneNumber }],
+        });
         console.log(user);
         // Check if user exists,  and if its an admin
         if (!user || user.userType !== UserType.ADMIN) {
@@ -60,14 +62,13 @@ export async function generateAndSendOTP(phoneNumber: string, countryCode: strin
         otpCode = generateOTP();
         // Send OTP via CM SMS service
         const sendNo = `00${countryCode}${phoneNumber}`;
-        await sendSms([sendNo], "Ampli5", `Your OTP code is ${otpCode}`);
+        await sendSms([sendNo], 'Ampli5', `Your OTP code is ${otpCode}`);
 
         // Invalidate any existing OTPs for this phone number
-        await AppDataSource.transaction(async transactionalEntityManager => {
-            await transactionalEntityManager.getRepository(OTP).update(
-                { phoneNumber: normalizedPhoneNumber, isUsed: false },
-                { isUsed: true }
-            );
+        await AppDataSource.transaction(async (transactionalEntityManager) => {
+            await transactionalEntityManager
+                .getRepository(OTP)
+                .update({ phoneNumber: normalizedPhoneNumber, isUsed: false }, { isUsed: true });
             // Save the new OTP in the database only after SMS is successfully sent
             const otp = new OTP();
             otp.phoneNumber = normalizedPhoneNumber;
@@ -80,23 +81,26 @@ export async function generateAndSendOTP(phoneNumber: string, countryCode: strin
         logger.info(`OTP generated and sent successfully to: ${normalizedPhoneNumber}`);
 
         return { message: 'OTP sent successfully', status: HttpStatus.OK };
-
-
     } catch (error: any) {
         if (error.status) {
             throw error; // Pass custom errors forward
         }
         logger.error(`Error generating and sending OTP: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while generating and sending OTP' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while generating and sending OTP',
+        };
     }
 }
 
 // fn to generate otp and send it to the user via email
 
-export async function generateAndSendEmailOTP(email: string): Promise<{ message: string, status: number }> {
+export async function generateAndSendEmailOTP(
+    email: string,
+): Promise<{ message: string; status: number }> {
     try {
         // Find user by email or phone number
-        let user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
+        const user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
         // Check if user exists,  and if its an admin
         if (!user || user.userType !== UserType.ADMIN) {
             logger.warn(`User not found with email or phn no.: ${email}`);
@@ -109,14 +113,13 @@ export async function generateAndSendEmailOTP(email: string): Promise<{ message:
         // Send OTP via CM SMS service
         await sendOtpEmail(email, otpCode);
 
-        console.log("send otp email", email, otpCode);
+        console.log('send otp email', email, otpCode);
 
         // Invalidate any existing OTPs for this phone number
-        await AppDataSource.transaction(async transactionalEntityManager => {
-            await transactionalEntityManager.getRepository(OTP).update(
-                { phoneNumber: email, isUsed: false },
-                { isUsed: true }
-            );
+        await AppDataSource.transaction(async (transactionalEntityManager) => {
+            await transactionalEntityManager
+                .getRepository(OTP)
+                .update({ phoneNumber: email, isUsed: false }, { isUsed: true });
             // Save the new OTP in the database only after SMS is successfully sent
             const otp = new OTP();
             otp.email = email;
@@ -129,32 +132,37 @@ export async function generateAndSendEmailOTP(email: string): Promise<{ message:
         logger.info(`OTP generated and sent successfully to: ${email}`);
 
         return { message: 'OTP sent successfully', status: HttpStatus.OK };
-
-
     } catch (error: any) {
         if (error.status) {
             throw error; // Pass custom errors forward
         }
         logger.error(`Error generating and sending OTP: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while generating and sending OTP' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while generating and sending OTP',
+        };
     }
 }
 
-export async function validateOTP(phoneNumber: string, otpCode: string, countryCode: string): Promise<{
+export async function validateOTP(
+    phoneNumber: string,
+    otpCode: string,
+    countryCode: string,
+): Promise<{
     token?: string;
     message: string;
     refreshToken?: string;
     userId?: string;
 }> {
     try {
-        return await AppDataSource.transaction(async transactionalEntityManager => {
+        return await AppDataSource.transaction(async (transactionalEntityManager) => {
             const normalizedPhoneNumber = `+${countryCode}${phoneNumber}`;
             const otpRepository = transactionalEntityManager.getRepository(OTP);
             const userRepository = transactionalEntityManager.getRepository(User);
 
             // Step 2: If not whitelisted, proceed with normal OTP validation
             const otpRecord = await otpRepository.findOne({
-                where: { phoneNumber: normalizedPhoneNumber, otpCode, isUsed: false }
+                where: { phoneNumber: normalizedPhoneNumber, otpCode, isUsed: false },
             });
 
             if (!otpRecord || otpRecord.expiresAt < Math.floor(Date.now() / 1000)) {
@@ -167,17 +175,18 @@ export async function validateOTP(phoneNumber: string, otpCode: string, countryC
             await otpRepository.save(otpRecord);
 
             // Step 4: Check if the user already exists
-            const user = await userRepository.findOne({ where: { phoneNumber: normalizedPhoneNumber } });
+            const user = await userRepository.findOne({
+                where: { phoneNumber: normalizedPhoneNumber },
+            });
 
             if (user) {
-                // if isAdmin also encode phoneNumber in token to authenticate admins based on phoneNumber later on 
+                // if isAdmin also encode phoneNumber in token to authenticate admins based on phoneNumber later on
                 const token = generateAccessToken({ id: user.id, type: user.userType });
                 const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
                 return { token, refreshToken, message: 'Login successful', userId: user.id };
             } else {
                 // throw error if user is not found with status code 404
                 throw { status: HttpStatus.NOT_FOUND, message: 'User not found' };
-
             }
         });
     } catch (error: any) {
@@ -185,24 +194,30 @@ export async function validateOTP(phoneNumber: string, otpCode: string, countryC
             throw error; // Pass custom errors forward
         }
         logger.error(`Error validating OTP: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while validating OTP' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while validating OTP',
+        };
     }
 }
 
-export async function validateEmailOTP(email: string, otpCode: string): Promise<{
+export async function validateEmailOTP(
+    email: string,
+    otpCode: string,
+): Promise<{
     token?: string;
     message: string;
     refreshToken?: string;
     userId?: string;
 }> {
     try {
-        return await AppDataSource.transaction(async transactionalEntityManager => {
+        return await AppDataSource.transaction(async (transactionalEntityManager) => {
             const otpRepository = transactionalEntityManager.getRepository(OTP);
             const userRepository = transactionalEntityManager.getRepository(User);
 
             // Step 2: If not whitelisted, proceed with normal OTP validation
             const otpRecord = await otpRepository.findOne({
-                where: { email: email, otpCode, isUsed: false }
+                where: { email: email, otpCode, isUsed: false },
             });
 
             if (!otpRecord || otpRecord.expiresAt < Math.floor(Date.now() / 1000)) {
@@ -218,14 +233,13 @@ export async function validateEmailOTP(email: string, otpCode: string): Promise<
             const user = await userRepository.findOne({ where: { email } });
 
             if (user) {
-                // if isAdmin also encode phoneNumber in token to authenticate admins based on phoneNumber later on 
+                // if isAdmin also encode phoneNumber in token to authenticate admins based on phoneNumber later on
                 const token = generateAccessToken({ id: user.id, type: user.userType });
                 const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
                 return { token, refreshToken, message: 'Login successful', userId: user.id };
             } else {
                 // throw error if user is not found with status code 404
                 throw { status: HttpStatus.NOT_FOUND, message: 'User not found' };
-
             }
         });
     } catch (error: any) {
@@ -233,7 +247,10 @@ export async function validateEmailOTP(email: string, otpCode: string): Promise<
             throw error; // Pass custom errors forward
         }
         logger.error(`Error validating OTP: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while validating OTP' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while validating OTP',
+        };
     }
 }
 
@@ -248,23 +265,23 @@ interface JwtPayload {
 const ALLOWED_DOMAINS = ['houseofweb3.com'];
 
 const extractEmailDomain = (email: string): string | null => {
-    return email.split("@")[1]?.toLowerCase() || null;
+    return email.split('@')[1]?.toLowerCase() || null;
 };
 
 export const validateGmail = (email: string): void => {
     const emailDomain = extractEmailDomain(email);
     if (!emailDomain) {
-        throw { status: HttpStatus.BAD_REQUEST, message: "Invalid email format" };
+        throw { status: HttpStatus.BAD_REQUEST, message: 'Invalid email format' };
     }
-    if (emailDomain === "gmail.com") {
-        throw { status: HttpStatus.FORBIDDEN, message: "Gmail accounts are not allowed" };
+    if (emailDomain === 'gmail.com') {
+        throw { status: HttpStatus.FORBIDDEN, message: 'Gmail accounts are not allowed' };
     }
 };
 
 export const validateDomainLimit = async (email: string): Promise<void> => {
     const emailDomain = extractEmailDomain(email);
     if (!emailDomain) {
-        throw { status: HttpStatus.BAD_REQUEST, message: "Invalid email format" };
+        throw { status: HttpStatus.BAD_REQUEST, message: 'Invalid email format' };
     }
 
     // ✅ Skip domain limit check for ALLOWED_DOMAINS
@@ -278,15 +295,20 @@ export const validateDomainLimit = async (email: string): Promise<void> => {
         });
 
         if (domainCount >= 2) {
-            throw { status: HttpStatus.FORBIDDEN, message: "Only 2 accounts per domain are allowed" };
+            throw {
+                status: HttpStatus.FORBIDDEN,
+                message: 'Only 2 accounts per domain are allowed',
+            };
         }
     } catch (error: any) {
         if (error.status) throw error; // Pass custom errors forward
         logger.error(`Error validating domain limit: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: "An unknown error occurred while validating the domain" };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while validating the domain',
+        };
     }
 };
-
 
 export const createUser = async (
     email: string,
@@ -301,6 +323,7 @@ export const createUser = async (
     firstName?: string,
     lastName?: string,
     addressInfo?: Record<string, string>,
+    profilePicture?: string,
 ) => {
     try {
         // 🔹 Validate email before proceeding
@@ -333,7 +356,10 @@ export const createUser = async (
             const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
             // ✅ FIX: Ensure role is `null` instead of an empty string
-            const validRole = role && Object.values(UserRole).includes(role as UserRole) ? (role as UserRole) : null;
+            const validRole =
+                role && Object.values(UserRole).includes(role as UserRole)
+                    ? (role as UserRole)
+                    : null;
 
             // Create the entity to store in the DB
             const newUser = transactionalEntityManager.create(User, {
@@ -349,7 +375,8 @@ export const createUser = async (
                 lastName,
                 role: validRole, // ✅ Prevents invalid enum errors
                 status: true,
-                addressInfo
+                addressInfo,
+                profilePicture,
             });
 
             // Generate token and refresh token
@@ -363,18 +390,18 @@ export const createUser = async (
 
             return { user: newUser, message: 'User signup successful', token, refreshToken };
         });
-
     } catch (error) {
         if ((error as any).status) {
             throw error; // Pass custom errors forward
         }
 
         logger.error(`Error creating user: ${(error as Error).message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while creating the user' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while creating the user',
+        };
     }
 };
-
-
 
 // Login Admins
 
@@ -383,8 +410,9 @@ export const loginAdmin = async (email?: string, phoneNumber?: string) => {
         // 🔹 Validate email before proceeding
 
         // Find user by email or phone number
-        let user = await AppDataSource.getRepository(User).findOne({ where: [{ email }, { phoneNumber }] });
-
+        const user = await AppDataSource.getRepository(User).findOne({
+            where: [{ email }, { phoneNumber }],
+        });
 
         // Check if user exists,  and if its an admin
         if (!user || user.userType !== UserType.ADMIN) {
@@ -393,7 +421,6 @@ export const loginAdmin = async (email?: string, phoneNumber?: string) => {
         }
 
         if (user) {
-
             // Generate token and refresh token
             const token = generateAccessToken({ id: user.id, type: user.userType });
             const refreshToken = generateRefreshToken({ id: user.id, type: user.userType });
@@ -402,7 +429,10 @@ export const loginAdmin = async (email?: string, phoneNumber?: string) => {
             return { user, message: 'Login successful', token, refreshToken };
         } else {
             logger.error('An unknown error occurred while logging in the user');
-            throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred' };
+            throw {
+                status: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: 'An unknown error occurred',
+            };
         }
     } catch (error: any) {
         if (error.status) {
@@ -410,12 +440,46 @@ export const loginAdmin = async (email?: string, phoneNumber?: string) => {
         }
 
         logger.error(`Error logging in user: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while logging in the user' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while logging in the user',
+        };
     }
 };
 
+// Login User
+// TODO: refactor this later
+export const verificationUser = async (email: string, password: string) => {
+    try {
+        const user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
 
+        if (!user) {
+            throw {
+                status: HttpStatus.NOT_FOUND,
+                message: 'user not found',
+            };
+        }
 
+        const isPasswordValid = await bcrypt.compare(password, user.password || '');
+
+        if (!isPasswordValid) {
+            throw {
+                status: HttpStatus.NOT_FOUND,
+                message: 'user not found',
+            };
+        }
+        const token = generateAccessToken({ id: user.id, type: user.userType });
+        return { user, message: 'User login successful', token };
+    } catch (error: any) {
+        if (error.status) {
+            throw error;
+        }
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while logging in the user',
+        };
+    }
+};
 
 // Login User
 // TODO: refactor this later
@@ -423,7 +487,7 @@ export const loginUser = async (
     email: string,
     password: string,
     fullname: string = '',
-    type: string = UserType.USER
+    type: string = UserType.USER,
 ) => {
     try {
         // 🔹 Validate email before proceeding
@@ -463,7 +527,10 @@ export const loginUser = async (
             return { user, message: 'Login successful', token, refreshToken };
         } else {
             logger.error('An unknown error occurred while logging in the user');
-            throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred' };
+            throw {
+                status: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: 'An unknown error occurred',
+            };
         }
     } catch (error: any) {
         if (error.status) {
@@ -471,11 +538,12 @@ export const loginUser = async (
         }
 
         logger.error(`Error logging in user: ${error.message}`);
-        throw { status: HttpStatus.INTERNAL_SERVER_ERROR, message: 'An unknown error occurred while logging in the user' };
+        throw {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'An unknown error occurred while logging in the user',
+        };
     }
 };
-
-
 
 // Refresh User Token
 export const refreshTokenService = async (refreshToken: string) => {
@@ -496,7 +564,6 @@ export const refreshTokenService = async (refreshToken: string) => {
 
         logger.info(`Refresh token processed successfully for user: ${decoded.id}`);
         return { newAccessToken };
-
     } catch (error) {
         if (error instanceof Error) {
             logger.error(`Error refreshing token: ${error.message}`);
@@ -508,12 +575,11 @@ export const refreshTokenService = async (refreshToken: string) => {
     }
 };
 
-
 // get user details by id
 export const getUserDetailsById = async (id: string): Promise<User | null> => {
     try {
         const user = await userRepository.findOneBy({
-            id
+            id,
         });
 
         // If user is found, return User entity
@@ -529,17 +595,16 @@ export const getUserDetailsById = async (id: string): Promise<User | null> => {
     }
 };
 
-
-
-
-export const getUserDetailsAndOrderHistoryById = async (userId: string): Promise<{ user: User | null, checkoutHistory: any[] }> => {
+export const getUserDetailsAndOrderHistoryById = async (
+    userId: string,
+): Promise<{ user: User | null; checkoutHistory: any[] }> => {
     try {
         const cartRepository = AppDataSource.getRepository(Cart);
 
         // Fetch the user
         const user = await userRepository.findOne({
             where: { id: userId },
-            relations: ['bountySubmissions'] // Fetch bountySubmissions relation
+            relations: ['bountySubmissions'], // Fetch bountySubmissions relation
         });
 
         if (!user) {
@@ -547,28 +612,29 @@ export const getUserDetailsAndOrderHistoryById = async (userId: string): Promise
         }
 
         // Fetch the user's carts with all related data
-        const carts = await cartRepository.createQueryBuilder('cart')
+        const carts = await cartRepository
+            .createQueryBuilder('cart')
             .leftJoinAndSelect('cart.user', 'user')
             .leftJoinAndSelect('cart.influencerCartItems', 'influencerCartItems')
             .leftJoinAndSelect('influencerCartItems.influencer', 'influencer')
             .leftJoinAndSelect('cart.packageCartItems', 'packageCartItems')
             .leftJoinAndSelect('packageCartItems.package', 'package')
-            .leftJoinAndSelect('package.packageItems', 'packageItems')  // Join for packageItems
+            .leftJoinAndSelect('package.packageItems', 'packageItems') // Join for packageItems
             .leftJoinAndSelect('cart.checkout', 'checkout')
             .where('cart.userId = :userId', { userId })
             .andWhere('checkout.id IS NOT NULL')
             .getMany();
 
         // Map the results to the desired format
-        const checkoutHistory = carts.map(cart => ({
+        const checkoutHistory = carts.map((cart) => ({
             cartId: cart.id,
             checkout: {
                 createdAt: cart.checkout?.createdAt,
                 updatedAt: cart.checkout?.updatedAt,
                 id: cart.checkout?.id,
-                totalAmount: cart.checkout?.totalAmount
+                totalAmount: cart.checkout?.totalAmount,
             },
-            influencerCartItems: cart.influencerCartItems.map(item => ({
+            influencerCartItems: cart.influencerCartItems.map((item) => ({
                 id: item.id,
                 influencer: {
                     id: item.influencer.id,
@@ -581,25 +647,25 @@ export const getUserDetailsAndOrderHistoryById = async (userId: string): Promise
                     price: item.influencer.price,
                     credibilityScore: item.influencer.credibilityScore,
                     engagementRate: item.influencer.engagementRate,
-                    investorType: item.influencer.investorType
-                }
+                    investorType: item.influencer.investorType,
+                },
             })),
-            packageCartItems: cart.packageCartItems.map(item => ({
+            packageCartItems: cart.packageCartItems.map((item) => ({
                 id: item.id,
                 package: {
                     id: item.package.id,
                     header: item.package.header,
                     cost: item.package.cost,
                     guaranteedFeatures: item.package.guaranteedFeatures,
-                    packageItems: item.package.packageItems.map(pkgItem => ({
+                    packageItems: item.package.packageItems.map((pkgItem) => ({
                         id: pkgItem.id,
                         media: pkgItem.media,
                         format: pkgItem.format,
                         monthlyTraffic: pkgItem.monthlyTraffic,
-                        turnAroundTime: pkgItem.turnAroundTime
-                    }))
-                }
-            }))
+                        turnAroundTime: pkgItem.turnAroundTime,
+                    })),
+                },
+            })),
         }));
 
         return { user, checkoutHistory };
@@ -608,12 +674,6 @@ export const getUserDetailsAndOrderHistoryById = async (userId: string): Promise
         throw new Error('Failed to get user details and order history');
     }
 };
-
-
-
-
-
-
 
 // Deactivate the user provided the id
 export const deactivateUserById = async (id: string): Promise<void> => {
@@ -647,4 +707,3 @@ function Like(pattern: string): FindOperator<string> {
 function randomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-

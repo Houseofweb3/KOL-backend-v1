@@ -29,7 +29,7 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
     if (!token) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
-            message: "Access token is not provided"
+            message: 'Access token is not provided',
         });
     }
     jwt.verify(token, jwtSecret, (err, user) => {
@@ -37,20 +37,21 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
             if (err.name === 'TokenExpiredError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
-                    message: "Access token has expired"
+                    message: 'Access token has expired',
                 });
             }
             if (err.name === 'JsonWebTokenError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
-                    message: "Access token is not valid"
+                    message: 'Access token is not valid',
                 });
             }
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: "Internal server error"
+                message: 'Internal server error',
             });
         }
+
         // req.user = user as JwtPayload;
         next();
     });
@@ -61,7 +62,7 @@ export const refreshToken = (req: Request, res: Response) => {
     if (!refreshToken) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
-            message: "Refresh token is required"
+            message: 'Refresh token is required',
         });
     }
 
@@ -70,18 +71,18 @@ export const refreshToken = (req: Request, res: Response) => {
             if (err.name === 'TokenExpiredError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
-                    message: "Refresh token has expired"
+                    message: 'Refresh token has expired',
                 });
             }
             if (err.name === 'JsonWebTokenError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
-                    message: "Refresh token is not valid"
+                    message: 'Refresh token is not valid',
                 });
             }
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: "Internal server error"
+                message: 'Internal server error',
             });
         }
 
@@ -90,14 +91,14 @@ export const refreshToken = (req: Request, res: Response) => {
         if (!user) {
             return res.status(HttpStatus.UNAUTHORIZED).json({
                 success: false,
-                message: "User not found"
+                message: 'User not found',
             });
         }
 
         const newAccessToken = generateAccessToken(user);
         res.json({
             success: true,
-            accessToken: newAccessToken
+            accessToken: newAccessToken,
         });
     });
 };
@@ -107,6 +108,6 @@ export const logout = (req: Request, res: Response) => {
     // This might involve removing the refresh token from a database or a blacklist
     res.json({
         success: true,
-        message: "Logged out successfully"
+        message: 'Logged out successfully',
     });
 };
