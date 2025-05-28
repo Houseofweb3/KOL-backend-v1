@@ -26,7 +26,6 @@ export async function createBounty(params: CreateBountyParams): Promise<Bounty> 
             bountyName,
             metadata,
             prize,
-            startDate,
             endDate,
             status = 'open',
             creatorId,
@@ -40,15 +39,18 @@ export async function createBounty(params: CreateBountyParams): Promise<Bounty> 
         // if (!startDate) throw { status: HttpStatus.BAD_REQUEST, message: 'Start date is required' };
 
         // Validate dates
-        const now = new Date();
-        const start = new Date(now);
-        const end = new Date(endDate);
+        console.log(endDate, 'endDate');
 
+        const now = new Date(); // Now in local, but internally in UTC
+        const start = new Date(now.toISOString()); // Explicitly converted to UTC-based ISO string
+        const end = new Date(endDate); // JS Date parses ISO or date string and stores in UTC internally
+
+        // Comparison in UTC is safe because all Date objects are internally in UTC
         if (start < now && status === 'draft') {
             throw new Error('Start date cannot be in the past for an open bounty');
         }
 
-        if (endDate && new Date(endDate) <= start) {
+        if (endDate && end <= start) {
             throw new Error('End date must be after start date');
         }
 
@@ -236,7 +238,7 @@ export interface EditBountyParams {
     creatorId?: string;
 }
 
-export async function editBounty(id: string, updates: EditBountyParams): Promise<Bounty> {
+export async function editBounty(id: string, updates: CreateBountyParams): Promise<Bounty> {
     try {
         if (!id) {
             throw new Error('Bounty ID is required');
@@ -251,6 +253,20 @@ export async function editBounty(id: string, updates: EditBountyParams): Promise
 
         // Find the bounty by ID
         const bounty = await bountyRepository.findOneBy({ id });
+        const start = updates.startDate ? new Date(updates.startDate) : undefined;
+        const end = updates.endDate ? new Date(updates.endDate) : undefined;
+        const now = new Date();
+
+        if (updates.startDate !== undefined && start) {
+            updates.startDate = start;
+        }
+        if (updates.endDate !== undefined && end) {
+            updates.endDate = end;
+        }
+        if (start && end && end <= start && now < end) {
+            throw new Error('End date must be after start date or current date');
+        }
+
         if (updates?.status === 'open') {
             const now = new Date();
             updates.startDate = now;
@@ -263,6 +279,8 @@ export async function editBounty(id: string, updates: EditBountyParams): Promise
 
         const updatedBounty = await bountyRepository.save(bounty);
 
+        console.log(updatedBounty, 'updatedBounty');
+        
         return updatedBounty;
     } catch (error) {
         console.error(`Error editing bounty with ID ${id}:`, error);

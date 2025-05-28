@@ -35,6 +35,7 @@ import { adminProposalRoutes } from './routes';
 import { adminDashboardRoutes } from './routes/v1/admin/adminDashboardRoutes';
 import { bountyRoutes } from './routes/v1/bounty/bounty.routes';
 import { bountySubmissionRoutes } from './routes/v1/bounty/bountySubmission.routes';
+import { bountyBookingRoutes } from './routes/v1/bounty/bountyBooking.routes';
 
 
 const app: Application = express();
@@ -103,6 +104,9 @@ app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
 
 // Bounty Routes
 app.use(`/api/v${ENV.VERSION}/bounty`, bountyRoutes);
+
+// Bounty Feedback Routes
+app.use(`/api/v${ENV.VERSION}/bounty-booking`, bountyBookingRoutes);
 
 // Bounty Submission Routes
 app.use(`/api/v${ENV.VERSION}/bounty-submission`, bountySubmissionRoutes);

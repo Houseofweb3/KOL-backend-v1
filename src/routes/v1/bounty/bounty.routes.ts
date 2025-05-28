@@ -8,7 +8,6 @@ import {
     fetchUserSubmissionBountiesController,
 } from '../../../controllers/v1/bounty/bountyController';
 import multer from 'multer';
-import { verifyAccessToken } from '../../../middleware';
 
 const router = Router();
 const upload = multer();
@@ -18,12 +17,13 @@ router.post('/', upload.fields([{ name: 'logo' }, { name: 'coverImage' }]), crea
 
 // Fetch Bounties with optional filters and pagination
 router.get('/', fetchBountiesController);
+
 // Fetch Bounties with optional filters and pagination for admin
 router.get('/all', fetchAllBountiesController);
 // Fetch a specific Bounty by ID
 router.get('/:id', fetchBountyByIdController);
 // Edit a specific Bounty by ID
-router.put('/:id', editBountyController);
+router.put('/:id', upload.fields([{ name: 'logo' }, { name: 'coverImage' }]), editBountyController);
 
 // Fetch a specific user submission Bounties list by userId
 router.get('/my/submission/:userId', fetchUserSubmissionBountiesController);
