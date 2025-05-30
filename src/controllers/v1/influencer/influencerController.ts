@@ -83,9 +83,6 @@ export const getInfluencersWithHiddenPricesHandler = async (req: Request, res: R
           filter = {};
       }
 
-      // Log parsed filter for debugging
-      console.log('Parsed filter:', filter);
-
       // Fetch influencers using the service function with parsed filters
       const { influencers, pagination } = await getInfluencersWithHiddenPrices(
           userId,

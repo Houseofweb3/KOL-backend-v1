@@ -10,7 +10,7 @@ const cartRepository = AppDataSource.getRepository(Cart);
 // Create or get an existing Cart
 export const createCart = async (userId?: string): Promise<Cart> => {
     try {
-        let cart: Cart | null = null;
+        const cart: Cart | null = null;
 
         const newCart = cartRepository.create({ user: userId ? { id: userId } : undefined });
         const savedCart = await updateTimestamp(cartRepository, newCart);
@@ -87,7 +87,7 @@ export const getCarts = async (
 
         const transformedCarts = await Promise.all(
             carts.map(async (cart) => {
-                let totalPrice = calculateTotalPrice(cart);
+                const totalPrice = calculateTotalPrice(cart);
 
                 let managementFeePercentage = 0;
 

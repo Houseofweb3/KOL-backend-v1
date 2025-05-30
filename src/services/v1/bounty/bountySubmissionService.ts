@@ -12,7 +12,7 @@ interface CreateBountySubmissionParams {
  * Service function to create a bounty submission
  */
 export async function createBountySubmission(
-    params: CreateBountySubmissionParams
+    params: CreateBountySubmissionParams,
 ): Promise<BountySubmission> {
     try {
         const { userId, bountyId, submissionLink } = params;
@@ -78,11 +78,66 @@ export async function createBountySubmission(
         return savedSubmission;
     } catch (error) {
         console.error('Error creating bounty submission:', error);
-        throw new Error(`Failed to create bounty submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+            `Failed to create bounty submission: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
     }
 }
 
 // fn to fetch all submissions for a bounty
+export async function fetchBountySubmissionsForAdmin(
+    bountyId: string,
+    page: number,
+    limit: number,
+): Promise<{
+    submissions: BountySubmission[];
+    bounty: Bounty;
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}> {
+    try {
+        if (!bountyId) {
+            throw new Error('Bounty ID is required');
+        }
+
+        const offset = (page - 1) * limit;
+
+        const BountyRepo = AppDataSource.getRepository(Bounty);
+        const bounty = await BountyRepo.findOneBy({ id: bountyId });
+        if (!bounty) {
+            throw new Error(`Bounty with ID ${bountyId} not found`);
+        }
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+
+        const [submissions, total] = await submissionRepo.findAndCount({
+            where: { bounty: { id: bountyId } },
+            relations: ['user', 'bounty'],
+            skip: offset,
+            take: limit,
+        });
+
+        return {
+            submissions,
+            bounty,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } catch (error) {
+        console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
+        throw new Error(
+            `Failed to fetch submissions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
 export async function fetchBountySubmissions(bountyId: string): Promise<BountySubmission[]> {
     try {
         if (!bountyId) {
@@ -91,20 +146,24 @@ export async function fetchBountySubmissions(bountyId: string): Promise<BountySu
 
         const submissionRepo = AppDataSource.getRepository(BountySubmission);
 
-        // Fetch all submissions for the given bounty ID
-        const submissions = await submissionRepo.findBy({ bountyId });
+        const submissions = await submissionRepo.find({
+            where: { bountyId },
+            relations: ['user', 'bounty'],
+        });
 
         return submissions;
     } catch (error) {
         console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
-        throw new Error(`Failed to fetch submissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+            `Failed to fetch submissions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
     }
 }
 
 // editBountySubmission function to edit a submission, with link, sbmittedAt and reviewedAt
 export async function editBountySubmission(
     submissionId: string,
-    updates: Partial<BountySubmission>
+    updates: Partial<BountySubmission>,
 ): Promise<BountySubmission> {
     try {
         if (!submissionId) {
@@ -128,12 +187,14 @@ export async function editBountySubmission(
         return updatedSubmission;
     } catch (error) {
         console.error(`Error editing submission with ID ${submissionId}:`, error);
-        throw new Error(`Failed to edit submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+            `Failed to edit submission: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
     }
 }
 
-import * as ExcelJS from "exceljs";
-import { Response } from "express"; // assuming you're using express
+import * as ExcelJS from 'exceljs';
+import { Response } from 'express'; // assuming you're using express
 
 export class BountySubmissionService {
     static async exportSubmissionsAsExcel(bountyId: string, res: Response) {
@@ -141,40 +202,46 @@ export class BountySubmissionService {
 
         const submissions = await repo.find({
             where: { bountyId },
-            relations: ["user"],
-            order: { submittedAt: "ASC" }
+            relations: ['user'],
+            order: { submittedAt: 'ASC' },
         });
 
         const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet("Bounty Submissions");
+        const sheet = workbook.addWorksheet('Bounty Submissions');
 
         sheet.columns = [
-            { header: "User ID", key: "userId", width: 36 },
-            { header: "User Email", key: "userEmail", width: 30 },
-            { header: "Submission Link", key: "submissionLink", width: 50 },
-            { header: "Status", key: "status", width: 15 },
-            { header: "Ranking", key: "ranking", width: 10 },
-            { header: "Submitted At", key: "submittedAt", width: 25 },
-            { header: "Reviewed At", key: "reviewedAt", width: 25 },
-            { header: "Feedback (JSON)", key: "feedback", width: 50 },
+            { header: 'User ID', key: 'userId', width: 36 },
+            { header: 'User Email', key: 'userEmail', width: 30 },
+            { header: 'Submission Link', key: 'submissionLink', width: 50 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Ranking', key: 'ranking', width: 10 },
+            { header: 'Submitted At', key: 'submittedAt', width: 25 },
+            { header: 'Reviewed At', key: 'reviewedAt', width: 25 },
+            { header: 'Feedback (JSON)', key: 'feedback', width: 50 },
         ];
 
-        submissions.forEach(sub => {
+        submissions.forEach((sub) => {
             sheet.addRow({
                 userId: sub.userId,
-                userEmail: sub.user?.email ?? "N/A",
+                userEmail: sub.user?.email ?? 'N/A',
                 submissionLink: sub.submissionLink,
                 status: sub.status,
-                ranking: sub.ranking ?? "N/A",
+                ranking: sub.ranking ?? 'N/A',
                 submittedAt: sub.submittedAt,
-                reviewedAt: sub.reviewedAt ?? "N/A",
-                feedback: sub.feedback ? JSON.stringify(sub.feedback) : "N/A"
+                reviewedAt: sub.reviewedAt ?? 'N/A',
+                feedback: sub.feedback ? JSON.stringify(sub.feedback) : 'N/A',
             });
         });
 
         // Set the headers for file download
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.setHeader("Content-Disposition", `attachment; filename=bounty_${bountyId}_submissions.xlsx`);
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename=bounty_${bountyId}_submissions.xlsx`,
+        );
 
         await workbook.xlsx.write(res);
         res.end();

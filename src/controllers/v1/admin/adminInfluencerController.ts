@@ -55,8 +55,6 @@ export const getUniqueInfluencersHandler = async (req: Request, res: Response) =
             filter = {};
         }
 
-        // Log parsed filter for debugging
-        console.log('Parsed filter for unique influencers:', filter);
 
         // Fetch unique influencers
         const { influencers, pagination } = await getUniqueInfluencers(
@@ -116,7 +114,7 @@ export const createInfluencerController = async (req: Request, res: Response) =>
     }
     try {
         // create multiple influencers as per the payload generated on the basis of contentTypeAndPrice array
-        let influencerPayload = contentTypeAndPrice.map(
+        const influencerPayload = contentTypeAndPrice.map(
             ({ contentType, price }: { contentType: string; price: number }) => {
                 // Exclude `contentTypeAndPrice` field from new influencer object
                 const { contentTypeAndPrice: _, ...filteredInfluencer } = influencer;

@@ -1,60 +1,62 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 /**
  * Bounty entity representing bounty challenges in the system
  */
-@Entity("bounties")
+@Entity('bounties')
 export class Bounty {
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: "varchar", length: 50 })
+    @Column({ type: 'varchar', length: 50 })
     @Index()
     bountyType!: string;
 
-    @Column({ type: "varchar", length: 255 })
+    @Column({ type: 'varchar', length: 255 })
     @Index()
     bountyName!: string;
 
-    @Column({ type: "integer", default: 0 })
+    @Column({ type: 'integer', default: 0 })
     submissions!: number;
 
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: 'jsonb', nullable: true })
     metadata!: Record<string, any>;
 
-    @Column({ type: "decimal", precision: 18, scale: 2, nullable: true })
+    @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
     prize!: number;
 
     // add status column
     @Column({
-        type: "enum",
-        enum: ["open", "closed", "cancelled"],
-        default: "open",
+        type: 'enum',
+        enum: ['open', 'closed', 'cancelled', 'draft'],
+        default: 'open',
     })
     @Index()
-    status!: "open" | "closed" | "cancelled";
+    status!: 'open' | 'closed' | 'cancelled' | 'draft';
 
-    @Column({ type: "timestamp with time zone" })
+    @Column({ type: 'timestamp with time zone' })
     @Index()
     startDate!: Date;
 
-    @Column({ type: "timestamp with time zone", nullable: true })
+    @Column({ type: 'timestamp with time zone', nullable: true })
     endDate!: Date;
 
     // add creatorId column
-    @Column({ type: "uuid", nullable: true })
+    @Column({ type: 'uuid', nullable: true })
     creatorId!: string;
 
-    @CreateDateColumn({ type: "timestamp with time zone" })
+    @CreateDateColumn({ type: 'timestamp with time zone' })
     createdAt!: Date;
 
     /**
      * Check if bounty is currently active
      */
     isActive(): boolean {
-        return this.status === "open" &&
+        return (
+            this.status === 'open' &&
             this.startDate <= new Date() &&
-            (!this.endDate || this.endDate >= new Date());
+            (!this.endDate || this.endDate >= new Date())
+        );
     }
 
     /**

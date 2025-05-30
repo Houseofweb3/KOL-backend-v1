@@ -3,7 +3,7 @@ export const normalizeName = (name: string) => name.replace(/\s+/g, '').toLowerC
 // Helper functions for date handling
 export function getDatesInRange(startDate: Date, endDate: Date): Date[] {
     const dates: Date[] = [];
-    let currentDate = getStartOfDay(new Date(startDate));
+    const currentDate = getStartOfDay(new Date(startDate));
     const lastDate = getStartOfDay(new Date(endDate));
     
     while (currentDate <= lastDate) {
