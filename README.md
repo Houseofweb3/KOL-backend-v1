@@ -1,83 +1,196 @@
-#### Removes the dist directory.
+# 🧠 KOL Backend V1
 
-- `npm run clean`
+This is the official backend service for the **KOL (Key Opinion Leader) platform**, built with **Node.js**, **Express**, **TypeORM**, and **TypeScript**. It supports all major backend operations for:
 
-#### Cleans the dist directory and compiles TypeScript files.
+* 🎯 **KOL Users**
+* 🛠️ **KOL Admin Panel**
+* 🚀 **Amplify Bounty Program**
 
-- `npm run build`
+The API serves as a foundational layer for the entire KOL ecosystem, providing features like user onboarding, influencer management, admin operations, checkout flows, invoicing, and a custom bounty platform.
 
-#### Runs the application using Node.js.
+---
 
-- `npm run start`
+## 🚀 Features
 
-#### Runs the application using ts-node on local.
+* ✅ TypeScript + Express server
+* ✅ Modular route handling
+* ✅ Swagger documentation (`/docs`)
+* ✅ PostgreSQL integration via TypeORM
+* ✅ RESTful APIs for User, Admin, and Bounty operations
+* ✅ CORS-enabled API
+* ✅ Environment-based config loading
+* ✅ Cleanly separated route layers
+* ✅ Bounty + Submission endpoints
+* ✅ Admin dashboard and proposal APIs
 
-- `npm run local`
+---
 
-#### Runs the application on local(**recommended*).
-
-- `npm run local:watch`
-
-#### Placeholder for test scripts. Currently, it outputs an error message.
-
-- `npm test`
-
-#### Command to run eslint on specific file
-
-- `npx eslint <path-to-your-file>.<js/ts>`
-
-#### Command to run eslint on project(src/*).
-
-- `npm run lint`
-
-#### Command to run prettier on specific file.
-
-- `npx prettier package.json --write`
-
-#### Command to prettier on the entire project with prettier(src/*).
-
-- `npm run pretty`
-
-#### Command to run eslint and prettier on the entire project(src/*).
-
-- `npm run format-and-lint`
-
-#### Branching strategy
-- `main` 
-1. This is production branch. Never touch it or there will be terrible consequences.:)
-2. We will only merge dev rom into main branch
-- `dev`
-1. Always take feature branch from dev branch and merge it in this branch.
-2. This branch will also be deployed for testing purposes.
-- `####-<feature-info>`
-1. '####' = Ticket/Card number. Properly describe the feature that you are working on.
-2. Once approved. This branch will be merged into dev branch.
-
-#### Commit strategy
-- `git commit -m '####-<meaningful-commit>`
-1. '####' = Ticket/Card number. Properly describe the feature on which you worked through meaningful commit message.
-2. Writing bad commit comments will have dangerous consequences. 😈
-
-#### Commands to build and run the docker container(detached mode)
-
-- `docker build -t <your-image-name> .` e.x. `docker build -t kol-tool .`
-
-- `docker run -d -p 3000:3000 your-image-name` e.x. `docker run -d -p 3000:3000 kol-tool`
-
-#### Swagger
-- Swagger documentation can be viewed at <base-url>/docs. e.x. http://localhost:3000/docs
-
-#### API Collection
-- We use postman for documenting and testing our APIs.
-
-#### Different logging levels in winston
+## 🧩 Folder Structure
 
 ```
-logger.error('This is an error message');
-logger.warn('This is a warning message');
-logger.info('This is an informational message');
-logger.http('This is an HTTP log message');
-logger.verbose('This is a verbose log message');
-logger.debug('This is a debug log message');
-logger.silly('This is a silly log message');
+.
+├── src/
+│   ├── config/              # DB, Logger, Env config
+│   ├── middleware/          # Custom middlewares (e.g., CORS)
+│   ├── routes/              # Route handlers (user, admin, bounty, etc.)
+│   │   └── v1/              # Versioned route sets
+│   ├── models/              # DB entities and models
+│   └── swagger.json         # Swagger base definition
+├── .env                     # Your environment variables
+├── tsconfig.json            # TypeScript config
+└── README.md
 ```
+
+---
+
+## 📦 Setup Instructions
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-org/kol-backend-v1.git
+cd kol-backend-v1
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure Environment
+
+Create a `.env` file in the root directory:
+
+```bash
+cp .env.example .env
+```
+
+Then fill in your environment variables:
+
+```env
+PORT=3000
+VERSION=1
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=your_pg_user
+DB_PASSWORD=your_pg_password
+DB_NAME=kol_db
+JWT_SECRET=your_jwt_secret
+```
+
+### 4. Run Locally
+
+```bash
+npm run start
+```
+
+You should see logs indicating:
+
+* Database successfully connected
+* Server running on your configured port
+
+---
+
+## 📘 API Documentation
+
+Interactive API docs are available at:
+
+```
+http://localhost:3000/docs
+```
+
+These are auto-generated using `swagger-jsdoc` and `swagger-ui-express`, based on route and model definitions.
+
+---
+
+## 🛣️ API Endpoints Overview
+
+> All routes are versioned under `/api/v1/`
+
+### 🔐 Auth & User
+
+* `POST /auth/login`
+* `GET /questions`
+* `GET /onboarding-questions`
+* `POST /user-onboarding-selections`
+
+### 📦 Package & Cart
+
+* `GET /packages`
+* `GET /package-items`
+* `POST /cart`
+* `POST /influencer-cart-item`
+* `POST /package-cart-item`
+
+### 💳 Checkout & Invoice
+
+* `POST /checkout`
+* `GET /invoice`
+
+### 🎯 Admin Panel
+
+* `POST /admin/auth/login`
+* `GET /admin/influencer`
+* `GET /admin/client`
+* `GET /admin/proposal`
+* `GET /admin/dashboard-details`
+
+### 🏆 Bounty System
+
+* `POST /bounty`
+* `POST /bounty-submission`
+
+---
+
+## 🧪 Testing API
+
+You can test all routes using:
+
+* Swagger UI at `/docs`
+* Postman collections (coming soon)
+* `curl` or HTTP clients like Thunder Client/Insomnia
+
+---
+
+## 🧰 Tech Stack
+
+| Technology       | Description                    |
+| ---------------- | ------------------------------ |
+| Node.js          | Backend runtime                |
+| Express          | Web framework                  |
+| TypeORM          | ORM for PostgreSQL             |
+| Swagger UI       | API documentation              |
+| TypeScript       | Static typing                  |
+| PostgreSQL       | Primary database               |
+| CORS             | Cross-origin resource sharing  |
+| Reflect Metadata | Required by TypeORM decorators |
+
+---
+
+## ✅ To-Do / Future Enhancements
+
+* [ ] Add Role-Based Access Control (RBAC)
+* [ ] Add Postman Collection
+* [ ] Write Unit and Integration Tests
+* [ ] Add CI/CD pipeline
+* [ ] Dockerize the service
+* [ ] Add Redis or caching layer for improved performance
+
+---
+
+## 👨‍💻 Contributing
+
+PRs and issues are welcome! Please follow conventional commits and structure your changes modularly.
+
+---
+
+## 🛡️ License
+
+This project is licensed under the **MIT License**.
+
+---
+
+## 📞 Contact
+
+For queries, drop a message to the backend team or raise an issue on the repository.
