@@ -19,6 +19,9 @@ export class Bounty {
     @Column({ type: 'integer', default: 0 })
     submissions!: number;
 
+    @Column({ type: 'integer', default: 20 })
+    yaps!: number;
+
     @Column({ type: 'jsonb', nullable: true })
     metadata!: Record<string, any>;
 
@@ -59,6 +62,9 @@ export class Bounty {
         );
     }
 
+    shouldBeClosed(): boolean {
+        return this.status === 'open' && this.endDate !== null && this.endDate < new Date();
+    }
     /**
      * Calculate remaining time in days
      */
