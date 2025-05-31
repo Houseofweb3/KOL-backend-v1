@@ -121,11 +121,19 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
             searchTerm,
         } = params;
 
-        // Calculate offset for pagination
         const offset = (page - 1) * limit;
-
-        // Start building the query
         const bountyRepository = AppDataSource.getRepository(Bounty);
+
+        //  Auto-close expired bounties (efficient, scoped update)
+        // await bountyRepository
+        //     .createQueryBuilder()
+        //     .update(Bounty)
+        //     .set({ status: 'closed' })
+        //     .where('status = :status', { status: 'open' })
+        //     .andWhere('endDate IS NOT NULL AND endDate < NOW()')
+        //     .execute();
+
+        //  Start building the filtered query
         const queryBuilder = bountyRepository.createQueryBuilder('bounty');
 
         if (searchTerm?.trim()) {
@@ -135,45 +143,39 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
         }
 
         if (notInclude && notInclude === 'draft') {
-            queryBuilder.where('bounty.status != :status', { status: 'draft' });
+            queryBuilder.andWhere('bounty.status NOT IN (:...statuses)', {
+                statuses: ['draft', 'cancelled'],
+            });
         }
+
         if (statusFilter !== BountyStatusFilter.ALL) {
-            // Apply status filter
             if (statusFilter === BountyStatusFilter.OPEN) {
-                queryBuilder.where('bounty.status = :status', { status: 'open' });
+                queryBuilder.andWhere('bounty.status = :status', { status: 'open' });
             } else if (statusFilter === BountyStatusFilter.CLOSED) {
-                queryBuilder.where('bounty.status = :status', { status: 'closed' });
+                queryBuilder.andWhere('bounty.status = :status', { status: 'closed' });
             }
         }
 
-        // Apply bounty type filter if provided
         if (bountyType) {
-            if (bountyType) {
-                if (bountyType.includes(',')) {
-                    const bType = bountyType.split(',');
-                    queryBuilder.andWhere('bounty.bountyType IN (:...bountyType)', {
-                        bountyType: bType,
-                    });
-                } else {
-                    queryBuilder.andWhere('bounty.bountyType = :bountyType', { bountyType });
-                }
+            if (bountyType.includes(',')) {
+                const bType = bountyType.split(',');
+                queryBuilder.andWhere('bounty.bountyType IN (:...bountyType)', {
+                    bountyType: bType,
+                });
+            } else {
+                queryBuilder.andWhere('bounty.bountyType = :bountyType', { bountyType });
             }
         }
 
-        // Apply sorting
         if (sortBy === BountySortOption.LATEST) {
             queryBuilder.orderBy('bounty.startDate', 'DESC');
         } else if (sortBy === BountySortOption.PRIZE) {
             queryBuilder.orderBy('bounty.prize', 'DESC');
         }
 
-        // Add secondary sort by creation date to ensure consistent ordering
         queryBuilder.addOrderBy('bounty.createdAt', 'DESC');
-
-        // Apply pagination
         queryBuilder.skip(offset).take(limit);
 
-        // Execute query and get total count
         const [bounties, total] = await queryBuilder.getManyAndCount();
 
         return {
@@ -186,12 +188,12 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
             },
         };
     } catch (error: any) {
-        // Handle errors and throw with status codes and messages
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage = error.message || 'An unknown error occurred during fetching bounties';
         throw { status: statusCode, message: errorMessage };
     }
 }
+
 
 export interface BountyWithSubmissions {
     bounty: Bounty | null;
@@ -280,7 +282,7 @@ export async function editBounty(id: string, updates: CreateBountyParams): Promi
         const updatedBounty = await bountyRepository.save(bounty);
 
         console.log(updatedBounty, 'updatedBounty');
-        
+
         return updatedBounty;
     } catch (error) {
         console.error(`Error editing bounty with ID ${id}:`, error);

@@ -59,6 +59,9 @@ export class Bounty {
         );
     }
 
+    shouldBeClosed(): boolean {
+        return this.status === 'open' && this.endDate !== null && this.endDate < new Date();
+    }
     /**
      * Calculate remaining time in days
      */

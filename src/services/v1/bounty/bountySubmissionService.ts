@@ -66,7 +66,7 @@ export async function createBountySubmission(
         submission.userId = userId;
         submission.bountyId = bountyId;
         submission.submissionLink = submissionLink;
-        submission.status = 'pending';
+        submission.status = 'under review';
 
         // Save the submission
         const savedSubmission = await submissionRepo.save(submission);
