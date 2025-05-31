@@ -43,7 +43,7 @@ export const createBountyController = async (req: Request, res: Response) => {
             coverImage: coverImage,
         };
 
-        const { bountyType, bountyName, prize, startDate, endDate, status, creatorId } =
+        const { bountyType, bountyName, prize,yaps, startDate, endDate, status, creatorId } =
             req.body as CreateBountyParams;
 
         const bounty = await createBounty({
@@ -51,6 +51,7 @@ export const createBountyController = async (req: Request, res: Response) => {
             bountyName,
             metadata: updatedMetadata,
             prize,
+            yaps,
             startDate,
             endDate,
             status,
@@ -167,40 +168,36 @@ export const editBountyController = async (req: Request, res: Response) => {
 
     try {
         const { id: bountyId } = req.params;
-        const { bountyType, bountyName, metadata, prize, startDate, endDate, status, creatorId } =
+        const { bountyType, bountyName, metadata, prize,yaps, startDate, endDate, status, creatorId } =
             req.body as CreateBountyParams;
 
-            const files = req.files as {
-                [fieldname: string]: Express.Multer.File[];
-            };
-    
-            let logo = req.body.logo
-            let coverImage = req.body.coverImage;
+        const files = req.files as {
+            [fieldname: string]: Express.Multer.File[];
+        };
 
-            if (files.logo || files.coverImage) {
-                logo = await uploadImageToS3(files.logo[0]);
-                coverImage = await uploadImageToS3(files.coverImage[0]);
-            }
-    
-            let parsedMetadata: Record<string, any> = {};
-            parsedMetadata =
-                typeof req.body.metadata === 'string'
-                    ? JSON.parse(req.body.metadata)
-                    : req.body.metadata || {};
-    
-          
-    
-            const updatedMetadata = {
-                ...parsedMetadata,
-                logo: logo,
-                coverImage: coverImage,
-            };
+        let logo = req.body.logo;
+        let coverImage = req.body.coverImage;
+
+        if (files.logo || files.coverImage) {
+            logo = await uploadImageToS3(files.logo[0]);
+            coverImage = await uploadImageToS3(files.coverImage[0]);
+        }
+
+        let parsedMetadata: Record<string, any> = {};
+        parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata || {};
+
+        const updatedMetadata = {
+            ...parsedMetadata,
+            logo: logo,
+            coverImage: coverImage,
+        };
 
         const bounty = await editBounty(bountyId, {
             bountyType,
             bountyName,
             metadata: updatedMetadata,
             prize,
+            yaps,
             startDate,
             endDate,
             status,

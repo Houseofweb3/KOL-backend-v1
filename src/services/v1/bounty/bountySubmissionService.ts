@@ -160,6 +160,32 @@ export async function fetchBountySubmissions(bountyId: string): Promise<BountySu
     }
 }
 
+export async function fetchBountySubmissionsByStatus(userId: string): Promise<BountySubmission[]> {
+    try {
+        if (!userId) {
+            throw new Error('User ID is required');
+        }
+
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+
+        const statusCounts = await submissionRepo
+            .createQueryBuilder('submission')
+            .select('submission.status', 'status')
+            .addSelect('COUNT(*)', 'count')
+            .where('submission.userId = :userId', { userId })
+            .groupBy('submission.status')
+            .getRawMany();
+
+            
+        return statusCounts;
+    } catch (error) {
+        console.error(`Error fetching bounty ${userId}:`, error);
+        throw new Error(
+            `Failed to fetch bounty: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
 // editBountySubmission function to edit a submission, with link, sbmittedAt and reviewedAt
 export async function editBountySubmission(
     submissionId: string,
@@ -194,7 +220,7 @@ export async function editBountySubmission(
 }
 
 import * as ExcelJS from 'exceljs';
-import { Response } from 'express'; // assuming you're using express
+import { Response } from 'express';
 
 export class BountySubmissionService {
     static async exportSubmissionsAsExcel(bountyId: string, res: Response) {

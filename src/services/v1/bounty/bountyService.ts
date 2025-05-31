@@ -10,6 +10,7 @@ export interface CreateBountyParams {
     bountyName: string;
     metadata?: Record<string, any>;
     prize?: number;
+    yaps: number;
     startDate: Date;
     endDate: Date;
     status?: BountyStatus;
@@ -29,6 +30,7 @@ export async function createBounty(params: CreateBountyParams): Promise<Bounty> 
             endDate,
             status = 'open',
             creatorId,
+            yaps,
         } = params;
 
         // Validate required fields and throw errors with status codes and messages
@@ -41,9 +43,9 @@ export async function createBounty(params: CreateBountyParams): Promise<Bounty> 
         // Validate dates
         console.log(endDate, 'endDate');
 
-        const now = new Date(); // Now in local, but internally in UTC
-        const start = new Date(now.toISOString()); // Explicitly converted to UTC-based ISO string
-        const end = new Date(endDate); // JS Date parses ISO or date string and stores in UTC internally
+        const now = new Date();
+        const start = new Date(now.toISOString());
+        const end = new Date(endDate);
 
         // Comparison in UTC is safe because all Date objects are internally in UTC
         if (start < now && status === 'draft') {
@@ -61,6 +63,7 @@ export async function createBounty(params: CreateBountyParams): Promise<Bounty> 
         bounty.bountyName = bountyName;
         bounty.metadata = metadata || {};
         bounty.prize = Number(prize) ?? 0;
+        bounty.yaps = yaps;
         bounty.startDate = start;
         bounty.endDate = end;
         bounty.status = status;
@@ -125,13 +128,13 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
         const bountyRepository = AppDataSource.getRepository(Bounty);
 
         //  Auto-close expired bounties (efficient, scoped update)
-        // await bountyRepository
-        //     .createQueryBuilder()
-        //     .update(Bounty)
-        //     .set({ status: 'closed' })
-        //     .where('status = :status', { status: 'open' })
-        //     .andWhere('endDate IS NOT NULL AND endDate < NOW()')
-        //     .execute();
+        const data = await bountyRepository
+            .createQueryBuilder()
+            .update(Bounty)
+            .set({ status: 'closed' })
+            .where('status = :status', { status: 'open' })
+            .andWhere('endDate IS NOT NULL AND endDate < NOW()')
+            .execute();
 
         //  Start building the filtered query
         const queryBuilder = bountyRepository.createQueryBuilder('bounty');
@@ -173,7 +176,12 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
             queryBuilder.orderBy('bounty.prize', 'DESC');
         }
 
-        queryBuilder.addOrderBy('bounty.createdAt', 'DESC');
+        if (notInclude) {
+            queryBuilder.addOrderBy('bounty.yaps ', 'ASC');
+        } else {
+            queryBuilder.addOrderBy('bounty.createdAt', 'DESC');
+        }
+
         queryBuilder.skip(offset).take(limit);
 
         const [bounties, total] = await queryBuilder.getManyAndCount();
@@ -193,7 +201,6 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
         throw { status: statusCode, message: errorMessage };
     }
 }
-
 
 export interface BountyWithSubmissions {
     bounty: Bounty | null;
@@ -280,8 +287,6 @@ export async function editBounty(id: string, updates: CreateBountyParams): Promi
         Object.assign(bounty, updates);
 
         const updatedBounty = await bountyRepository.save(bounty);
-
-        console.log(updatedBounty, 'updatedBounty');
 
         return updatedBounty;
     } catch (error) {
