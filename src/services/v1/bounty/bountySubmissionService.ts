@@ -121,7 +121,6 @@ export async function fetchBountySubmissionsForAdmin(
             .where('submission.bountyId = :bountyId', { bountyId })
             .andWhere("submission.status NOT IN ('approved', 'rejected', 'winner')")
             .getCount();
-            
 
         const qb = submissionRepo
             .createQueryBuilder('submission')
@@ -141,7 +140,7 @@ export async function fetchBountySubmissionsForAdmin(
         return {
             submissions,
             bounty,
-            areAllSubmissionsApprovedOrRejectedOrWinner:count === 0,
+            areAllSubmissionsApprovedOrRejectedOrWinner: count === 0,
             pagination: {
                 page,
                 limit,
@@ -149,6 +148,32 @@ export async function fetchBountySubmissionsForAdmin(
                 totalPages: Math.ceil(total / limit),
             },
         };
+    } catch (error) {
+        console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
+        throw new Error(
+            `Failed to fetch submissions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
+// areAllSubmissionsApprovedOrRejectedOrWinner for admin
+export async function fetchBountyVerifySubmissionsForAdmin(bountyId: string): Promise<{
+    areAllSubmissionsApprovedOrRejectedOrWinner: Boolean;
+}> {
+    try {
+        if (!bountyId) {
+            throw new Error('Bounty ID is required');
+        }
+
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+
+        const count = await submissionRepo
+            .createQueryBuilder('submission')
+            .where('submission.bountyId = :bountyId', { bountyId })
+            .andWhere("submission.status NOT IN ('approved', 'rejected', 'winner')")
+            .getCount();
+
+        return { areAllSubmissionsApprovedOrRejectedOrWinner: count === 0 };
     } catch (error) {
         console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
         throw new Error(

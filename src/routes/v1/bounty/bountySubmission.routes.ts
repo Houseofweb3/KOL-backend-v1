@@ -1,6 +1,12 @@
 import { Router } from 'express';
-import { createBountySubmissionController, fetchBountySubmissionsController, editBountySubmissionController, fetchBountySubmissionsControllerForAdmin } from '../../../controllers/v1/bounty/bountySubmissionController';
-import { BountySubmissionService } from "../../../services/v1/bounty/bountySubmissionService";
+import {
+    createBountySubmissionController,
+    fetchBountySubmissionsController,
+    editBountySubmissionController,
+    fetchBountySubmissionsControllerForAdmin,
+    fetchBountyVerifiedSubmissionsControllerForAdmin,
+} from '../../../controllers/v1/bounty/bountySubmissionController';
+import { BountySubmissionService } from '../../../services/v1/bounty/bountySubmissionService';
 
 const router = Router();
 
@@ -12,11 +18,12 @@ router.get('/:bountyId', fetchBountySubmissionsController);
 
 // Fetch all Bounty Submissions for a specific Bounty for admin
 router.get('/all/:bountyId', fetchBountySubmissionsControllerForAdmin);
+router.get('/all/:bountyId/is-verified', fetchBountyVerifiedSubmissionsControllerForAdmin);
 
 // Edit a specific Bounty Submission by ID
 router.put('/:submissionId', editBountySubmissionController);
 
-router.get("/:bountyId/export", async (req, res) => {
+router.get('/:bountyId/export', async (req, res) => {
     const { bountyId } = req.params;
     await BountySubmissionService.exportSubmissionsAsExcel(bountyId, res);
 });

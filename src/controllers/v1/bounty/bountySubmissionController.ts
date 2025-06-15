@@ -6,6 +6,7 @@ import {
     fetchBountySubmissions,
     editBountySubmission,
     fetchBountySubmissionsForAdmin,
+    fetchBountyVerifySubmissionsForAdmin,
 } from '../../../services/v1/bounty';
 
 // fn to create a bounty submission
@@ -51,6 +52,29 @@ export const fetchBountySubmissionsControllerForAdmin = async (req: Request, res
         return res.status(HttpStatus.OK).json({
             message: 'Bounty submissions fetched successfully',
             ...submissions,
+        });
+    } catch (error: any) {
+        const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        const errorMessage =
+            error.message || 'An unknown error occurred during fetching bounty submissions';
+
+        logger.error(`Error while fetching bounty submissions (${statusCode}): ${errorMessage}`);
+
+        return res.status(statusCode).json({ error: errorMessage });
+    }
+};
+export const fetchBountyVerifiedSubmissionsControllerForAdmin = async (req: Request, res: Response) => {
+    try {
+        const { bountyId } = req.params;
+     
+
+        const submissions = await fetchBountyVerifySubmissionsForAdmin(
+            bountyId,
+           
+        );
+        return res.status(HttpStatus.OK).json({
+            message: 'Bounty submissions fetched successfully',
+            submissions,
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
