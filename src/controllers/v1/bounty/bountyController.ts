@@ -9,7 +9,6 @@ import {
     BountySortOption,
     fetchBountyById,
     editBounty,
-    EditBountyParams,
     fetchBountyByUserId,
 } from '../../../services/v1/bounty';
 import { setCorsHeaders } from '../../../middleware';
@@ -43,7 +42,7 @@ export const createBountyController = async (req: Request, res: Response) => {
             coverImage: coverImage,
         };
 
-        const { bountyType, bountyName, prize,yaps, startDate, endDate, status, creatorId } =
+        const { bountyType, bountyName, prize, yaps, startDate, endDate, status, creatorId } =
             req.body as CreateBountyParams;
 
         const bounty = await createBounty({
@@ -168,8 +167,17 @@ export const editBountyController = async (req: Request, res: Response) => {
 
     try {
         const { id: bountyId } = req.params;
-        const { bountyType, bountyName, metadata, prize,yaps, startDate, endDate, status, creatorId } =
-            req.body as CreateBountyParams;
+        const {
+            bountyType,
+            bountyName,
+            metadata,
+            prize,
+            yaps,
+            startDate,
+            endDate,
+            status,
+            creatorId,
+        } = req.body as CreateBountyParams;
 
         const files = req.files as {
             [fieldname: string]: Express.Multer.File[];

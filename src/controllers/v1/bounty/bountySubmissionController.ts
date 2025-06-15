@@ -32,9 +32,10 @@ export const createBountySubmissionController = async (req: Request, res: Respon
 export const fetchBountySubmissionsControllerForAdmin = async (req: Request, res: Response) => {
     try {
         const { bountyId } = req.params;
-        const { page, limit } = req.query as unknown as {
+        const { page, limit, searchTerm } = req.query as unknown as {
             page?: number;
             limit?: number;
+            searchTerm?: string;
         };
         const params: { page: number; limit: number } = {
             page: Number(page) || 1,
@@ -45,6 +46,7 @@ export const fetchBountySubmissionsControllerForAdmin = async (req: Request, res
             bountyId,
             params.page,
             params.limit,
+            searchTerm
         );
         return res.status(HttpStatus.OK).json({
             message: 'Bounty submissions fetched successfully',

@@ -33,10 +33,10 @@ export class BountySubmission {
 
     @Column({
         type: 'enum',
-        enum: ['under review', 'winner', 'approved', 'rejected', 'pending'],
-        default: 'under review',
+        enum: ['under_review', 'winner', 'approved', 'rejected', 'pending'],
+        default: 'under_review',
     })
-    status!: 'under review' | 'winner' | 'approved' | 'rejected' | 'pending';
+    status!: 'under_review' | 'winner' | 'approved' | 'rejected' | 'pending';
 
     @Column({ type: 'jsonb', nullable: true })
     feedback?: Record<string, any>;

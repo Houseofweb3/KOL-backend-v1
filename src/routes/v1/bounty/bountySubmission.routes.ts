@@ -12,6 +12,7 @@ router.get('/:bountyId', fetchBountySubmissionsController);
 
 // Fetch all Bounty Submissions for a specific Bounty for admin
 router.get('/all/:bountyId', fetchBountySubmissionsControllerForAdmin);
+
 // Edit a specific Bounty Submission by ID
 router.put('/:submissionId', editBountySubmissionController);
 

@@ -66,7 +66,7 @@ export async function createBountySubmission(
         submission.userId = userId;
         submission.bountyId = bountyId;
         submission.submissionLink = submissionLink;
-        submission.status = 'under review';
+        submission.status = 'under_review';
 
         // Save the submission
         const savedSubmission = await submissionRepo.save(submission);
@@ -89,9 +89,11 @@ export async function fetchBountySubmissionsForAdmin(
     bountyId: string,
     page: number,
     limit: number,
+    searchTerm?: string,
 ): Promise<{
     submissions: BountySubmission[];
     bounty: Bounty;
+    areAllSubmissionsApprovedOrRejectedOrWinner: Boolean;
     pagination: {
         page: number;
         limit: number;
@@ -113,16 +115,33 @@ export async function fetchBountySubmissionsForAdmin(
         }
         const submissionRepo = AppDataSource.getRepository(BountySubmission);
 
-        const [submissions, total] = await submissionRepo.findAndCount({
-            where: { bounty: { id: bountyId } },
-            relations: ['user', 'bounty'],
-            skip: offset,
-            take: limit,
-        });
+        // Use QueryBuilder for flexible search
+        const count = await submissionRepo
+            .createQueryBuilder('submission')
+            .where('submission.bountyId = :bountyId', { bountyId })
+            .andWhere("submission.status NOT IN ('approved', 'rejected', 'winner')")
+            .getCount();
+            
+
+        const qb = submissionRepo
+            .createQueryBuilder('submission')
+            .leftJoinAndSelect('submission.user', 'user')
+            .leftJoinAndSelect('submission.bounty', 'bounty')
+            .where('submission.bountyId = :bountyId', { bountyId });
+
+        if (searchTerm) {
+            qb.andWhere(
+                '(user.fullname ILIKE :searchTerm OR user.first_name ILIKE :searchTerm OR user.last_name ILIKE :searchTerm)',
+                { searchTerm: `%${searchTerm}%` },
+            );
+        }
+
+        const [submissions, total] = await qb.skip(offset).take(limit).getManyAndCount();
 
         return {
             submissions,
             bounty,
+            areAllSubmissionsApprovedOrRejectedOrWinner:count === 0,
             pagination: {
                 page,
                 limit,
@@ -176,7 +195,6 @@ export async function fetchBountySubmissionsByStatus(userId: string): Promise<Bo
             .groupBy('submission.status')
             .getRawMany();
 
-            
         return statusCounts;
     } catch (error) {
         console.error(`Error fetching bounty ${userId}:`, error);

@@ -2,8 +2,15 @@ import { AppDataSource } from '../../../config/data-source';
 import { Bounty, BountySubmission } from '../../../entity/bounty';
 import HttpStatus from 'http-status-codes';
 
-type BountyStatus = 'open' | 'closed' | 'cancelled' | 'draft';
-type bountyType = 'thread' | 'video' | 'article' | 'meme';
+export type BountyStatus =
+    | 'open'
+    | 'closed'
+    | 'draft'
+    | 'not_qualified'
+    | 'qualified'
+    | 'not_winning'
+    | 'winning';
+type bountyType = 'thread' | 'video' | 'article' | 'meme' | 'twitter' | 'quests';
 
 export interface CreateBountyParams {
     bountyType: bountyType;
@@ -39,9 +46,6 @@ export async function createBounty(params: CreateBountyParams): Promise<Bounty> 
         if (!bountyName)
             throw { status: HttpStatus.BAD_REQUEST, message: 'Bounty name is required' };
         // if (!startDate) throw { status: HttpStatus.BAD_REQUEST, message: 'Start date is required' };
-
-        // Validate dates
-        console.log(endDate, 'endDate');
 
         const now = new Date();
         const start = new Date(now.toISOString());
@@ -147,7 +151,15 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
 
         if (notInclude && notInclude === 'draft') {
             queryBuilder.andWhere('bounty.status NOT IN (:...statuses)', {
-                statuses: ['draft', 'cancelled'],
+                statuses: [
+                    'draft',
+                    'not_qualified',
+                    'qualified',
+                    'not_winning',
+                    'winning',
+                    'reward',
+                    'not_reward',
+                ],
             });
         }
 

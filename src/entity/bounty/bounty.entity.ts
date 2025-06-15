@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import { BountyStatus } from '../../services/v1/bounty';
 
 /**
  * Bounty entity representing bounty challenges in the system
@@ -31,11 +32,21 @@ export class Bounty {
     // add status column
     @Column({
         type: 'enum',
-        enum: ['open', 'closed', 'cancelled', 'draft'],
+        enum: [
+            'open',
+            'closed',
+            'draft',
+            'not_qualified',
+            'qualified',
+            'not_winning',
+            'winning',
+            'reward',
+            'not_reward',
+        ],
         default: 'open',
     })
     @Index()
-    status!: 'open' | 'closed' | 'cancelled' | 'draft';
+    status!: BountyStatus;
 
     @Column({ type: 'timestamp with time zone' })
     @Index()
