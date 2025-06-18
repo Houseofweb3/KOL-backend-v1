@@ -90,10 +90,10 @@ export async function fetchBountySubmissionsForAdmin(
     page: number,
     limit: number,
     searchTerm?: string,
+    status?: string,
 ): Promise<{
     submissions: BountySubmission[];
     bounty: Bounty;
-    areAllSubmissionsApprovedOrRejectedOrWinner: Boolean;
     pagination: {
         page: number;
         limit: number;
@@ -119,7 +119,7 @@ export async function fetchBountySubmissionsForAdmin(
         const count = await submissionRepo
             .createQueryBuilder('submission')
             .where('submission.bountyId = :bountyId', { bountyId })
-            .andWhere("submission.status NOT IN ('approved', 'rejected', 'winner')")
+            .andWhere("submission.status NOT IN ('approved', 'rejected', 'reword_distributed')")
             .getCount();
 
         const qb = submissionRepo
@@ -140,7 +140,6 @@ export async function fetchBountySubmissionsForAdmin(
         return {
             submissions,
             bounty,
-            areAllSubmissionsApprovedOrRejectedOrWinner: count === 0,
             pagination: {
                 page,
                 limit,
@@ -170,10 +169,48 @@ export async function fetchBountyVerifySubmissionsForAdmin(bountyId: string): Pr
         const count = await submissionRepo
             .createQueryBuilder('submission')
             .where('submission.bountyId = :bountyId', { bountyId })
-            .andWhere("submission.status NOT IN ('approved', 'rejected', 'winner')")
+            .andWhere("submission.status NOT IN ('approved', 'rejected', 'reword_not_distributed','reword_distributed')")
             .getCount();
 
         return { areAllSubmissionsApprovedOrRejectedOrWinner: count === 0 };
+    } catch (error) {
+        console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
+        throw new Error(
+            `Failed to fetch submissions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
+
+// areAllSubmissionsWinnORnot for admin
+
+
+export async function fetchBountyQualifiedSubmissionsForAdmin(bountyId: string): Promise<{
+    reword_distributed: Boolean;
+    reword_not_distributed: Boolean;
+    isallrewordDecared: Boolean;
+}> {
+    try {
+        if (!bountyId) {
+            throw new Error('Bounty ID is required');
+        }
+
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+
+        const submissiions = await submissionRepo
+            .createQueryBuilder('submission')
+            .where('submission.bountyId = :bountyId', { bountyId })
+            .andWhere("submission.status IN ( 'reword_not_distributed' , 'reword_distributed')")
+            .getMany();
+
+        const statuses = submissiions.map((s) => s.status);
+
+        const reword_distributed = statuses.includes('reword_distributed');
+        const reword_not_distributed = statuses.includes('reword_not_distributed');
+        const lessSubmission = statuses.length <= 10 ? statuses.length == statuses.filter((s) => s === 'reword_distributed').length : false;
+        const isallrewordDecared = statuses.length > 0 ? statuses.filter((s) => s === 'reword_distributed').length >= 10 : false;
+
+        return { reword_distributed, reword_not_distributed, isallrewordDecared: lessSubmission || isallrewordDecared };
     } catch (error) {
         console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
         throw new Error(
@@ -261,6 +298,203 @@ export async function editBountySubmission(
         );
     }
 }
+
+
+export async function editClientBountySubmission(
+    submissionId: string,
+    updates: Partial<BountySubmission>,
+): Promise<BountySubmission> {
+    try {
+        if (!submissionId) {
+            throw new Error('Submission ID is required');
+        }
+
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+        const bountyRepo = AppDataSource.getRepository(Bounty);
+
+        // Find the submission by ID
+        const submission = await submissionRepo.findOneBy({ id: submissionId });
+
+        if (!submission) {
+            throw new Error(`Submission with ID ${submissionId} not found`);
+        }
+
+        const bounty = await bountyRepo.findOneBy({ id: submission.bountyId });
+
+
+        if (!bounty) {
+            throw new Error(`Bounty with ID ${submissionId} not found`);
+        }
+
+        // Check if the bounty is closed or draft
+        if (bounty.status === 'open' || bounty.status === 'draft') {
+            throw new Error(`You can not update submission befor bouty is closed.`);
+        }
+
+        if (updates.status === 'approved' || updates.status === 'rejected' || updates.status === 'under_review') {
+            updates.reviewedAt = new Date();
+        }
+
+        Object.assign(submission, updates);
+
+        const updatedSubmission = await submissionRepo.save(submission);
+
+        if ((updatedSubmission.status === 'approved' || updatedSubmission.status === 'rejected' || updatedSubmission.status === 'under_review')) {
+
+            const isAllApprovuedORregected = await fetchBountyVerifySubmissionsForAdmin(bounty.id)
+
+            if (isAllApprovuedORregected.areAllSubmissionsApprovedOrRejectedOrWinner) {
+                bounty.status = 'qualified';
+            } else {
+                bounty.status = 'not_qualified';
+            }
+            await bountyRepo.save(bounty);
+        }
+
+        return updatedSubmission;
+    } catch (error) {
+        console.error(`Error editing submission with ID ${submissionId}:`, error);
+        throw new Error(
+            `Failed to edit submission: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
+
+
+// fn to fetch all submissions for a bounty
+export async function fetchBountyQulifiedSubmissionsForAdmin(
+    bountyId: string,
+    page: number,
+    limit: number,
+    status: string[],
+    searchTerm?: string,
+): Promise<{
+    submissions: BountySubmission[];
+    bounty: Bounty;
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}> {
+    try {
+        if (!bountyId) {
+            throw new Error('Bounty ID is required');
+        }
+
+        const offset = (page - 1) * limit;
+
+        const BountyRepo = AppDataSource.getRepository(Bounty);
+        const bounty = await BountyRepo.findOneBy({ id: bountyId });
+        if (!bounty) {
+            throw new Error(`Bounty with ID ${bountyId} not found`);
+        }
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+
+
+
+        const qb = submissionRepo
+            .createQueryBuilder('submission')
+            .leftJoinAndSelect('submission.user', 'user')
+            .leftJoinAndSelect('submission.bounty', 'bounty')
+            .where('submission.bountyId = :bountyId', { bountyId });
+
+        if (status && Array.isArray(status) && status.length > 0) {
+            qb.andWhere('submission.status IN (:...status)', { status });
+        } else {
+            qb.andWhere('submission.status = :status', { status: 'approved' });
+        }
+        if (searchTerm) {
+            qb.andWhere(
+                '(user.fullname ILIKE :searchTerm OR user.first_name ILIKE :searchTerm OR user.last_name ILIKE :searchTerm)',
+                { searchTerm: `%${searchTerm}%` },
+            );
+        }
+
+        const [submissions, total] = await qb.skip(offset).take(limit).getManyAndCount();
+
+        return {
+            submissions,
+            bounty,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } catch (error) {
+        console.error(`Error fetching submissions for bounty ${bountyId}:`, error);
+        throw new Error(
+            `Failed to fetch submissions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
+
+
+export async function editClientQuelifiedBountySubmission(
+    submissionId: string,
+    updates: Partial<BountySubmission>,
+): Promise<BountySubmission> {
+    try {
+        if (!submissionId) {
+            throw new Error('Submission ID is required');
+        }
+
+        const submissionRepo = AppDataSource.getRepository(BountySubmission);
+        const bountyRepo = AppDataSource.getRepository(Bounty);
+
+        // Find the submission by ID
+        const submission = await submissionRepo.findOneBy({ id: submissionId });
+
+        if (!submission) {
+            throw new Error(`Submission with ID ${submissionId} not found`);
+        }
+
+        const bounty = await bountyRepo.findOneBy({ id: submission.bountyId });
+
+
+        if (!bounty) {
+            throw new Error(`Bounty with ID ${submissionId} not found`);
+        }
+
+        // Check if the bounty is closed or draft
+        if (bounty.status === 'open' || bounty.status === 'draft' || bounty.status === 'not_qualified') {
+            throw new Error(`You can not declear wiiner befor bouty is closed or qualified all submisiion.`);
+        }
+
+        Object.assign(submission, updates);
+
+        const updatedSubmission = await submissionRepo.save(submission);
+
+        if ((updatedSubmission.status === 'reword_distributed' || updatedSubmission.status === 'reword_not_distributed')) {
+
+            const submissionQulifiedOrNot = await fetchBountyQualifiedSubmissionsForAdmin(bounty.id)
+
+            if ((submissionQulifiedOrNot.reword_not_distributed ||
+                submissionQulifiedOrNot.reword_distributed)) {
+                bounty.status = 'reward_not_distributed';
+            }
+            if (submissionQulifiedOrNot.isallrewordDecared) {
+                bounty.status = 'reward_distributed';
+            }
+            await bountyRepo.save(bounty);
+        }
+
+        return updatedSubmission;
+    } catch (error) {
+        console.error(`Error editing submission with ID ${submissionId}:`, error);
+        throw new Error(
+            `Failed to edit submission: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+    }
+}
+
+
+
 
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';

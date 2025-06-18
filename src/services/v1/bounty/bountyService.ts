@@ -8,8 +8,8 @@ export type BountyStatus =
     | 'draft'
     | 'not_qualified'
     | 'qualified'
-    | 'not_winning'
-    | 'winning';
+    | 'reward_not_distributed'
+    | 'reward_distributed';
 type bountyType = 'thread' | 'video' | 'article' | 'meme' | 'twitter' | 'quests';
 
 export interface CreateBountyParams {
@@ -155,10 +155,9 @@ export async function fetchBounties(params: FetchBountiesParams = {}) {
                     'draft',
                     'not_qualified',
                     'qualified',
-                    'not_winning',
-                    'winning',
-                    'reward',
-                    'not_reward',
+                    'reward_not_distributed',
+                    'reward_distributed',
+                   
                 ],
             });
         }

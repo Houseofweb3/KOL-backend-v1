@@ -38,10 +38,8 @@ export class Bounty {
             'draft',
             'not_qualified',
             'qualified',
-            'not_winning',
-            'winning',
-            'reward',
-            'not_reward',
+            "reward_not_distributed",
+            "reward_distributed"
         ],
         default: 'open',
     })
