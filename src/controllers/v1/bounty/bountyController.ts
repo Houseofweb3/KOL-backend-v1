@@ -185,12 +185,15 @@ export const editBountyController = async (req: Request, res: Response) => {
 
         let logo = req.body.logo;
         let coverImage = req.body.coverImage;
-
-        if (files.logo || files.coverImage) {
+        if (files.logo && files.logo[0]) {
             logo = await uploadImageToS3(files.logo[0]);
+        }
+        if (files.coverImage && files.coverImage[0]) {
             coverImage = await uploadImageToS3(files.coverImage[0]);
         }
-
+        if (!logo || !coverImage) {
+            return res.status(400).json({ error: 'Both logo and coverImage are required.' });
+        }
         let parsedMetadata: Record<string, any> = {};
         parsedMetadata = typeof metadata === 'string' ? JSON.parse(metadata) : metadata || {};
 
