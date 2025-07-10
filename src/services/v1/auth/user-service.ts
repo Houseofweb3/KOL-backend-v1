@@ -351,6 +351,7 @@ export const createUser = async (
                 logger.warn(`User already exists and is active: ${user.id}`);
                 return { user, message: 'User already exists. Logging in', token, refreshToken };
             }
+            
             await validateDomainLimit(email);
 
             const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
@@ -391,6 +392,7 @@ export const createUser = async (
             return { user: newUser, message: 'User signup successful', token, refreshToken };
         });
     } catch (error) {
+        console.log(error,"error")
         if ((error as any).status) {
             throw error; // Pass custom errors forward
         }
