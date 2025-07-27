@@ -1,7 +1,13 @@
 import express from 'express';
 
 import {
-    createProposalController, getProposalDetailsController, editProposalController, generateInvoicePdfController, sendInvoiceEmailController, deleteProposalController
+    createProposalController,
+    getProposalDetailsController,
+    editProposalController,
+    generateInvoicePdfController,
+    sendInvoiceEmailController,
+    deleteProposalController,
+    downloadProposalController,
 } from '../../../controllers/v1/admin/adminProposalController';
 
 const router = express.Router();
@@ -15,8 +21,9 @@ router.get('/', getProposalDetailsController);
 // update user route
 router.put('/', editProposalController);
 
-// delete proposal route
+router.post('/pdf', downloadProposalController);
 
+// delete proposal route
 
 router.delete('/:checkoutId', deleteProposalController);
 
@@ -25,7 +32,5 @@ router.post('/generate-invoice-pdf', generateInvoicePdfController);
 
 // Send invoice pdf
 router.post('/invoices/send', sendInvoiceEmailController);
-
-
 
 export { router as adminProposalRoutes };

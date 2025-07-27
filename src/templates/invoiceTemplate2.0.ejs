@@ -10,25 +10,30 @@
             margin: 40px;
             size: A4;
         }
+
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
         }
+
         .main-container {
             width: 100%;
             background-color: #ffffff;
             margin: 0 auto;
             overflow: hidden;
         }
+
         .page-break {
             page-break-before: always;
         }
+
         .table-cell {
             word-wrap: break-word;
             overflow-wrap: break-word;
             hyphens: auto;
         }
+
         .table-header {
             display: grid;
             gap: 1.5rem;
@@ -38,15 +43,18 @@
             border-right: 1px solid #e5e7eb;
             background-color: #f9fafb;
         }
-        .table-row-container{
+
+        .table-row-container {
             width: 100%;
         }
-        .notes-row{
-                   padding: 1rem;
-                           border-bottom: 1px solid #e5e7eb;
+
+        .notes-row {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
         }
+
         .table-row {
             display: grid;
             gap: 1.5rem;
@@ -55,15 +63,18 @@
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
         }
+
         .summary-section {
             width: 100%;
             display: flex;
             justify-content: center;
             margin-top: 32px;
         }
+
         thead {
             display: table-header-group;
         }
+
         tfoot {
             display: table-footer-group;
         }
@@ -242,95 +253,105 @@
             <!-- Table Container -->
             <div id="tableContainer">
                 <!-- Check if any influencer has notes to determine column count -->
-                <% 
-                let hasAnyNotes = false;
-                influencerPRs.forEach(function(influencer) {
-                    if (influencer.notes && influencer.notes.trim() !== '') {
-                        hasAnyNotes = true;
-                    }
-                });
-                %>
+                <% let hasAnyNotes=false; influencerPRs.forEach(function(influencer) { if (influencer.notes &&
+                    influencer.notes.trim() !=='' ) { hasAnyNotes=true; } }); %>
 
-                <!-- Table Header -->
-                <div class="table-header" style="
+                    <!-- Table Header -->
+                    <div class="table-header" style="
                     grid-template-columns: <%= hasAnyNotes ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)' %>;
                 ">
-                    <div style="color: #374151; grid-column: span 2; font-weight: 500">Description</div>
-                    <div style="color: #374151; font-weight: 500; text-align: start">Content Type</div>
-                    <div style="color: #374151; font-weight: 500; text-align: start">Price</div>
-                    <!-- <% if (hasAnyNotes) { %>
+                        <div style="color: #374151; grid-column: span 2; font-weight: 500">Description</div>
+                        <div style="color: #374151; font-weight: 500; text-align: start">Content Type</div>
+                        <div style="color: #374151; font-weight: 500; text-align: start">Price</div>
+                        <!-- <% if (hasAnyNotes) { %>
                     <div style="color: #374151; font-weight: 500; text-align: start">Notes</div>
                     <% } %> -->
-                </div>
-                <div id="tableBody">
-                    <% influencerPRs.forEach(function(influencer) { %>
-                        <!-- Table Row -->
-                         <div class="table-row-container">
+                    </div>
+                    <div id="tableBody">
+                        <% influencerPRs.forEach(function(influencer) { %>
+                            <!-- Table Row -->
+                            <div class="table-row-container">
 
-                         </div>
-                        <div class="table-row" style="
+                            </div>
+                            <div class="table-row" style="
                             grid-template-columns: <%= hasAnyNotes ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)' %>;
                         ">
-                            <div class="table-cell" style="grid-column: span 2">
-                                <p style="font-weight: 500; color: #111827; margin: 0 0 4px 0">
-                                    <%= influencer.name %>
-                                </p>
-                                <p style="font-size: 0.875rem; color: #6b7280; margin: 0 0 4px 0">
-                                    <%= influencer.socialMediaLink %>
-                                </p>
-                                <!-- <p style="font-size: 0.875rem; color: #6b7280; margin: 0 0 4px 0">Geography - <%=
+                                <div class="table-cell" style="grid-column: span 2">
+                                    <p style="font-weight: 500; color: #111827; margin: 0 0 4px 0">
+                                        <%= influencer.name %>
+                                    </p>
+                                    <p style="font-size: 0.875rem; color: #6b7280; margin: 0 0 4px 0">
+                                        <%= influencer.socialMediaLink %>
+                                    </p>
+                                    <!-- <p style="font-size: 0.875rem; color: #6b7280; margin: 0 0 4px 0">Geography - <%=
                                         influencer.location %>
                                 </p>
                                 <p style="font-size: 0.875rem; color: #374151; margin: 0">
                                     <%= influencer.integratedVideos %> Integrated Video
                                 </p> -->
-                            </div>
-                            <div class="table-cell" style="text-align: start; color: #111827">
-                                <%= influencer.contentType %>
-                            </div>
-                            <div class="table-cell" style="text-align: start; font-weight: 500; color: #111827">$<%= influencer.price %>
-                            </div>
-                            <!-- <% if (hasAnyNotes) { %>
+                                </div>
+                                <div class="table-cell" style="text-align: start; color: #111827">
+                                    <%= influencer.contentType %>
+                                </div>
+                                <div class="table-cell" style="text-align: start; font-weight: 500; color: #111827">$<%=
+                                        influencer.price %>
+                                </div>
+                                <!-- <% if (hasAnyNotes) { %>
                             <div class="table-cell" style="text-align: start; color: #111827">
                                 <%= influencer.notes ? influencer.notes : '' %>
                             </div>
                             <% } %> -->
-                        </div>
-                             <% if (hasAnyNotes) { %>
-                            <div class="table-cell notes-row" style="text-align: start; color: #111827">
-                                <%= influencer.notes ? influencer.notes : '' %>
                             </div>
-                            <% } %>
-                        <% }); %>
-                          </div>
-                </div>
+                            <% if (hasAnyNotes) { %>
+                                <div class="table-cell notes-row" style="text-align: start; color: #111827">
+                                    <% if (influencer.notes.startsWith('http')) { %>
+                                        <a href="<%= influencer.notes %>" target="_blank" style="
+                                   color: #111827;
+                                   text-decoration: underline;
+                                   word-break: break-all;
+                                   white-space: nowrap;
+                                   display: inline-block;
+                                   width: 100%;
+                                 ">
+                                            <%= influencer.notes %>
+                                        </a>
+                                        <% } else { %>
+                                            <span style="word-break: break-word;">
+                                                <%= influencer.notes %>
+                                            </span>
+                                            <% } %>
+                                </div>
+                                <% } %>
+                                    <% }); %>
+                    </div>
             </div>
+        </div>
 
-            <!-- Summary Section -->
-            <div class="summary-section">
-                <div style="background-color: #a762fe; color: #ffffff; border-radius: 8px; padding: 24px; width: 50%;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                        <span>Total Excluding Tax</span>
-                        <span>$<%= totalPrice %></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                        <span>Management Fee: (<%= managementFeePercentage %>%)</span>
-                        <span>$<%= managementFee %></span>
-                    </div>
-                    <!-- <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div style="background-color: #a762fe; color: #ffffff; border-radius: 8px; padding: 24px; width: 50%;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span>Total Excluding Tax</span>
+                    <span>$<%= totalPrice %></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span>Management Fee: (<%= managementFeePercentage %>%)</span>
+                    <span>$<%= managementFee %></span>
+                </div>
+                <!-- <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                         <span>Airdrops for KOL community (<%= airDropFeePercentage %>%)</span>
                         <span>
                             $<%= airDropFee %>
                         </span>
                     </div> -->
-                    <div
-                        style="display: flex; justify-content: space-between; padding-top: 12px; margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                        <span style="font-weight: 600">Total</span>
-                        <span style="font-weight: 600">$<%= totalPriceWithFee %></span>
-                    </div>
+                <div
+                    style="display: flex; justify-content: space-between; padding-top: 12px; margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                    <span style="font-weight: 600">Total</span>
+                    <span style="font-weight: 600">$<%= totalPriceWithFee %></span>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </body>
 

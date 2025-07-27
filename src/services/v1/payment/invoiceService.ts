@@ -25,7 +25,7 @@ const proposalEmailInfo = (username: string) => {
 
         Best regards,  
         Ampli5
-        `
+        `;
     const proposalEmailHtml = `<p>Hello ${username},</p>
 
         <p>We are happy to have you onboard.</p>
@@ -45,11 +45,11 @@ const proposalEmailInfo = (username: string) => {
         <p>Best regards,</p>
 
         <p>Ampli5</p>
-        `
-    return { proposalEmailText, proposalEmailHtml }
-}
+        `;
+    return { proposalEmailText, proposalEmailHtml };
+};
 
-function transformData(data: any) {
+export function transformData(data: any) {
     const checkoutDetails = {
         projectName: data.user?.fullname || 'Unknown User',
         projectURL: `https://example.com/projects/${data.id}`,
@@ -91,7 +91,11 @@ function transformData(data: any) {
     }));
 
     const influencerSubtotal = data.influencerCartItems
-        .reduce((acc: number, item: any) => acc + parseFloat(item.price ? item.price : item.influencer.price), 0)
+        .reduce(
+            (acc: number, item: any) =>
+                acc + parseFloat(item.price ? item.price : item.influencer.price),
+            0,
+        )
         .toFixed(2);
     const packageSubtotal = data.packageCartItems
         .reduce((acc: number, item: any) => acc + parseFloat(item.package.cost), 0)
@@ -99,7 +103,9 @@ function transformData(data: any) {
     const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
 
     // calc management fee based on total amount
-    const managementFee = (parseFloat(totalPrice) * (data.managementFeePercentage / 100)).toFixed(2);
+    const managementFee = (parseFloat(totalPrice) * (data.managementFeePercentage / 100)).toFixed(
+        2,
+    );
 
     const airDropFeePercentage = 5; // 5% airdrop fee
 
@@ -107,13 +113,11 @@ function transformData(data: any) {
     const airDropFee = (parseFloat(totalPrice) * airDropFeePercentage) / 100;
 
     // Add the airdrop fee to the total price, then add the management fee
-    const totalPriceWithFee = (parseFloat(totalPrice) +
+    const totalPriceWithFee = (
+        parseFloat(totalPrice) +
         // airDropFee +
-        parseFloat(managementFee)).toFixed(
-            2,
-        );
-
-
+        parseFloat(managementFee)
+    ).toFixed(2);
 
     return {
         user,
@@ -168,8 +172,9 @@ export const fetchInvoiceDetails = async (
             where: { cart: { id } },
             relations: ['influencer'],
         });
-        const influencerCartItems = influencers.sort((a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore);
-
+        const influencerCartItems = influencers.sort(
+            (a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore,
+        );
 
         logger.info(`Fetching packageCartItems for cart id: ${id}`);
         const packageCartItems = await packageCartItemRepository.find({
@@ -202,29 +207,29 @@ export const fetchInvoiceDetails = async (
         const currentYear = new Date().getFullYear();
         const usernamePrefix = transformCartData?.user?.fullname.slice(0, 4).toLowerCase(); // First 4 characters of the username in lowercase
         const password = `${usernamePrefix}${currentYear}`; // Example: "john2024"
-        console.log("password: ", password)
+        console.log('password: ', password);
 
-        const pdfBuffer = await convertHtmlToPdfBuffer(html as string, password as string);
+        const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
 
         const username = checkoutDetails?.firstName || 'Valued Customer';
 
-        const { proposalEmailText, proposalEmailHtml } = proposalEmailInfo(username)
+        const { proposalEmailText, proposalEmailHtml } = proposalEmailInfo(username);
 
-        const fileName = `Ampli5X${checkoutDetails?.projectName || ""}.pdf`
+        const fileName = `Ampli5X${checkoutDetails?.projectName || ''}.pdf`;
 
-        const subject = 'Amplify Distribution with Ampli5 (Best Yapping Discovery tool)'
+        const subject = 'Amplify Distribution with Ampli5 (Best Yapping Discovery tool)';
 
         // Send the PDF buffer as an email attachment
-        await sendInvoiceEmail(
-            transformCartData.user,
-            pdfBuffer,
-            undefined,  // No S3 link, so pass undefined instead of an empty string
-            additionalEmail,
-            proposalEmailText,
-            proposalEmailHtml,
-            fileName,
-            subject
-        );
+            await sendInvoiceEmail(
+                transformCartData.user,
+                pdfBuffer,
+                undefined, // No S3 link, so pass undefined instead of an empty string
+                additionalEmail,
+                proposalEmailText,
+                proposalEmailHtml,
+                fileName,
+                subject,
+            );
 
         logger.info(`Invoice generated and email sent to user: ${transformCartData.user.id}`);
 
