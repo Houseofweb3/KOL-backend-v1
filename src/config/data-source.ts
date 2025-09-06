@@ -11,6 +11,7 @@ import { InfluencerCartItem } from '../entity/cart';
 import { User, RefreshToken } from '../entity/auth';
 import { BillingDetails } from '../entity/billingDetails';
 import { OTP } from '../entity/auth';
+import { Dr } from '../entity/dr';
 import {
     Option,
     Question,
@@ -49,7 +50,8 @@ export const AppDataSource = new DataSource({
         CouponCode,
         OTP,
         Bounty,
-        BountySubmission
+        BountySubmission,
+        Dr
     ],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],

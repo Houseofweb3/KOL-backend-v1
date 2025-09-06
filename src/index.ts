@@ -37,7 +37,7 @@ import { bountyRoutes } from './routes/v1/bounty/bounty.routes';
 import { bountySubmissionRoutes } from './routes/v1/bounty/bountySubmission.routes';
 import { bountyBookingRoutes } from './routes/v1/bounty/bountyBooking.routes';
 import { userProfileRoutes } from './routes/v1/bounty/user.route';
-
+import { dkRoutes } from './routes/v1/dr';
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -109,12 +109,14 @@ app.use(`/api/v${ENV.VERSION}/user/bounty`, userProfileRoutes);
 // Bounty Routes
 app.use(`/api/v${ENV.VERSION}/bounty`, bountyRoutes);
 
-
 // Bounty Feedback Routes
 app.use(`/api/v${ENV.VERSION}/bounty-booking`, bountyBookingRoutes);
 
 // Bounty Submission Routes
 app.use(`/api/v${ENV.VERSION}/bounty-submission`, bountySubmissionRoutes);
+
+// DR Submission Routes
+app.use(`/api/v${ENV.VERSION}/admin/dr`, dkRoutes);
 
 // Dummy API
 app.get('/', (req: Request, res: Response) => {
@@ -131,8 +133,7 @@ AppDataSource.initialize()
         server.listen(port, () => {
             logger.info(`Server is running on port ${port}`);
         });
-
     })
     .catch((error) => {
         logger.error('Database connection failed:', error);
-    }); 
+    });
