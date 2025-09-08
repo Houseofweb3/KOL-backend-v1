@@ -22,14 +22,14 @@ export const createDrController = async (req: Request, res: Response) => {
         const newWebsite = await createDr({ website, deliverables, dr, price });
 
         return res.status(HttpStatus.CREATED).json({
-            message: 'Dr created successfully',
+            message: 'PR created successfully',
             dr: newWebsite,
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        const errorMessage = error.message || 'An error occurred while creating a dr';
+        const errorMessage = error.message || 'An error occurred while creating a pr';
 
-        logger.error(`Error creating dr (${statusCode}): ${errorMessage}`);
+        logger.error(`Error creating pr (${statusCode}): ${errorMessage}`);
         return res.status(statusCode).json({ error: errorMessage });
     }
 };
@@ -50,14 +50,14 @@ export const fetchDrsController = async (req: Request, res: Response) => {
         );
 
         return res.status(HttpStatus.OK).json({
-            message: 'DR fetched successfully',
+            message: 'PR fetched successfully',
             ...drs,
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        const errorMessage = error.message || 'An error occurred while fetching DR';
+        const errorMessage = error.message || 'An error occurred while fetching PR';
 
-        logger.error(`Error fetching DR (${statusCode}): ${errorMessage}`);
+        logger.error(`Error fetching PR (${statusCode}): ${errorMessage}`);
         return res.status(statusCode).json({ error: errorMessage });
     }
 };
@@ -71,14 +71,14 @@ export const fetchDrByIdController = async (req: Request, res: Response) => {
         const dr = await fetchDrById(id);
 
         return res.status(HttpStatus.OK).json({
-            message: 'Dr fetched successfully',
+            message: 'PR fetched successfully',
             dr,
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        const errorMessage = error.message || 'An error occurred while fetching dr by id';
+        const errorMessage = error.message || 'An error occurred while fetching pr by id';
 
-        logger.error(`Error fetching dr (${statusCode}): ${errorMessage}`);
+        logger.error(`Error fetching pr (${statusCode}): ${errorMessage}`);
         return res.status(statusCode).json({ error: errorMessage });
     }
 };
@@ -94,14 +94,14 @@ export const updateDrController = async (req: Request, res: Response) => {
         const updatedDr = await updateDr(id, updates);
 
         return res.status(HttpStatus.OK).json({
-            message: 'Dr updated successfully',
+            message: 'PR updated successfully',
             dr: updatedDr,
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        const errorMessage = error.message || 'An error occurred while updating dr';
+        const errorMessage = error.message || 'An error occurred while updating pr';
 
-        logger.error(`Error updating dr (${statusCode}): ${errorMessage}`);
+        logger.error(`Error updating pr (${statusCode}): ${errorMessage}`);
         return res.status(statusCode).json({ error: errorMessage });
     }
 };
@@ -120,9 +120,9 @@ export const deleteDrController = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        const errorMessage = error.message || 'An error occurred while deleting dr';
+        const errorMessage = error.message || 'An error occurred while deleting pr';
 
-        logger.error(`Error deleting dr (${statusCode}): ${errorMessage}`);
+        logger.error(`Error deleting pr (${statusCode}): ${errorMessage}`);
         return res.status(statusCode).json({ error: errorMessage });
     }
 };

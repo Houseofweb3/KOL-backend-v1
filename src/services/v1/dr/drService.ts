@@ -36,7 +36,7 @@ export async function createDr(params: CreateDrParams): Promise<Dr> {
     } catch (error: any) {
         throw {
             status: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-            message: error.message || 'Error creating dr',
+            message: error.message || 'Error creating PR',
         };
     }
 }
@@ -93,7 +93,7 @@ export async function fetchDrs(
     } catch (error: any) {
         throw {
             status: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-            message: error.message || 'Error fetching DRs',
+            message: error.message || 'Error fetching PRs',
         };
     }
 }
@@ -106,12 +106,12 @@ export async function fetchDrById(id: string): Promise<Dr | null> {
     try {
         const repo = AppDataSource.getRepository(Dr);
         const website = await repo.findOneBy({ id });
-        if (!website) throw { status: HttpStatus.NOT_FOUND, message: 'Dr not found' };
+        if (!website) throw { status: HttpStatus.NOT_FOUND, message: 'PR not found' };
         return website;
     } catch (error: any) {
         throw {
             status: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-            message: error.message || 'Error fetching dr',
+            message: error.message || 'Error fetching PR',
         };
     }
 }
@@ -123,14 +123,14 @@ export async function updateDr(id: string, updates: UpdateDrParams): Promise<Dr>
     try {
         const repo = AppDataSource.getRepository(Dr);
         const website = await repo.findOneBy({ id });
-        if (!website) throw { status: HttpStatus.NOT_FOUND, message: 'Dr not found' };
+        if (!website) throw { status: HttpStatus.NOT_FOUND, message: 'PR not found' };
 
         Object.assign(website, updates);
         return await repo.save(website);
     } catch (error: any) {
         throw {
             status: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-            message: error.message || 'Error updating dr',
+            message: error.message || 'Error updating PR',
         };
     }
 }
@@ -143,13 +143,13 @@ export async function deleteDr(id: string): Promise<{ message: string }> {
         const repo = AppDataSource.getRepository(Dr);
         const result = await repo.delete(id);
         if (result.affected === 0) {
-            throw { status: HttpStatus.NOT_FOUND, message: 'Dr not found' };
+            throw { status: HttpStatus.NOT_FOUND, message: 'PR not found' };
         }
-        return { message: 'Dr deleted successfully' };
+        return { message: 'PR deleted successfully' };
     } catch (error: any) {
         throw {
             status: error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-            message: error.message || 'Error deleting dr',
+            message: error.message || 'Error deleting PR',
         };
     }
 }
