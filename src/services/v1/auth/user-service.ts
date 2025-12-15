@@ -102,9 +102,14 @@ export async function generateAndSendEmailOTP(
         // Find user by email or phone number
         const user = await AppDataSource.getRepository(User).findOne({ where: [{ email }] });
         // Check if user exists,  and if its an admin
-        if (!user || user.userType !== UserType.ADMIN) {
+        if (!user) {
             logger.warn(`User not found with email or phn no.: ${email}`);
-            throw { status: HttpStatus.UNAUTHORIZED, message: 'Admin Not Found' };
+            throw { status: HttpStatus.UNAUTHORIZED, message: 'Wrang credential please check' };
+        }
+
+        if (user.userType !== UserType.ADMIN) {
+            logger.warn(`You are not authorized user: ${email}`);
+            throw { status: HttpStatus.FORBIDDEN, message: 'You are not authorized user' };
         }
         let otpCode: string;
         const expiresAt = Math.floor(Date.now() / 1000) + 300; // OTP expires in 300 seconds
@@ -351,7 +356,7 @@ export const createUser = async (
                 logger.warn(`User already exists and is active: ${user.id}`);
                 return { user, message: 'User already exists. Logging in', token, refreshToken };
             }
-            
+
             await validateDomainLimit(email);
 
             const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
@@ -392,7 +397,7 @@ export const createUser = async (
             return { user: newUser, message: 'User signup successful', token, refreshToken };
         });
     } catch (error) {
-        console.log(error,"error")
+        console.log(error, 'error');
         if ((error as any).status) {
             throw error; // Pass custom errors forward
         }

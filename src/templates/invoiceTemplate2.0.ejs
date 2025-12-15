@@ -258,10 +258,11 @@
 
                     <!-- Table Header -->
                     <div class="table-header" style="
-                    grid-template-columns: <%= hasAnyNotes ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)' %>;
+                    grid-template-columns: <%= hasAnyNotes ? 'repeat(5, 1fr)' : 'repeat(5, 1fr)' %>;
                 ">
-                        <div style="color: #374151; grid-column: span 2; font-weight: 500">Description</div>
-                        <div style="color: #374151; font-weight: 500; text-align: start">Content Type</div>
+                        <div style="color: #374151; grid-column: span 2; font-weight: 500">Website</div>
+                        <div style="color: #374151; font-weight: 500; text-align: start">Domain Rating</div>
+                        <div style="color: #374151; font-weight: 500; text-align: start">Deliverables</div>
                         <div style="color: #374151; font-weight: 500; text-align: start">Price</div>
                         <!-- <% if (hasAnyNotes) { %>
                     <div style="color: #374151; font-weight: 500; text-align: start">Notes</div>
@@ -274,7 +275,7 @@
 
                             </div>
                             <div class="table-row" style="
-                            grid-template-columns: <%= hasAnyNotes ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)' %>;
+                            grid-template-columns: <%= hasAnyNotes ? 'repeat(5, 1fr)' : 'repeat(5, 1fr)' %>;
                         ">
                                 <div class="table-cell" style="grid-column: span 2">
                                     <p style="font-weight: 500; color: #111827; margin: 0 0 4px 0">
@@ -291,10 +292,13 @@
                                 </p> -->
                                 </div>
                                 <div class="table-cell" style="text-align: start; color: #111827">
+                                    <%= influencer.domainRating %>
+                                </div>
+                                <div class="table-cell" style="text-align: start; color: #111827">
                                     <%= influencer.contentType %>
                                 </div>
-                                <div class="table-cell" style="text-align: start; font-weight: 500; color: #111827">$<%=
-                                        influencer.price %>
+                                <div class="table-cell" style="text-align: start; font-weight: 500; color: #111827">
+                                    $<%= influencer.price %>
                                 </div>
                                 <!-- <% if (hasAnyNotes) { %>
                             <div class="table-cell" style="text-align: start; color: #111827">
@@ -305,8 +309,8 @@
                             <% if (hasAnyNotes) { %>
                                 <div class="table-cell notes-row" style="text-align: start; color: #111827">
                                     <% if (influencer.notes.startsWith('http')) { %>
-                                        <a href="<%= influencer.notes %>" target="_blank" style="
-                                   color: #111827;
+                                        <a href="<%= influencer.notes %>" target="_blank" 
+                                        style="color: #111827;
                                    text-decoration: underline;
                                    word-break: break-all;
                                    white-space: nowrap;

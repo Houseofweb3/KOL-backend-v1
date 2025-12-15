@@ -17,7 +17,7 @@ import { cartRoutes } from './routes';
 import { optionRoutes } from './routes';
 import { userRoutes } from './routes';
 import { packageRoutes } from './routes';
-import { checkoutRoutes } from './routes';
+import { checkoutRoutes, checkoutPrRoutes } from './routes';
 import { questionRoutes } from './routes';
 import { utilsRoutes } from './routes';
 import { influencerRoutes } from './routes';
@@ -31,7 +31,7 @@ import { couponRoutes } from './routes';
 import { adminInfluencerRoutes } from './routes';
 import { adminClientRoutes } from './routes';
 import { adminAuthRoutes } from './routes';
-import { adminProposalRoutes } from './routes';
+import { adminProposalRoutes, adminProposalPrRoutes } from './routes';
 import { adminDashboardRoutes } from './routes/v1/admin/adminDashboardRoutes';
 import { bountyRoutes } from './routes/v1/bounty/bounty.routes';
 import { bountySubmissionRoutes } from './routes/v1/bounty/bountySubmission.routes';
@@ -83,6 +83,8 @@ app.use(`/api/v${ENV.VERSION}/influencer-cart-item`, influencerCartItemRoutes);
 app.use(`/api/v${ENV.VERSION}/package-cart-item`, packageCartItemRoutes);
 // checkout Routes
 app.use(`/api/v${ENV.VERSION}/checkout`, checkoutRoutes);
+// checkoutPr Routes
+app.use(`/api/v${ENV.VERSION}/checkout-pr`, checkoutPrRoutes);
 // invoice Routes
 app.use(`/api/v${ENV.VERSION}/invoice`, invoiceRoutes);
 
@@ -100,6 +102,8 @@ app.use(`/api/v${ENV.VERSION}/admin/client`, adminClientRoutes);
 app.use(`/api/v${ENV.VERSION}/admin/auth`, adminAuthRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/proposal`, adminProposalRoutes);
+
+app.use(`/api/v${ENV.VERSION}/admin/proposal-pr`, adminProposalPrRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
 

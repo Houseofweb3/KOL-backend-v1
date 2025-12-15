@@ -7,9 +7,11 @@ import { Checkout } from '../entity/checkout';
 import { PackageItem } from '../entity/package';
 import { PackageCartItem } from '../entity/cart';
 import { Influencer } from '../entity/influencer';
-import { InfluencerCartItem } from '../entity/cart';
+import { InfluencerCartItem, DrCartItem } from '../entity/cart';
 import { User, RefreshToken } from '../entity/auth';
 import { BillingDetails } from '../entity/billingDetails';
+import { CheckoutPr } from '../entity/checkoutPr';
+import { BillingDetailsPr } from '../entity/billingDetailsPr';
 import { OTP } from '../entity/auth';
 import { Dr } from '../entity/dr';
 import {
@@ -37,6 +39,7 @@ export const AppDataSource = new DataSource({
         Package,
         PackageItem,
         InfluencerCartItem,
+        DrCartItem,
         Cart,
         PackageCartItem,
         Checkout,
@@ -46,6 +49,8 @@ export const AppDataSource = new DataSource({
         OnboardingQuestion,
         RefreshToken,
         BillingDetails,
+        CheckoutPr,
+        BillingDetailsPr,
         UserCoupon,
         CouponCode,
         OTP,

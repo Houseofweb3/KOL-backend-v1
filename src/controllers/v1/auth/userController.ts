@@ -62,7 +62,6 @@ export const signup = async (req: Request, res: Response) => {
             .status(HttpStatus.CREATED)
             .json({ user, message, accessToken: token, refreshToken });
     } catch (error: any) {
-
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage = error.message || 'An unknown error occurred during signup';
 
@@ -340,6 +339,7 @@ export const generateEmailOTP = async (req: Request, res: Response) => {
         const errorMessage = error.message || 'An unknown error occurred during login';
 
         logger.error(`Login error (${statusCode}): ${errorMessage}`);
+        console.log(error);
 
         return res.status(statusCode).json({ error: errorMessage });
     }
