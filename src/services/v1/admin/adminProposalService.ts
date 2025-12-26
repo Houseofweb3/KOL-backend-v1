@@ -225,7 +225,7 @@ export const editProposal = async (
         invoiceStatus?: string,
         paymentStatus?: string,
     },
-    updatedInfluencerItems: { influencerId: string; price: number, note?: string, }[]
+    updatedInfluencerItems: { influencerId: string; price: number, note?: string, profOfWork?: string}[]
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
         try {
@@ -272,6 +272,7 @@ export const editProposal = async (
                 cartItem.influencer = { id: item.influencerId } as any;
                 cartItem.price = item.price;
                 cartItem.note = item.note;
+                cartItem.profOfWork = item.profOfWork;
                 return cartItem;
             });
 

@@ -131,7 +131,7 @@ export const downloadProposalController = async (req: Request, res: Response) =>
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
         const { message, checkoutDetails, cartId, email, calculatedTotalAmount } = await editProposal(checkoutId, billingInfo, influencerItems);
-      
+
         if (cartId && email) {
             const cartRepository = AppDataSource.getRepository(Cart);
             const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
@@ -173,6 +173,9 @@ export const downloadProposalController = async (req: Request, res: Response) =>
 
             const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate2.0.ejs');
             const html = await renderFile(templatePath, transformCartData);
+
+            console.log(transformCartData, "transformCartData");
+
 
             const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
 

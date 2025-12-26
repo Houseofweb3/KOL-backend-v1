@@ -1,3 +1,5 @@
+import { getPlatformIcon } from '../../../utils/platformIcons';
+
 export function transformDataPr(data: any) {
     const checkoutDetails = {
         projectName: data.user?.fullname || 'Unknown User',
@@ -23,7 +25,7 @@ export function transformDataPr(data: any) {
         socialMediaLink: item.dr?.website || '',
         notes: item.note || '', // Ensure notes is always at least an empty string
     }));
-    console.log(drPRs,"drPRs");
+    // console.log(drPRs,"drPRs");
 
     // Check if any DR item has notes
     const hasAnyNotes = drPRs.some(
@@ -92,6 +94,7 @@ export function transformDataPr(data: any) {
         influencerLength: drPRs.length,
         airDropFee,
         hasAnyNotes,
+        getPlatformIcon, // Pass the function to template
     };
 }
 

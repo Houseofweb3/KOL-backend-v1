@@ -6,6 +6,7 @@ import { AppDataSource } from '../../../config/data-source';
 import { convertHtmlToPdfBuffer } from '../../../utils/pdfGenerator';
 import { sendInvoiceEmail } from '../../../utils/communication/ses/emailSender';
 import { Cart, InfluencerCartItem, PackageCartItem } from '../../../entity/cart';
+import { getPlatformIcon } from '../../../utils/platformIcons';
 
 const proposalEmailInfo = (username: string) => {
     const proposalEmailText = `Hello ${username},
@@ -49,6 +50,7 @@ const proposalEmailInfo = (username: string) => {
     return { proposalEmailText, proposalEmailHtml };
 };
 
+
 export function transformData(data: any) {
     const checkoutDetails = {
         projectName: data.user?.fullname || 'Unknown User',
@@ -71,6 +73,7 @@ export function transformData(data: any) {
         price: item.price ? item.price : item.influencer.price,
         socialMediaLink: item.influencer.socialMediaLink,
         notes: item.note || '', // Ensure notes is always at least an empty string
+        profOfWork: item.profOfWork || '', // Ensure profOfWork is always at least an empty string
     }));
 
     // Check if any influencer has notes
@@ -136,6 +139,7 @@ export function transformData(data: any) {
         influencerLength: influencerPRs.length,
         airDropFee,
         hasAnyNotes,
+        getPlatformIcon, // Pass the function to template
     };
 }
 

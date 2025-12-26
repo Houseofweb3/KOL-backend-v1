@@ -115,7 +115,7 @@ export const createInfluencerController = async (req: Request, res: Response) =>
     try {
         // create multiple influencers as per the payload generated on the basis of contentTypeAndPrice array
         const influencerPayload = contentTypeAndPrice.map(
-            ({ contentType, price }: { contentType: string; price: number }) => {
+            ({ contentType, price,quantity }: { contentType: string; price: number; quantity: number }) => {
                 // Exclude `contentTypeAndPrice` field from new influencer object
                 const { contentTypeAndPrice: _, ...filteredInfluencer } = influencer;
 
@@ -123,9 +123,11 @@ export const createInfluencerController = async (req: Request, res: Response) =>
                     ...filteredInfluencer,
                     contentType,
                     price,
+                    quantity,
                 };
             },
         );
+        console.log(influencerPayload,"influencerPayload");
 
         const newInfluencers = await createInfluencer(influencerPayload);
         return res.status(HttpStatus.CREATED).json(newInfluencers);

@@ -35,6 +35,10 @@ export class Influencer extends BaseModel {
     @Column('decimal')
     @Index() // Add an index for sorting
     price!: number;
+    
+    @Column({ type: 'numeric', nullable: true, default: 1 })
+    @Index() // Add an index for sorting
+    quantity!: number;
 
     @Column({ type: 'numeric', nullable: true, default: 0 })
     tweetScoutScore!: number;

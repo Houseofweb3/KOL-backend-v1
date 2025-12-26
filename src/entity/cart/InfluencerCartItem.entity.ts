@@ -21,6 +21,9 @@ export class InfluencerCartItem extends BaseModel {
     // add a note field
     @Column({ type: 'text', nullable: true })
     note?: string;
+    // add a profOfWork field
+    @Column({ type: 'text', nullable: true })
+    profOfWork?: string;
 
     @ManyToOne(() => Cart, (cart) => cart.influencerCartItems)
     @JoinColumn({ name: 'cart_id' })

@@ -167,7 +167,7 @@ export const downloadProposalPrController = async (req: Request, res: Response) 
 
             const transformCartData = transformDataPr(data);
 
-            const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate2.0.ejs');
+            const templatePath = resolve(__dirname, '../../../templates/invoicePrTemplate2.0.0.ejs');
             const html = await renderFile(templatePath, transformCartData);
 
             const pdfBuffer = await convertHtmlToPdfBuffer(html as string);
