@@ -112,6 +112,7 @@ export const createProposal = async (
                 cartItem.cart = cart;
                 cartItem.influencer = { id: item.influencerId } as any; // Assign influencer by ID
                 cartItem.price = item.price;
+                cartItem.isClientApproved = false;
                 return cartItem;
             });
 
@@ -352,11 +353,16 @@ export const deleteProposal = async (checkoutId: string) => {
             await transactionalEntityManager.delete(BillingDetails, { id: billingDetails.id });
             logger.info(`Deleted BillingDetails for checkout ID: ${checkoutId}`);
 
-            /** Step 6: Delete Checkout **/
+            /** Step 6: Delete ProposalToken if exists (to avoid foreign key constraint) **/
+            const { ProposalToken } = await import('../../../entity/proposalToken/ProposalToken.entity');
+            await transactionalEntityManager.delete(ProposalToken, { cart: { id: cart.id } });
+            logger.info(`Deleted ProposalToken for cart ID: ${cart.id}`);
+
+            /** Step 7: Delete Checkout **/
             await transactionalEntityManager.delete(Checkout, { id: checkoutId });
             logger.info(`Deleted Checkout with ID: ${checkoutId}`);
 
-            /** Step 7: Delete Cart **/
+            /** Step 8: Delete Cart **/
             await transactionalEntityManager.delete(Cart, { id: cart.id });
             logger.info(`Deleted Cart with ID: ${cart.id}`);
 

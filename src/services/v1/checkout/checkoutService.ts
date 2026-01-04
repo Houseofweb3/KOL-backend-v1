@@ -248,9 +248,46 @@ export const getCheckouts = async (
 
         const [billingDetails, total] = await queryBuilder.getManyAndCount();
 
+        // Fetch isUsed status from proposal_tokens for each billing detail
+        const { ProposalToken } = await import('../../../entity/proposalToken/ProposalToken.entity');
+        const proposalTokenRepository = AppDataSource.getRepository(ProposalToken);
+
+        // Get all cart IDs from billing details
+        const cartIds = billingDetails
+            .map((billing: any) => billing?.checkout?.cart?.id)
+            .filter((id: string | undefined) => id !== undefined);
+
+        // Fetch all proposal tokens in one query using query builder for IN clause
+        const proposalTokens = cartIds.length > 0
+            ? await proposalTokenRepository
+                .createQueryBuilder('proposalToken')
+                .leftJoinAndSelect('proposalToken.cart', 'cart')
+                .where('cart.id IN (:...cartIds)', { cartIds })
+                .getMany()
+            : [];
+
+        // Create a map of cartId -> proposalToken for quick lookup
+        const tokenMap = new Map<string, { isUsed: boolean }>();
+        proposalTokens.forEach((token: any) => {
+            if (token.cart?.id) {
+                tokenMap.set(token.cart.id, { isUsed: token.isUsed });
+            }
+        });
+
+        // Map billing details to include isUsed from proposalToken
+        const billingDetailsWithTokenStatus = billingDetails.map((billing: any) => {
+            const cartId = billing?.checkout?.cart?.id;
+            const proposalToken = cartId ? tokenMap.get(cartId) : null;
+
+            return {
+                ...billing,
+                isTokenUsed: proposalToken?.isUsed ?? null,
+            };
+        });
+
         // return the response with pagination
         return {
-            billingDetails,
+            billingDetails: billingDetailsWithTokenStatus,
             pagination: {
                 page: page || 1,
                 limit: limit || 10,

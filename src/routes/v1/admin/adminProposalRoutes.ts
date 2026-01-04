@@ -8,6 +8,7 @@ import {
     sendInvoiceEmailController,
     deleteProposalController,
     downloadProposalController,
+    updateSentProposalController,
 } from '../../../controllers/v1/admin/adminProposalController';
 
 const router = express.Router();
@@ -20,6 +21,9 @@ router.get('/', getProposalDetailsController);
 
 // update user route
 router.put('/', editProposalController);
+
+// update sent proposal route
+router.put('/send', updateSentProposalController);
 
 router.post('/pdf', downloadProposalController);
 

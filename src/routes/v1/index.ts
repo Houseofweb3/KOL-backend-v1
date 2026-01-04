@@ -10,3 +10,4 @@ export * from './coupon';
 export * from './influencer';
 export * from './admin';
 export * from './bounty';
+export * from './client';

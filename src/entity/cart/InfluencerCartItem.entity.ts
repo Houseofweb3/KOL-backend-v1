@@ -25,6 +25,10 @@ export class InfluencerCartItem extends BaseModel {
     @Column({ type: 'text', nullable: true })
     profOfWork?: string;
 
+    // add a isClientApproved field
+    @Column({ type: 'boolean', nullable: true, default: false })
+    isClientApproved!: boolean;
+
     @ManyToOne(() => Cart, (cart) => cart.influencerCartItems)
     @JoinColumn({ name: 'cart_id' })
     cart!: Cart;

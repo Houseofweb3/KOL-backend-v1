@@ -17,48 +17,44 @@ import {
 import { VALID_TIME_RANGES } from '../../../constants';
 import { AppDataSource } from '../../../config/data-source';
 import { Cart, InfluencerCartItem, PackageCartItem } from '../../../entity/cart';
+import { User } from '../../../entity/auth';
 import { convertHtmlToPdfBuffer } from '../../../utils/pdfGenerator';
 import { renderFile } from 'ejs';
 import { resolve } from 'path';
+import { createProposalToken } from '../../../services/v1/admin/proposalTokenService';
+import { updateProposalTokenAndSendEmail } from '../../../services/v1/admin/proposalTokenService';
 
-// create proposal
+// create proposal - Now generates token and sends email instead of creating proposal directly
 export const createProposalController = async (req: Request, res: Response) => {
-    const { userId, billingInfo, influencerItems } = req.body;
+    const { userId, billingInfo, influencerItems, email } = req.body;
     try {
-        const {
-            message,
-            checkoutId,
-            checkoutDetails,
-            cartId,
-            billingDetailsId,
-            totalAmount,
-            email,
-        } = await createProposal(userId, billingInfo, influencerItems);
+        // Get user email if not provided
+        let clientEmail = email;
+        if (!clientEmail) {
+            const userRepository = AppDataSource.getRepository(User);
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                throw { status: HttpStatus.NOT_FOUND, message: 'User not found' };
+            }
+            clientEmail = user.email;
+        }
 
-        // ✅ Send response immediately (DO NOT wait for invoice processing)
+        // Generate token and send email with link
+        const { message, token, expiresAt, cartId } = await createProposalToken(
+            userId,
+            billingInfo,
+            influencerItems,
+            clientEmail,
+        );
+
+        // ✅ Send response immediately
         res.status(HttpStatus.CREATED).json({
             message,
-            checkoutId,
-            checkoutDetails,
+            token,
+            expiresAt,
             cartId,
-            billingDetailsId,
-            totalAmount,
-            email,
+            email: clientEmail,
         });
-
-        // ✅ Process invoice in the background (no `await`, non-blocking)
-        fetchInvoiceDetails(
-            cartId,
-            email,
-            billingInfo.managementFeePercentage ?? 0,
-            totalAmount,
-            billingInfo.discount ?? 5,
-            checkoutDetails,
-        )
-            .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
-            .catch((error) =>
-                logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`),
-            );
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage = error.message || 'An unknown error occurred while creating proposal';
@@ -126,6 +122,35 @@ export const editProposalController = async (req: Request, res: Response) => {
         return res.status(statusCode).json({ error: errorMessage });
     }
 };
+
+// sent proposal edit proposal
+export const updateSentProposalController = async (req: Request, res: Response) => {
+    const { checkoutId, billingInfo, influencerItems } = req.body;
+    try {
+        
+        const result = await updateProposalTokenAndSendEmail(checkoutId, billingInfo, influencerItems);
+        const { message, token, expiresAt, checkoutDetails, cartId, calculatedTotalAmount, email } = result;
+
+        // ✅ Send response immediately
+        res.status(HttpStatus.OK).json({
+            message,
+            token,
+            expiresAt,
+            checkoutDetails,
+            cartId,
+            calculatedTotalAmount,
+            email,
+        });
+    } catch (error: any) {
+        const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        const errorMessage = error.message || 'An unknown error occurred while updating and resending proposal';
+
+        logger.error(`Error while updating and resending proposal (${statusCode}): ${errorMessage}`);
+
+        return res.status(statusCode).json({ error: errorMessage });
+    }
+};
+
 
 export const downloadProposalController = async (req: Request, res: Response) => {
     const { checkoutId, billingInfo, influencerItems } = req.body;

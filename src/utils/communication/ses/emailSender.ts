@@ -145,3 +145,55 @@ export async function sendOtpEmail(email: string, otp: string): Promise<any> {
     console.log(`OTP email sent to ${email}: ${info.messageId}`);
     return info;
 }
+
+/**
+ * Send proposal link email to client
+ */
+export async function sendProposalLinkEmail(
+    email: string,
+    clientName: string,
+    proposalLink: string,
+): Promise<any> {
+    const info = await transporter.sendMail({
+        from: '"Ampli5" <partnerships@houseofweb3.com>',
+        to: email,
+        subject: 'Review Your Proposal - Ampli5',
+        text: `Dear ${clientName},
+
+We've prepared a custom proposal for your project. Please review and approve the influencer items by clicking the link below:
+
+${proposalLink}
+
+This link will expire after you submit the form. If you have any questions, please don't hesitate to reach out.
+
+Best regards,
+Ampli5 Team`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background-color: #007bff; padding: 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0;">Ampli5</h1>
+                </div>
+                <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
+                    <h2>Review Your Proposal</h2>
+                    <p>Dear ${clientName},</p>
+                    <p>We've prepared a custom proposal for your project. Please review and approve the influencer items by clicking the button below:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${proposalLink}" 
+                           style="display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                            Review Proposal
+                        </a>
+                    </div>
+                    <p style="font-size: 14px; color: #666;">Or copy and paste this link into your browser:</p>
+                    <p style="font-size: 12px; color: #999; word-break: break-all;">${proposalLink}</p>
+                    <p style="font-size: 14px; color: #666;">This link will expire after you submit the form.</p>
+                    <p>If you have any questions, please don't hesitate to reach out.</p>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                    <p style="font-size: 12px; color: #666;">Best regards,<br>Ampli5 Team</p>
+                </div>
+            </div>
+        `,
+    });
+
+    console.log(`Proposal link email sent to ${email}: ${info.messageId}`);
+    return info;
+}
