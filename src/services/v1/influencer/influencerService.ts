@@ -12,11 +12,12 @@ import { AppDataSource } from '../../../config/data-source';
 import { FindOptionsOrder } from 'typeorm/find-options/FindOptionsOrder';
 import { get } from 'http';
 import { Brackets } from 'typeorm';
+import { normalizeName } from '../../../helpers';
 
 // Define default values for pagination and sorting
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 10;
-export const DEFAULT_SORT_FIELD = 'tweetScoutScore';
+export const DEFAULT_SORT_FIELD = 'createdAt';
 export const DEFAULT_SORT_ORDER = 'DESC';
 
 // range formation for subscribers
@@ -198,6 +199,199 @@ function capitalizeWords(str: string): string {
         .join(' ');
 }
 
+// New CSV format interface for Clippers CSV
+interface NewCSVRow {
+    name: string;
+    platform: string;
+    socialMediaLink: string;
+    dpLink: string;
+    industry: string;
+    niche: string;
+    niche2: string;
+    contentType: string;
+    geography: string;
+    price: string; // Will be parsed to number
+}
+
+/**
+ * Upload CSV file with new format (Clippers format)
+ * Maps: name, platform, socialMediaLink, dpLink, Industry, niche, niche2, contentType, geography, price
+ * Sets isNewInfluencer = true and maps Industry to industry field
+ */
+export const uploadNewFormatCSV = async (filePath: string) => {
+    let insertedRows = 0;
+    let skippedRows = 0;
+    const skippedReasons: Array<{ row: string; reason: string; duplicates?: string[] }> = [];
+    const influencersToCreate: Influencer[] = [];
+
+    try {
+        const readStream = fs.createReadStream(filePath).pipe(csv());
+
+        for await (const row of readStream) {
+            // Skip empty rows
+            if (!row.name || row.name.trim() === '') {
+                skippedRows++;
+                skippedReasons.push({ row: 'empty_name', reason: 'Name is empty' });
+                continue;
+            }
+
+            // Parse price - remove $ and commas, then convert to number
+            const parsePrice = (priceStr: string): number => {
+                if (!priceStr || priceStr.trim() === '' || priceStr === '$0.00') {
+                    return 0;
+                }
+                // Remove $, commas, and spaces, then parse
+                const cleaned = priceStr.replace(/[$,\s]/g, '');
+                const parsed = parseFloat(cleaned);
+                return isNaN(parsed) ? 0 : parsed;
+            };
+
+            // Clean and normalize platform name
+            const normalizePlatform = (platform: string): string => {
+                if (!platform) return 'Unknown';
+                const cleaned = platform.trim();
+                // Map common variations
+                if (cleaned.toLowerCase().includes('youtube')) return 'YouTube';
+                if (cleaned.toLowerCase().includes('instagram')) return 'Instagram';
+                if (cleaned.toLowerCase().includes('x') || cleaned.toLowerCase().includes('twitter')) return 'X';
+                if (cleaned.toLowerCase().includes('tiktok')) return 'TikTok';
+                if (cleaned.toLowerCase().includes('telegram')) return 'Telegram';
+                if (cleaned.toLowerCase().includes('spotify')) return 'Spotify';
+                return cleaned;
+            };
+
+            // Clean geography - remove extra spaces
+            const cleanGeography = (geo: string): string => {
+                if (!geo || geo.trim() === '') return null as any;
+                return geo.trim();
+            };
+
+            // Generate default avatar URL from name if dpLink is not provided
+            const generateAvatarUrl = (name: string): string => {
+                if (!name || name.trim() === '') return '';
+                // Use UI Avatars service to generate avatar from name
+                const encodedName = encodeURIComponent(name.trim());
+                return `https://ui-avatars.com/api/?name=${encodedName}&size=200&background=random&color=fff&bold=true`;
+            };
+
+            const csvRow: NewCSVRow = {
+                name: row.name?.trim() || '',
+                platform: normalizePlatform(row.platform || ''),
+                socialMediaLink: row.socialMediaLink?.trim() || '',
+                dpLink: row['dpLink ']?.trim() || row.dpLink?.trim() || '', // Handle space in column name
+                industry: row.industry?.trim() || '',
+                niche: row.niche?.trim() || '',
+                niche2: row.niche2?.trim() || '',
+                contentType: row.contentType?.trim() || '',
+                geography: cleanGeography(row['geography '] || row.geography || ''), // Handle space in column name
+                price: row.price?.trim() || '0',
+            };
+
+            // Skip if name is missing
+            if (!csvRow.name) {
+                skippedRows++;
+                skippedReasons.push({ row: csvRow.name || 'unknown', reason: 'Name is required' });
+                continue;
+            }
+
+            // Generate dpLink - use provided dpLink or generate from name
+            const finalDpLink = csvRow.dpLink && csvRow.dpLink.trim() !== '' 
+                ? csvRow.dpLink.trim() 
+                : generateAvatarUrl(csvRow.name);
+
+            // Create influencer object with defaults
+            const influencerData: Partial<Influencer> = {
+                name: csvRow.name,
+                platform: csvRow.platform || 'Unknown',
+                socialMediaLink: csvRow.socialMediaLink || '',
+                dpLink: finalDpLink, // Use provided dpLink or generated avatar URL
+                industry: csvRow.industry, // Map Industry to industry field
+                niche: csvRow.niche || 'General', // Default niche
+                niche2: csvRow.niche2 ,
+                contentType: csvRow.contentType ,
+                geography: csvRow.geography,
+                price: parsePrice(csvRow.price),
+                subscribers: 0, // Default value
+                quantity: 1, // Default value
+                tweetScoutScore: 0, // Default value
+                credibilityScore: 'Medium', // Default value
+                engagementRate: "Medium ", // Default value
+                investorType: "", // Default value
+                blockchain: "", // Default value
+                deleted: false, // Default value
+                isNewInfluencer: true, // Set to true for CSV uploads
+                categoryName: "", // Default value
+            };
+
+            // Create influencer entity
+            const influencer = influencerRepository.create(influencerData);
+            influencersToCreate.push(influencer);
+        }
+
+        // Bulk insert all influencers
+        if (influencersToCreate.length > 0) {
+            // Check for duplicates before inserting
+            const existingInfluencers = await influencerRepository.find({
+                where: { deleted: false },
+            });
+
+            const uniqueInfluencers: Influencer[] = [];
+            const duplicateNames = new Set<string>();
+
+            for (const newInfluencer of influencersToCreate) {
+                const normalizedName = normalizeName(newInfluencer.name);
+                const isDuplicate = existingInfluencers.some((existing) => {
+                    const existingName = normalizeName(existing.name);
+                    return (
+                        existingName === normalizedName &&
+                        existing.contentType === newInfluencer.contentType &&
+                        existing.platform === newInfluencer.platform
+                    );
+                });
+
+                if (!isDuplicate) {
+                    uniqueInfluencers.push(newInfluencer);
+                } else {
+                    skippedRows++;
+                    duplicateNames.add(newInfluencer.name);
+                }
+            }
+
+            if (uniqueInfluencers.length > 0) {
+                await influencerRepository.save(uniqueInfluencers);
+                insertedRows = uniqueInfluencers.length;
+                logger.info(`Bulk inserted ${insertedRows} influencers from CSV`);
+            }
+
+            if (duplicateNames.size > 0) {
+                skippedReasons.push({
+                    row: 'duplicates',
+                    reason: `Found ${duplicateNames.size} duplicate influencers`,
+                    duplicates: Array.from(duplicateNames),
+                });
+            }
+        }
+
+        logger.info(
+            `New format CSV processed successfully. Inserted: ${insertedRows}, Skipped: ${skippedRows}`,
+        );
+        return {
+            message: 'CSV processed successfully',
+            insertedRows,
+            skippedRows,
+            skippedReasons,
+        };
+    } catch (error: any) {
+        logger.error('Error saving data from new format CSV:', error);
+        throw new Error(`Error saving data: ${error.message}`);
+    } finally {
+        // Clean up file
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    }
+};
+
 // Get influencers with hidden prices, including pagination and sorting
 export const getInfluencersWithHiddenPrices = async (
     userId: string | undefined,
@@ -210,7 +404,7 @@ export const getInfluencersWithHiddenPrices = async (
     followerRange: string = '',
     priceRange: string = '',
 ) => {
-    const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate'];
+    const validSortFields = ['price', 'name', 'subscribers', 'categoryName', 'engagementRate', 'createdAt'];
     const order: FindOptionsOrder<Influencer> = validSortFields.includes(sortField)
         ? { [sortField]: sortOrder }
         : { [DEFAULT_SORT_FIELD]: DEFAULT_SORT_ORDER };
@@ -341,9 +535,12 @@ export const getInfluencersWithHiddenPrices = async (
     });
 
     // Apply sorting and pagination
+    // If sortField is not provided or invalid, use default (createdAt DESC for latest first)
+    const finalSortField = validSortFields.includes(sortField) ? sortField : DEFAULT_SORT_FIELD;
+    const finalSortOrder = sortOrder || DEFAULT_SORT_ORDER;
+    
     query
-        // .orderBy('influencer.tweetScoutScore', 'DESC') // Ensure DESC order and place NULLs last
-        .orderBy(`influencer.${sortField}`, sortOrder)
+        .orderBy(`influencer.${finalSortField}`, finalSortOrder)
         .skip((page - 1) * limit)
         .take(limit);
 
@@ -457,13 +654,17 @@ export const getFilterOptions = async () => {
             .select('DISTINCT(influencer.blockchain)', 'blockchain')
             .getRawMany();
 
+        const industries = await influencerRepository
+            .createQueryBuilder('influencer')
+            .select('DISTINCT(influencer.industry)', 'industry')
+            .getRawMany();
+
         const hiddenPrices = prices
             .map((row) => getHiddenPrice(row.price))
             .filter((price) => price);
 
         const followerRanges = subscribers.map((row) => {
             const range = categorizeFollowers(row.subscribers);
-            logger.info(`Follower count: ${row.subscribers}, categorized as: ${range}`);
             return range;
         });
 
@@ -516,6 +717,9 @@ export const getFilterOptions = async () => {
                 return rangeOrder.indexOf(a) - rangeOrder.indexOf(b);
             }),
             blockchains: Array.from(blockchainSet).sort(),
+            industries: industries
+                .map((row) => row.industry)
+                .filter((el) => el !== 'N/a' && el !== null && el !== ''),
         };
     } catch (error: any) {
         throw new Error(`Error fetching filter options: ${error.message}`);
@@ -564,6 +768,33 @@ export const deleteInfluencer = async (id: string) => {
         } else {
             logger.error('An unknown error occurred during question creation');
             throw new Error('An unknown error occurred during question creation');
+        }
+    }
+};
+
+// Delete all influencers where isNewInfluencer is true
+export const deleteNewInfluencers = async () => {
+    try {
+        const result = await influencerRepository
+            .createQueryBuilder()
+            .delete()
+            .from(Influencer)
+            .where('isNewInfluencer = :isNewInfluencer', { isNewInfluencer: true })
+            .execute();
+
+        const deletedCount = result.affected || 0;
+        logger.info(`Deleted ${deletedCount} new influencers successfully`);
+        return { 
+            message: `Deleted ${deletedCount} new influencers successfully`,
+            deletedCount 
+        };
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Error deleting new influencers: ${error.message}`);
+            throw new Error(error.message);
+        } else {
+            logger.error('An unknown error occurred during deletion');
+            throw new Error('An unknown error occurred during deletion');
         }
     }
 };

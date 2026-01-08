@@ -43,6 +43,9 @@ export class Influencer extends BaseModel {
     @Column({ type: 'numeric', nullable: true, default: 0 })
     tweetScoutScore!: number;
 
+    @Column({ nullable: true })
+    industry !: string;
+
     @Column()
     credibilityScore!: string;
 
@@ -66,6 +69,9 @@ export class Influencer extends BaseModel {
 
     @Column({ nullable: true })
     deleted!: boolean;
+
+    @Column({ nullable: true, default: false })
+    isNewInfluencer: boolean = false;
 
     @OneToMany(() => InfluencerCartItem, (item) => item.influencer)
     influencerCartItems!: InfluencerCartItem[];
