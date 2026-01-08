@@ -176,9 +176,15 @@ export const fetchInvoiceDetails = async (
             where: { cart: { id } },
             relations: ['influencer'],
         });
-        const influencerCartItems = influencers.sort(
+        
+        // Filter only approved influencer items for PDF generation
+        const approvedInfluencers = influencers.filter((item) => item.isClientApproved === true);
+        
+        const influencerCartItems = approvedInfluencers.sort(
             (a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore,
         );
+        
+        logger.info(`Filtered ${approvedInfluencers.length} approved items out of ${influencers.length} total influencer items`);
 
         logger.info(`Fetching packageCartItems for cart id: ${id}`);
         const packageCartItems = await packageCartItemRepository.find({

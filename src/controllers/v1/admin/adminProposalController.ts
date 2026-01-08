@@ -2,7 +2,6 @@ import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import {
-    createProposal,
     getProposalDetails,
     editProposal,
     generateInvoicePdf,
@@ -84,10 +83,14 @@ export const getProposalDetailsController = async (req: Request, res: Response) 
 
 // edit proposal
 export const editProposalController = async (req: Request, res: Response) => {
+    console.log("editProposalController", "-----------------------------------------------------");
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
+
         const { message, checkoutDetails, cartId, email, calculatedTotalAmount } =
             await editProposal(checkoutId, billingInfo, influencerItems);
+        console.log(billingInfo, "billingInfo");
+
         if (cartId && email && billingInfo?.proposalStatus === 'sent') {
             fetchInvoiceDetails(
                 cartId,
@@ -125,6 +128,8 @@ export const editProposalController = async (req: Request, res: Response) => {
 
 // sent proposal edit proposal
 export const updateSentProposalController = async (req: Request, res: Response) => {
+    console.log("updateSentProposalController", "-----------------------------------------------------");
+
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
         
@@ -175,9 +180,15 @@ export const downloadProposalController = async (req: Request, res: Response) =>
                 where: { cart: { id: cartId } },
                 relations: ['influencer'],
             });
-            const influencerCartItems = influencers.sort(
+            
+            // Filter only approved influencer items
+            const approvedInfluencers = influencers.filter((item) => item.isClientApproved === true);
+            
+            const influencerCartItems = approvedInfluencers.sort(
                 (a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore,
             );
+            
+            logger.info(`Filtered ${approvedInfluencers.length} approved items out of ${influencers.length} total influencer items for PDF download`);
 
             const packageCartItems = await packageCartItemRepository.find({
                 where: { cart: { id: cartId } },

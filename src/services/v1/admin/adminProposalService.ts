@@ -262,26 +262,61 @@ export const editProposal = async (
             await transactionalEntityManager.save(billingDetails);
             logger.info(`Updated BillingDetails for checkout ID: ${checkoutId}`);
 
-            /** ✅ Step 4: Remove Existing InfluencerCartItems **/
-            await transactionalEntityManager.delete(InfluencerCartItem, { cart: { id: cart.id } });
-            logger.info(`Removed existing influencer cart items for cart ID: ${cart.id}`);
-
-            /** ✅ Step 5: Add New InfluencerCartItems **/
-            const newInfluencerCartItems = updatedInfluencerItems.map((item) => {
-                const cartItem = new InfluencerCartItem();
-                cartItem.cart = cart;
-                cartItem.influencer = { id: item.influencerId } as any;
-                cartItem.price = item.price;
-                cartItem.note = item.note;
-                cartItem.profOfWork = item.profOfWork;
-                return cartItem;
+            /** ✅ Step 4: Fetch Existing InfluencerCartItems **/
+            const existingCartItems = await transactionalEntityManager.find(InfluencerCartItem, {
+                where: { cart: { id: cart.id } },
+                relations: ['influencer'],
             });
+            logger.info(`Found ${existingCartItems.length} existing influencer cart items for cart ID: ${cart.id}`);
 
-            await transactionalEntityManager.save(newInfluencerCartItems);
-            logger.info(`Added ${newInfluencerCartItems.length} influencer items to cart ID: ${cart.id}`);
+            /** ✅ Step 5: Update or Create InfluencerCartItems **/
+            const updatedCartItems: InfluencerCartItem[] = [];
+            const updatedInfluencerIds = new Set(updatedInfluencerItems.map(item => item.influencerId));
+
+            // Update existing items or create new ones
+            for (const item of updatedInfluencerItems) {
+                const existingItem = existingCartItems.find(
+                    (cartItem) => cartItem.influencer.id === item.influencerId
+                );
+
+                if (existingItem) {
+                    // Update existing item
+                    existingItem.price = item.price;
+                    existingItem.note = item.note ?? existingItem.note;
+                    existingItem.profOfWork = item.profOfWork ?? existingItem.profOfWork;
+                    // Preserve isClientApproved status if it exists
+                    await transactionalEntityManager.save(existingItem);
+                    updatedCartItems.push(existingItem);
+                    logger.info(`Updated existing cart item for influencer ID: ${item.influencerId}`);
+                } else {
+                    // Create new item
+                    const newCartItem = new InfluencerCartItem();
+                    newCartItem.cart = cart;
+                    newCartItem.influencer = { id: item.influencerId } as any;
+                    newCartItem.price = item.price;
+                    newCartItem.note = item.note;
+                    newCartItem.profOfWork = item.profOfWork;
+                    newCartItem.isClientApproved = false; // Default to false for new items
+                    const savedItem = await transactionalEntityManager.save(newCartItem);
+                    updatedCartItems.push(savedItem);
+                    logger.info(`Created new cart item for influencer ID: ${item.influencerId}`);
+                }
+            }
+
+            // Remove items that are not in the updated list (optional - comment out if you want to keep all items)
+            const itemsToRemove = existingCartItems.filter(
+                (item) => !updatedInfluencerIds.has(item.influencer.id)
+            );
+            
+            if (itemsToRemove.length > 0) {
+                await transactionalEntityManager.remove(itemsToRemove);
+                logger.info(`Removed ${itemsToRemove.length} cart items that were not in the update list`);
+            }
+
+            logger.info(`Updated ${updatedCartItems.length} influencer items in cart ID: ${cart.id}`);
 
             /** ✅ Step 6: Recalculate & Update `totalAmount` **/
-            const calculatedTotalAmount = newInfluencerCartItems.reduce((sum, item) => sum + item.price, 0);
+            const calculatedTotalAmount = updatedCartItems.reduce((sum, item) => sum + Number(item.price), 0);
             checkout.totalAmount = calculatedTotalAmount;
             await transactionalEntityManager.save(checkout);
 

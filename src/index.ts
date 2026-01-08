@@ -103,13 +103,14 @@ app.use(`/api/v${ENV.VERSION}/admin/client`, adminClientRoutes);
 app.use(`/api/v${ENV.VERSION}/admin/auth`, adminAuthRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/proposal`, adminProposalRoutes);
+// Client Proposal Routes (public routes for token-based access)
+app.use(`/api/v${ENV.VERSION}/proposal`, proposalClientRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/proposal-pr`, adminProposalPrRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
 
-// Client Proposal Routes (public routes for token-based access)
-app.use(`/api/v${ENV.VERSION}/proposal`, proposalClientRoutes);
+
 
 // Bounty Routes
 app.use(`/api/v${ENV.VERSION}/user/bounty`, userProfileRoutes);

@@ -96,8 +96,8 @@ export const updateAndSubmitProposalController = async (req: Request, res: Respo
             influencerItemUpdates,
         );
 
-
         const cartRepository = AppDataSource.getRepository(Cart);
+        const influencerCartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
 
         const cart = await cartRepository.findOne({
             where: { id: cartId },
@@ -108,20 +108,29 @@ export const updateAndSubmitProposalController = async (req: Request, res: Respo
             throw new Error('Cart or user not found');
         }
 
-        // Filter approved items and remove unapproved ones
-        const approvedItems = cart.influencerCartItems.filter((item) => item.isClientApproved);
-        const unapprovedItems = cart.influencerCartItems.filter((item) => !item.isClientApproved);
-
-        // Remove unapproved items from cart
-        if (unapprovedItems.length > 0) {
-            const { AppDataSource } = await import('../../../config/data-source');
-            const { InfluencerCartItem } = await import('../../../entity/cart/InfluencerCartItem.entity');
-            const cartItemRepository = AppDataSource.getRepository(InfluencerCartItem);
-            await cartItemRepository.remove(unapprovedItems);
-            logger.info(`Removed ${unapprovedItems.length} unapproved items from cart`);
+        // Update approval status for all influencer items (don't remove any)
+        for (const update of influencerItemUpdates) {
+            const cartItem = cart.influencerCartItems.find((item) => item.id === update.id);
+            if (cartItem) {
+                cartItem.isClientApproved = update.isClientApproved;
+                await influencerCartItemRepository.save(cartItem);
+            }
         }
 
-        // Calculate total amount from approved items only
+        logger.info(`Updated approval status for ${influencerItemUpdates.length} influencer items`);
+
+        // Re-fetch cart to get updated items
+        const updatedCart = await cartRepository.findOne({
+            where: { id: cartId },
+            relations: ['influencerCartItems'],
+        });
+
+        if (!updatedCart) {
+            throw new Error('Cart not found after update');
+        }
+
+        // Calculate total amount from approved items only (but keep all items in cart)
+        const approvedItems = updatedCart.influencerCartItems.filter((item) => item.isClientApproved);
         const totalAmount = approvedItems.reduce((sum, item) => sum + Number(item.price), 0);
 
         // Update existing checkout and billing details (they were created during token creation)
@@ -166,6 +175,7 @@ export const updateAndSubmitProposalController = async (req: Request, res: Respo
         billingDetails.totalAmount = totalAmount;
         await billingDetailsRepository.save(billingDetails);
         logger.info(`Updated billing details: ${billingDetails.id}`);
+        logger.info(`Total approved items: ${approvedItems.length}, Total unapproved items: ${updatedCart.influencerCartItems.length - approvedItems.length}`);
 
         const checkoutDetails = {
             firstName: billingDetails.firstName,
@@ -193,18 +203,18 @@ export const updateAndSubmitProposalController = async (req: Request, res: Respo
         });
 
         // Process invoice in the background
-        fetchInvoiceDetails(
-            finalCartId,
-            email,
-            updatedBillingInfo.managementFeePercentage ?? 0,
-            finalTotalAmount,
-            updatedBillingInfo.discount ?? 5,
-            checkoutDetails,
-        )
-            .then(() => logger.info(`Invoice processing initiated for cartId: ${finalCartId}`))
-            .catch((error) =>
-                logger.error(`Error processing invoice for cartId: ${finalCartId}: ${error}`),
-            );
+        // fetchInvoiceDetails(
+        //     finalCartId,
+        //     email,
+        //     updatedBillingInfo.managementFeePercentage ?? 0,
+        //     finalTotalAmount,
+        //     updatedBillingInfo.discount ?? 5,
+        //     checkoutDetails,
+        // )
+        //     .then(() => logger.info(`Invoice processing initiated for cartId: ${finalCartId}`))
+        //     .catch((error) =>
+        //         logger.error(`Error processing invoice for cartId: ${finalCartId}: ${error}`),
+        //     );
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage =
