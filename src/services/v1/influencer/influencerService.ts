@@ -211,6 +211,7 @@ interface NewCSVRow {
     contentType: string;
     geography: string;
     price: string; // Will be parsed to number
+    subscribers: number;
 }
 
 /**
@@ -282,6 +283,7 @@ export const uploadNewFormatCSV = async (filePath: string) => {
                 industry: row.industry?.trim() || '',
                 niche: row.niche?.trim() || '',
                 niche2: row.niche2?.trim() || '',
+                subscribers: parseInt(row.subscribers?.trim() || '0') || 0,
                 contentType: row.contentType?.trim() || '',
                 geography: cleanGeography(row['geography '] || row.geography || ''), // Handle space in column name
                 price: row.price?.trim() || '0',
@@ -311,11 +313,11 @@ export const uploadNewFormatCSV = async (filePath: string) => {
                 contentType: csvRow.contentType ,
                 geography: csvRow.geography,
                 price: parsePrice(csvRow.price),
-                subscribers: 0, // Default value
+                subscribers: csvRow.subscribers, // Default value
                 quantity: 1, // Default value
-                tweetScoutScore: 0, // Default value
-                credibilityScore: 'Medium', // Default value
-                engagementRate: "Medium ", // Default value
+                tweetScoutScore: 1400, // Default value
+                credibilityScore: 'High', // Default value
+                engagementRate: "High", // Default value
                 investorType: "", // Default value
                 blockchain: "", // Default value
                 deleted: false, // Default value
@@ -665,6 +667,7 @@ export const getFilterOptions = async () => {
 
         const followerRanges = subscribers.map((row) => {
             const range = categorizeFollowers(row.subscribers);
+            logger.info(`Follower count: ${row.subscribers}, categorized as: ${range}`);
             return range;
         });
 
@@ -795,6 +798,73 @@ export const deleteNewInfluencers = async () => {
         } else {
             logger.error('An unknown error occurred during deletion');
             throw new Error('An unknown error occurred during deletion');
+        }
+    }
+};
+
+/**
+ * Update existing influencers from CSV by matching name
+ * Sets isNewInfluencer = true and updates industry field from CSV
+ */
+export const updateInfluencersFromCSV = async (filePath: string) => {
+    let updatedRows = 0;
+    let skippedRows = 0;
+    const skippedReasons: Array<{ row: string; reason: string }> = [];
+
+    try {
+        const readStream = fs.createReadStream(filePath).pipe(csv());
+
+        for await (const row of readStream) {
+            // Skip empty rows
+            if (!row.name || row.name.trim() === '') {
+                skippedRows++;
+                skippedReasons.push({ row: 'empty', reason: 'Name is empty' });
+                continue;
+            }
+
+            const influencerName = row.name.trim();
+            const industryValue = row.industry?.trim() || row.Industry?.trim() || null;
+
+            // Find existing influencer by name (case-insensitive)
+            const existingInfluencer = await influencerRepository
+                .createQueryBuilder('influencer')
+                .where('LOWER(TRIM(influencer.name)) = LOWER(:name)', { name: influencerName })
+                .andWhere('influencer.deleted = :deleted', { deleted: false })
+                .getOne();
+
+            if (existingInfluencer) {
+                // Update the influencer
+                existingInfluencer.isNewInfluencer = true;
+                if (industryValue && industryValue !== '') {
+                    existingInfluencer.industry = industryValue;
+                }
+                
+                await influencerRepository.save(existingInfluencer);
+                updatedRows++;
+                logger.info(`Updated influencer: ${influencerName}, isNewInfluencer=true, industry=${industryValue || 'null'}`);
+            } else {
+                skippedRows++;
+                skippedReasons.push({ row: influencerName, reason: 'Influencer not found by name' });
+                logger.info(`Skipped influencer: ${influencerName} - not found in database`);
+            }
+        }
+
+        logger.info(
+            `CSV update processed successfully. Updated: ${updatedRows}, Skipped: ${skippedRows}`,
+        );
+        return {
+            message: 'CSV update processed successfully',
+            updatedRows,
+            skippedRows,
+            skippedReasons,
+        };
+    } catch (error: any) {
+        logger.error('Error updating influencers from CSV:', error);
+        throw new Error(`Error updating influencers: ${error.message}`);
+    } finally {
+        // Clean up file
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
         }
     }
 };

@@ -6,6 +6,7 @@ import { setCorsHeaders } from '../../../middleware/setcorsHeaders';
 import {
   uploadCSV,
   uploadNewFormatCSV,
+  updateInfluencersFromCSV,
   createInfluencer,
   deleteInfluencer,
   deleteNewInfluencers,
@@ -73,9 +74,38 @@ export const uploadNewFormatCSVHandler = async (req: Request, res: Response) => 
   }
 };
 
+// Update existing influencers from CSV by name
+export const updateInfluencersFromCSVHandler = async (req: Request, res: Response) => {
+  setCorsHeaders(req, res);
+  try {
+    if (!req.file) {
+      logger.warn('No file uploaded for CSV update processing');
+      return res.status(HttpStatus.BAD_REQUEST).json({ message: 'No file uploaded' });
+    }
+
+    const { updatedRows, skippedRows, skippedReasons } = await updateInfluencersFromCSV(req.file.path);
+    logger.info(`CSV update processed. Updated: ${updatedRows}, Skipped: ${skippedRows}`);
+
+    return res.status(HttpStatus.OK).json({
+      message: 'Influencers updated successfully 👍',
+      updatedRows,
+      skippedRows,
+      skippedReasons
+    });
+  } catch (error: any) {
+    logger.error('Error updating influencers from CSV:', error);
+    if (error instanceof Error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error updating data', error: error.message });
+    } else {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Unexpected error', error: String(error) });
+    }
+  }
+};
+
 export const getFilterOptionsController = async (req: Request, res: Response) => {
   try {
     const filterOptions = await getFilterOptions();
+    console.log(filterOptions, "filterOptions");
 
     res.json(filterOptions);
   } catch (error) {
