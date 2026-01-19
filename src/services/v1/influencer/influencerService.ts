@@ -803,16 +803,56 @@ export const deleteNewInfluencers = async () => {
 };
 
 /**
- * Update existing influencers from CSV by matching name
- * Sets isNewInfluencer = true and updates industry field from CSV
+ * Update existing influencers from CSV by matching name, or create new ones if not found
+ * Updates all fields from CSV and sets isNewInfluencer = true
  */
 export const updateInfluencersFromCSV = async (filePath: string) => {
     let updatedRows = 0;
+    let createdRows = 0;
     let skippedRows = 0;
     const skippedReasons: Array<{ row: string; reason: string }> = [];
 
     try {
         const readStream = fs.createReadStream(filePath).pipe(csv());
+
+        // Helper function to parse price - remove $ and commas, then convert to number
+        const parsePrice = (priceStr: string): number => {
+            if (!priceStr || priceStr.trim() === '' || priceStr === '$0.00') {
+                return 0;
+            }
+            // Remove $, commas, and spaces, then parse
+            const cleaned = priceStr.replace(/[$,\s]/g, '');
+            const parsed = parseFloat(cleaned);
+            return isNaN(parsed) ? 0 : parsed;
+        };
+
+        // Helper function to normalize platform name
+        const normalizePlatform = (platform: string): string => {
+            if (!platform) return 'Unknown';
+            const cleaned = platform.trim();
+            // Map common variations
+            if (cleaned.toLowerCase().includes('youtube')) return 'YouTube';
+            if (cleaned.toLowerCase().includes('instagram')) return 'Instagram';
+            if (cleaned.toLowerCase().includes('x') || cleaned.toLowerCase().includes('twitter')) return 'X';
+            if (cleaned.toLowerCase().includes('tiktok')) return 'TikTok';
+            if (cleaned.toLowerCase().includes('telegram')) return 'Telegram';
+            if (cleaned.toLowerCase().includes('spotify')) return 'Spotify';
+            return cleaned;
+        };
+
+        // Helper function to clean geography - remove extra spaces
+        const cleanGeography = (geo: string): string => {
+            if (!geo || geo.trim() === '') return null as any;
+            return geo.trim();
+        };
+
+        // Helper function to generate default avatar URL from name if dpLink is not provided
+        const generateAvatarUrl = (name: string): string => {
+            if (!name || name.trim() === '') return '';
+            // Use UI Avatars service to generate avatar from name
+            const encodedName = encodeURIComponent(name.trim());
+            return `https://ui-avatars.com/api/?name=${encodedName}&size=200&background=random&color=fff&bold=true`;
+        };
 
         for await (const row of readStream) {
             // Skip empty rows
@@ -823,38 +863,93 @@ export const updateInfluencersFromCSV = async (filePath: string) => {
             }
 
             const influencerName = row.name.trim();
-            const industryValue = row.industry?.trim() || row.Industry?.trim() || null;
 
-            // Find existing influencer by name (case-insensitive)
+            // Parse all CSV fields
+            const csvData = {
+                name: influencerName,
+                platform: normalizePlatform(row.platform || ''),
+                socialMediaLink: row.socialMediaLink?.trim() || '',
+                dpLink: row['dpLink ']?.trim() || row.dpLink?.trim() || '', // Handle space in column name
+                industry: row.industry?.trim() || null,
+                niche: row.niche?.trim() || 'General',
+                niche2: row.niche2?.trim() || null,
+                contentType: row.contentType?.trim() || null,
+                geography: cleanGeography(row['geography '] || row.geography || ''), // Handle space in column name
+                price: parsePrice(row.price?.trim() || '0'),
+                subscribers: parseInt(row.subscribers?.trim() || '0') || 0,
+            };
+
+            // Generate dpLink - use provided dpLink or generate from name
+            const finalDpLink = csvData.dpLink && csvData.dpLink.trim() !== '' 
+                ? csvData.dpLink.trim() 
+                : generateAvatarUrl(csvData.name);
+
+            // Find existing influencer by name, platform, and price (all must match)
             const existingInfluencer = await influencerRepository
                 .createQueryBuilder('influencer')
                 .where('LOWER(TRIM(influencer.name)) = LOWER(:name)', { name: influencerName })
+                .andWhere('LOWER(TRIM(influencer.platform)) = LOWER(:platform)', { platform: csvData.platform })
+                .andWhere('influencer.price = :price', { price: csvData.price })
                 .andWhere('influencer.deleted = :deleted', { deleted: false })
                 .getOne();
 
             if (existingInfluencer) {
-                // Update the influencer
+                // Update all fields from CSV
+                existingInfluencer.name = csvData.name;
+                existingInfluencer.platform = csvData.platform || 'Unknown';
+                existingInfluencer.socialMediaLink = csvData.socialMediaLink;
+                existingInfluencer.dpLink = finalDpLink;
+                existingInfluencer.industry = csvData.industry;
+                existingInfluencer.niche = csvData.niche;
+                existingInfluencer.niche2 = csvData.niche2;
+                existingInfluencer.contentType = csvData.contentType;
+                existingInfluencer.geography = csvData.geography;
+                existingInfluencer.price = csvData.price;
+                existingInfluencer.subscribers = csvData.subscribers;
                 existingInfluencer.isNewInfluencer = true;
-                if (industryValue && industryValue !== '') {
-                    existingInfluencer.industry = industryValue;
-                }
                 
                 await influencerRepository.save(existingInfluencer);
                 updatedRows++;
-                logger.info(`Updated influencer: ${influencerName}, isNewInfluencer=true, industry=${industryValue || 'null'}`);
+                logger.info(`Updated influencer: ${influencerName} with all CSV data`);
             } else {
-                skippedRows++;
-                skippedReasons.push({ row: influencerName, reason: 'Influencer not found by name' });
-                logger.info(`Skipped influencer: ${influencerName} - not found in database`);
+                // Create new influencer with all CSV data
+                const influencerData: Partial<Influencer> = {
+                    name: csvData.name,
+                    platform: csvData.platform || 'Unknown',
+                    socialMediaLink: csvData.socialMediaLink,
+                    dpLink: finalDpLink,
+                    industry: csvData.industry,
+                    niche: csvData.niche,
+                    niche2: csvData.niche2,
+                    contentType: csvData.contentType,
+                    geography: csvData.geography,
+                    price: csvData.price,
+                    subscribers: csvData.subscribers,
+                    quantity: 1, // Default value
+                    tweetScoutScore: 1400, // Default value
+                    credibilityScore: 'High', // Default value
+                    engagementRate: 'High', // Default value
+                    investorType: '', // Default value
+                    blockchain: '', // Default value
+                    deleted: false, // Default value
+                    isNewInfluencer: true, // Set to true for CSV uploads
+                    categoryName: '', // Default value
+                };
+
+                const newInfluencer = influencerRepository.create(influencerData);
+                await influencerRepository.save(newInfluencer);
+                createdRows++;
+                logger.info(`Created new influencer: ${influencerName} from CSV`);
             }
         }
 
         logger.info(
-            `CSV update processed successfully. Updated: ${updatedRows}, Skipped: ${skippedRows}`,
+            `CSV update processed successfully. Updated: ${updatedRows}, Created: ${createdRows}, Skipped: ${skippedRows}`,
         );
         return {
             message: 'CSV update processed successfully',
             updatedRows,
+            createdRows,
             skippedRows,
             skippedReasons,
         };
