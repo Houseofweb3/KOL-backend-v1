@@ -46,6 +46,10 @@ export class BillingDetails extends BaseModel {
     @Column({ type: 'decimal', nullable: true })
     managementFeePercentage?: number;
 
+    // add discount field
+    @Column({ type: 'decimal', nullable: true })
+    discount?: number;
+
     //add note field
     @Column({ type: 'text', nullable: true })
     note?: string;

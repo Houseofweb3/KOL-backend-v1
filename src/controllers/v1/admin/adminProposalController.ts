@@ -87,9 +87,8 @@ export const editProposalController = async (req: Request, res: Response) => {
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
 
-        const { message, checkoutDetails, cartId, email, calculatedTotalAmount } =
+        const { message, checkoutDetails, cartId, email, calculatedTotalAmount, subtotal, discount, discountAmount } =
             await editProposal(checkoutId, billingInfo, influencerItems);
-        console.log(billingInfo, "billingInfo");
 
         if (cartId && email && billingInfo?.proposalStatus === 'sent') {
             fetchInvoiceDetails(
@@ -97,8 +96,9 @@ export const editProposalController = async (req: Request, res: Response) => {
                 email,
                 billingInfo.managementFeePercentage ?? 0,
                 calculatedTotalAmount,
-                billingInfo.discount ?? 5,
+                billingInfo.discount || 0,
                 checkoutDetails,
+
             )
                 .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
                 .catch((error) =>
@@ -132,7 +132,7 @@ export const updateSentProposalController = async (req: Request, res: Response) 
 
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
-        
+
         const result = await updateProposalTokenAndSendEmail(checkoutId, billingInfo, influencerItems);
         const { message, token, expiresAt, checkoutDetails, cartId, calculatedTotalAmount, email } = result;
 
@@ -157,10 +157,10 @@ export const updateSentProposalController = async (req: Request, res: Response) 
 };
 
 
-export const downloadProposalController = async (req: Request, res: Response) => {
+export const   downloadProposalController = async (req: Request, res: Response) => {
     const { checkoutId, billingInfo, influencerItems } = req.body;
     try {
-        const { message, checkoutDetails, cartId, email, calculatedTotalAmount } = await editProposal(checkoutId, billingInfo, influencerItems);
+        const { message, checkoutDetails, cartId, email } = await editProposal(checkoutId, billingInfo, influencerItems);
 
         if (cartId && email) {
             const cartRepository = AppDataSource.getRepository(Cart);
@@ -180,15 +180,29 @@ export const downloadProposalController = async (req: Request, res: Response) =>
                 where: { cart: { id: cartId } },
                 relations: ['influencer'],
             });
-            
+
+            // Ensure quantity is properly set for each item (default to 1 if not set)
+            const influencerCartItemsWithQuantity = influencers.map(item => ({
+                ...item,
+                quantity: item.quantity ?? 1, // Explicitly set quantity from cart item
+            }));
+
+            const subtotal = influencerCartItemsWithQuantity.reduce(
+                (sum, item) => sum + Number(item.price) * Number(item.quantity), 
+                0
+            );
+            const discount = billingInfo.discount || 0;
+            const discountAmount = discount > 0 ? (subtotal * discount) / 100 : 0;
+            const calculatedTotalAmount = subtotal - discountAmount;
+
             // Filter only approved influencer items
-            const approvedInfluencers = influencers.filter((item) => item.isClientApproved === true);
-            
-            const influencerCartItems = approvedInfluencers.sort(
+            // const approvedInfluencers = influencerCartItemsWithQuantity.filter((item) => item.isClientApproved === true);
+
+            const influencerCartItems = influencerCartItemsWithQuantity.sort(
                 (a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore,
             );
-            
-            logger.info(`Filtered ${approvedInfluencers.length} approved items out of ${influencers.length} total influencer items for PDF download`);
+
+            logger.info(`Processing ${influencerCartItems.length} influencer items for PDF download with quantities: ${influencerCartItems.map(item => `${item.influencer.name}: qty=${item.quantity}`).join(', ')}`);
 
             const packageCartItems = await packageCartItemRepository.find({
                 where: { cart: { id: cartId } },
@@ -203,6 +217,9 @@ export const downloadProposalController = async (req: Request, res: Response) =>
                 managementFeePercentage: billingInfo.managementFeePercentage ?? 0,
                 calculatedTotalAmount,
                 checkoutDetails,
+                subtotal,
+                discount,
+                discountAmount,
             };
 
             const transformCartData = transformData(data);

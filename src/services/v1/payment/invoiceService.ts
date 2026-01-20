@@ -63,18 +63,24 @@ export function transformData(data: any) {
 
     const user = data.user || {};
 
-    const influencerPRs = data.influencerCartItems.map((item: any) => ({
-        name: item.influencer.name,
-        category_name: item.influencer.categoryName,
-        location: item.influencer.geography,
-        subscribers: item.influencer.subscribers,
-        platform: item.influencer.platform,
-        contentType: item.influencer.contentType,
-        price: item.price ? item.price : item.influencer.price,
-        socialMediaLink: item.influencer.socialMediaLink,
-        notes: item.note || '', // Ensure notes is always at least an empty string
-        profOfWork: item.profOfWork || '', // Ensure profOfWork is always at least an empty string
-    }));
+    const influencerPRs = data.influencerCartItems.map((item: any) => {
+        // Ensure quantity is properly converted from cart item (default to 1 if not set)
+        const quantity = item.quantity != null ? Number(item.quantity) : 1;
+        
+        return {
+            name: item.influencer.name,
+            category_name: item.influencer.categoryName,
+            location: item.influencer.geography,
+            subscribers: item.influencer.subscribers,
+            platform: item.influencer.platform,
+            contentType: item.influencer.contentType,
+            price: item.price ? item.price : item.influencer.price,
+            quantity: quantity, // Use quantity from cart item, not from influencer
+            socialMediaLink: item.influencer.socialMediaLink,
+            notes: item.note || '', // Ensure notes is always at least an empty string
+            profOfWork: item.profOfWork || '', // Ensure profOfWork is always at least an empty string
+        };
+    });
 
     // Check if any influencer has notes
     const hasAnyNotes = influencerPRs.some(
@@ -96,7 +102,7 @@ export function transformData(data: any) {
     const influencerSubtotal = data.influencerCartItems
         .reduce(
             (acc: number, item: any) =>
-                acc + parseFloat(item.price ? item.price : item.influencer.price),
+                acc + parseFloat(item.price ? item.price : item.influencer.price) * (item.quantity ?? 1),
             0,
         )
         .toFixed(2);
@@ -105,8 +111,13 @@ export function transformData(data: any) {
         .toFixed(2);
     const totalPrice = (parseFloat(influencerSubtotal) + parseFloat(packageSubtotal)).toFixed(2);
 
-    // calc management fee based on total amount
-    const managementFee = (parseFloat(totalPrice) * (data.managementFeePercentage / 100)).toFixed(
+    // Apply discount if provided (discount is a percentage)
+    const discount = data.discount ?? 0;
+    const discountAmount = discount > 0 ? (parseFloat(totalPrice) * discount) / 100 : 0;
+    const totalPriceAfterDiscount = (parseFloat(totalPrice) - discountAmount).toFixed(2);
+
+    // calc management fee based on total amount after discount
+    const managementFee = (parseFloat(totalPriceAfterDiscount) * (data.managementFeePercentage / 100)).toFixed(
         2,
     );
 
@@ -117,7 +128,7 @@ export function transformData(data: any) {
 
     // Add the airdrop fee to the total price, then add the management fee
     const totalPriceWithFee = (
-        parseFloat(totalPrice) +
+        parseFloat(totalPriceAfterDiscount) +
         // airDropFee +
         parseFloat(managementFee)
     ).toFixed(2);
@@ -130,6 +141,9 @@ export function transformData(data: any) {
         influencerSubtotal,
         packageSubtotal,
         totalPrice,
+        discount: discount,
+        discountAmount: discountAmount.toFixed(2),
+        totalPriceAfterDiscount,
         managementFee,
         managementFeePercentage: data.managementFeePercentage,
         totalPriceWithFee,
@@ -184,9 +198,7 @@ export const fetchInvoiceDetails = async (
             (a, b) => b?.influencer?.tweetScoutScore - a?.influencer?.tweetScoutScore,
         );
         
-        logger.info(`Filtered ${approvedInfluencers.length} approved items out of ${influencers.length} total influencer items`);
 
-        logger.info(`Fetching packageCartItems for cart id: ${id}`);
         const packageCartItems = await packageCartItemRepository.find({
             where: { cart: { id } },
             relations: ['package', 'package.packageItems'],

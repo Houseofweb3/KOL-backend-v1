@@ -1,6 +1,7 @@
 import logger from '../../../config/logger';
 import { User } from '../../../entity/auth';
 import { AppDataSource } from '../../../config/data-source';
+import { Brackets } from 'typeorm';
 
 const DEFAULT_SORT_FIELD = 'createdAt';
 const DEFAULT_SORT_ORDER = 'DESC';
@@ -18,8 +19,13 @@ export const getAllUsers = async (
             .createQueryBuilder('user')
             .leftJoinAndSelect('user.carts', 'cart') // Fetch user carts
             .leftJoinAndSelect('cart.checkout', 'checkout') // Fetch checkout details within carts
-            .where('user.is_deleted = :is_deleted', { is_deleted: false })
-            .andWhere(searchTerm ? 'user.fullname ILIKE :searchTerm OR user.email ILIKE :searchTerm' : '1=1', {
+            .where(
+                new Brackets((qb) => {
+                    qb.where('user.is_deleted = :is_deleted', { is_deleted: false })
+                      .orWhere('user.is_deleted IS NULL');
+                })
+            )
+            .andWhere(searchTerm ? 'user.fullname ILIKE :searchTerm OR user.first_name ILIKE :searchTerm OR user.last_name ILIKE :searchTerm' : '1=1', {
                 searchTerm: `%${searchTerm}%`,
             })
             .orderBy(`user.${sortField}`, sortOrder)
@@ -72,6 +78,8 @@ export const createUser = async (user: User) => {
 
 // service to update user with try catch block
 export const updateUser = async (id: string, user: User) => {
+    console.log(user, "user");
+
     const userRepository = AppDataSource.getRepository(User);
     try {
         const data = await userRepository.update(id, user);

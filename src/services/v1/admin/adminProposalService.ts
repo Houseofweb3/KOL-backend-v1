@@ -143,6 +143,7 @@ export const createProposal = async (
             billingDetails.paymentStatus = 'Unpaid';
             billingDetails.totalAmount = totalAmount;
             billingDetails.checkout = checkout;
+            billingDetails.discount = billingInfo.discount;
 
             await transactionalEntityManager.save(billingDetails);
             logger.info(`Billing details saved for checkout ID: ${checkout.id}`);
@@ -225,8 +226,9 @@ export const editProposal = async (
         proposalStatus?: string,
         invoiceStatus?: string,
         paymentStatus?: string,
+        discount?: number,
     },
-    updatedInfluencerItems: { influencerId: string; price: number, note?: string, profOfWork?: string}[]
+    updatedInfluencerItems: { influencerId: string; price: number, note?: string, profOfWork?: string,quantity?: number}[]
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
         try {
@@ -257,6 +259,7 @@ export const editProposal = async (
                 proposalStatus: updatedBillingInfo.proposalStatus ?? billingDetails.proposalStatus,
                 invoiceStatus: updatedBillingInfo.invoiceStatus ?? billingDetails.invoiceStatus,
                 paymentStatus: updatedBillingInfo.paymentStatus ?? billingDetails.paymentStatus,
+                discount: updatedBillingInfo.discount ?? billingDetails.discount,
             });
 
             await transactionalEntityManager.save(billingDetails);
@@ -284,6 +287,7 @@ export const editProposal = async (
                     existingItem.price = item.price;
                     existingItem.note = item.note ?? existingItem.note;
                     existingItem.profOfWork = item.profOfWork ?? existingItem.profOfWork;
+                    existingItem.quantity = item.quantity ?? existingItem.quantity;
                     // Preserve isClientApproved status if it exists
                     await transactionalEntityManager.save(existingItem);
                     updatedCartItems.push(existingItem);
@@ -296,6 +300,7 @@ export const editProposal = async (
                     newCartItem.price = item.price;
                     newCartItem.note = item.note;
                     newCartItem.profOfWork = item.profOfWork;
+                    newCartItem.quantity = item.quantity ?? 1;
                     newCartItem.isClientApproved = false; // Default to false for new items
                     const savedItem = await transactionalEntityManager.save(newCartItem);
                     updatedCartItems.push(savedItem);
@@ -315,12 +320,20 @@ export const editProposal = async (
 
             logger.info(`Updated ${updatedCartItems.length} influencer items in cart ID: ${cart.id}`);
 
-            /** ✅ Step 6: Recalculate & Update `totalAmount` **/
-            const calculatedTotalAmount = updatedCartItems.reduce((sum, item) => sum + Number(item.price), 0);
-            checkout.totalAmount = calculatedTotalAmount;
+            /** ✅ Step 6: Recalculate & Update `totalAmount` with Discount **/
+            // Calculate subtotal (sum of all items)
+            const subtotal = updatedCartItems.reduce((sum, item) => sum + Number(item.price) * (item.quantity ?? 1), 0);
+            
+            // Apply discount if provided (discount is a percentage)
+            const discount = billingDetails.discount ?? 0;
+            const discountAmount = discount > 0 ? (subtotal * discount) / 100 : 0;
+            const calculatedTotalAmount = subtotal - discountAmount;
+            
+            billingDetails.totalAmount = calculatedTotalAmount;
+            await transactionalEntityManager.save(billingDetails);
             await transactionalEntityManager.save(checkout);
 
-            logger.info(`Updated totalAmount for checkout ID: ${checkoutId}, New Total: ${checkout.totalAmount}`);
+            logger.info(`Updated totalAmount for checkout ID: ${checkoutId}, Subtotal: ${subtotal}, Discount: ${discount}%, Discount Amount: ${discountAmount}, New Total: ${calculatedTotalAmount}`);
             const checkoutDetails = {
                 firstName: billingDetails.firstName,
                 lastName: billingDetails.lastName,
@@ -336,6 +349,9 @@ export const editProposal = async (
                 message: 'Proposal updated successfully',
                 checkoutDetails,
                 cartId: cart.id,
+                subtotal,
+                discount: discount,
+                discountAmount,
                 calculatedTotalAmount,
                 email: user?.email,
             };

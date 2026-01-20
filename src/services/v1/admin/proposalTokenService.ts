@@ -32,7 +32,7 @@ export const createProposalToken = async (
         managementFeePercentage?: number | 0;
         discount?: number;
     },
-    influencerItems: { influencerId: string; price: number }[],
+    influencerItems: { influencerId: string; price: number, quantity?: number ,note?: string, profOfWork?: string}[],
     email: string,
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
@@ -53,6 +53,9 @@ export const createProposalToken = async (
                 cartItem.influencer = { id: item.influencerId } as any;
                 cartItem.price = item.price;
                 cartItem.isClientApproved = false; // Default to false
+                cartItem.quantity = item.quantity ?? 1;
+                cartItem.note = item.note;
+                cartItem.profOfWork = item.profOfWork;
                 return cartItem;
             });
 
@@ -60,7 +63,7 @@ export const createProposalToken = async (
             logger.info(`Added ${influencerCartItems.length} influencer items to cart: ${cart.id}`);
 
             /** ✅ Step 3: Create a Checkout Entry (like old createProposal) **/
-            const totalAmount = influencerCartItems.reduce((sum, item) => sum + Number(item.price), 0);
+            const totalAmount = influencerCartItems.reduce((sum, item) => sum + Number(item.price) * (item.quantity ?? 1) , 0);
             const checkout = new Checkout();
             checkout.cart = cart;
             checkout.totalAmount = totalAmount;
@@ -77,7 +80,7 @@ export const createProposalToken = async (
             billingDetails.campaignLiveDate = billingInfo.campaignLiveDate;
             billingDetails.note = billingInfo.note;
             billingDetails.managementFeePercentage = billingInfo.managementFeePercentage;
-            billingDetails.proposalStatus = 'sent';
+            billingDetails.proposalStatus = 'sent'; 
             billingDetails.invoiceStatus = 'Not Paid';
             billingDetails.paymentStatus = 'Unpaid';
             billingDetails.totalAmount = totalAmount;
@@ -174,10 +177,14 @@ export const getProposalByToken = async (token: string) => {
             influencerItems: proposalToken.cart.influencerCartItems.map((item) => ({
                 id: item.id,
                 influencerId: item.influencer.id,
-                influencer: item.influencer,
+                influencer: {
+                    ...item.influencer,
+                    quantity: item.quantity?.toString() || '1', // Add quantity to influencer object for frontend convenience
+                },
                 price: item.price,
                 note: item.note,
                 profOfWork: item.profOfWork,
+                quantity: item.quantity,
                 isClientApproved: item.isClientApproved,
             })),
             cartId: proposalToken.cart.id,
@@ -364,7 +371,7 @@ export const updateProposalTokenAndSendEmail = async (
         managementFeePercentage?: number | 0;
         discount?: number;
     },
-    influencerItems: { influencerId: string; price: number; note?: string; profOfWork?: string }[],
+    influencerItems: { influencerId: string; price: number; note?: string; profOfWork?: string; quantity?: number }[],
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
         try {
@@ -396,6 +403,7 @@ export const updateProposalTokenAndSendEmail = async (
             if (billingInfo.campaignLiveDate !== undefined) billingDetails.campaignLiveDate = billingInfo.campaignLiveDate;
             if (billingInfo.note !== undefined) billingDetails.note = billingInfo.note;
             if (billingInfo.managementFeePercentage !== undefined) billingDetails.managementFeePercentage = billingInfo.managementFeePercentage;
+            if (billingInfo.discount !== undefined) billingDetails.discount = billingInfo.discount; // Store discount in BillingDetails
             // Don't change proposalStatus - preserve existing status to avoid triggering invoice generation
             // Only update invoiceStatus and paymentStatus if they need to be reset
             billingDetails.proposalStatus = 'asked_for_change'; // REMOVED - preserve existing status
@@ -427,10 +435,11 @@ export const updateProposalTokenAndSendEmail = async (
                     existingItem.price = item.price;
                     existingItem.note = item.note ?? existingItem.note;
                     existingItem.profOfWork = item.profOfWork ?? existingItem.profOfWork;
+                    existingItem.quantity = item.quantity ?? existingItem.quantity ?? 1; // Update quantity
                     // Preserve isClientApproved status - don't reset it
                     await transactionalEntityManager.save(existingItem);
                     updatedCartItems.push(existingItem);
-                    logger.info(`Updated existing cart item for influencer ID: ${item.influencerId}`);
+                    logger.info(`Updated existing cart item for influencer ID: ${item.influencerId}, quantity: ${existingItem.quantity}`);
                 } else {
                     // Create new item
                     const newCartItem = new InfluencerCartItem();
@@ -439,10 +448,11 @@ export const updateProposalTokenAndSendEmail = async (
                     newCartItem.price = item.price;
                     newCartItem.note = item.note;
                     newCartItem.profOfWork = item.profOfWork;
+                    newCartItem.quantity = item.quantity ?? 1; // Set quantity, default to 1
                     newCartItem.isClientApproved = false; // Default to false for new items
                     const savedItem = await transactionalEntityManager.save(newCartItem);
                     updatedCartItems.push(savedItem);
-                    logger.info(`Created new cart item for influencer ID: ${item.influencerId}`);
+                    logger.info(`Created new cart item for influencer ID: ${item.influencerId}, quantity: ${savedItem.quantity}`);
                 }
             }
 
@@ -458,13 +468,23 @@ export const updateProposalTokenAndSendEmail = async (
 
             logger.info(`Updated ${updatedCartItems.length} influencer items in cart ID: ${cart.id}`);
 
-            /** Step 6: Recalculate & Update totalAmount **/
-            const calculatedTotalAmount = updatedCartItems.reduce((sum, item) => sum + Number(item.price), 0);
+            /** Step 6: Recalculate & Update totalAmount with Discount **/
+            // Calculate subtotal (sum of all items with quantity)
+            const subtotal = updatedCartItems.reduce(
+                (sum, item) => sum + Number(item.price) * (item.quantity ?? 1), 
+                0
+            );
+            
+            // Apply discount if provided (discount is a percentage)
+            const discount = billingInfo.discount ?? 0;
+            const discountAmount = discount > 0 ? (subtotal * discount) / 100 : 0;
+            const calculatedTotalAmount = subtotal - discountAmount;
+            
             checkout.totalAmount = calculatedTotalAmount;
             billingDetails.totalAmount = calculatedTotalAmount;
             await transactionalEntityManager.save(checkout);
             await transactionalEntityManager.save(billingDetails);
-            logger.info(`Updated totalAmount for checkout ID: ${checkoutId}, New Total: ${calculatedTotalAmount}`);
+            logger.info(`Updated totalAmount for checkout ID: ${checkoutId}, Subtotal: ${subtotal}, Discount: ${discount}%, Discount Amount: ${discountAmount}, New Total: ${calculatedTotalAmount}`);
 
             /** Step 7: Find or Update ProposalToken **/
             let proposalToken = await transactionalEntityManager.findOne(ProposalToken, {

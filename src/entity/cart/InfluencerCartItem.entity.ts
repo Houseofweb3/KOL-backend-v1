@@ -25,6 +25,9 @@ export class InfluencerCartItem extends BaseModel {
     @Column({ type: 'text', nullable: true })
     profOfWork?: string;
 
+    @Column({ type: 'numeric', nullable: true, default: 1 })
+    quantity!: number;
+
     // add a isClientApproved field
     @Column({ type: 'boolean', nullable: true, default: false })
     isClientApproved!: boolean;
