@@ -23,6 +23,7 @@ import {
 import { CouponCode, UserCoupon } from '../entity/couponCode';
 import { Bounty, BountySubmission } from '../entity/bounty';
 import { ProposalToken } from '../entity/proposalToken/ProposalToken.entity';
+import { ProposalPrToken } from '../entity/proposalToken/ProposalPrToken.entity';
 
 
 export const AppDataSource = new DataSource({
@@ -58,7 +59,8 @@ export const AppDataSource = new DataSource({
         Bounty,
         BountySubmission,
         Dr,
-        ProposalToken
+        ProposalToken,
+        ProposalPrToken
     ],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],

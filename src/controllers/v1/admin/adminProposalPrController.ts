@@ -2,7 +2,6 @@ import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import {
-    createProposalPr,
     getProposalPrDetails,
     editProposalPr,
     generateInvoicePdfPr,
@@ -16,45 +15,41 @@ import { Cart, DrCartItem, PackageCartItem } from '../../../entity/cart';
 import { convertHtmlToPdfBuffer } from '../../../utils/pdfGenerator';
 import { renderFile } from 'ejs';
 import { resolve } from 'path';
+import { createProposalPrToken } from '../../../services/v1/admin/proposalPrTokenService';
+import { updateProposalPrTokenAndSendEmail } from '../../../services/v1/admin/proposalPrTokenService';
+import { User } from '../../../entity/auth';
 
-// create proposal-pr
+// create proposal-pr - Now generates token and sends email instead of creating proposal-pr directly
 export const createProposalPrController = async (req: Request, res: Response) => {
-    const { userId, billingInfo, drItems } = req.body;
+    const { userId, billingInfo, drItems, email } = req.body;
     try {
-        const {
-            message,
-            checkoutPrId,
-            checkoutDetails,
-            cartId,
-            billingDetailsPrId,
-            totalAmount,
-            email,
-        } = await createProposalPr(userId, billingInfo, drItems);
+        // Get user email if not provided
+        let clientEmail = email;
+        if (!clientEmail) {
+            const userRepository = AppDataSource.getRepository(User);
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                throw { status: HttpStatus.NOT_FOUND, message: 'User not found' };
+            }
+            clientEmail = user.email;
+        }
 
-        // ✅ Send response immediately (DO NOT wait for invoice processing)
+        // Generate token and send email with link
+        const { message, token, expiresAt, cartId } = await createProposalPrToken(
+            userId,
+            billingInfo,
+            drItems,
+            clientEmail,
+        );
+
+        // ✅ Send response immediately
         res.status(HttpStatus.CREATED).json({
             message,
-            checkoutPrId,
-            checkoutDetails,
+            token,
+            expiresAt,
             cartId,
-            billingDetailsPrId,
-            totalAmount,
-            email,
+            email: clientEmail,
         });
-
-        // ✅ Process invoice in the background (no `await`, non-blocking)
-        fetchInvoiceDetailsPr(
-            cartId,
-            email,
-            billingInfo.managementFeePercentage ?? 0,
-            totalAmount,
-            billingInfo.discount ?? 5,
-            checkoutDetails,
-        )
-            .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
-            .catch((error) =>
-                logger.error(`Error processing invoice for cartId: ${cartId}: ${error}`),
-            );
     } catch (error: any) {
         const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         const errorMessage = error.message || 'An unknown error occurred while creating proposal-pr';
@@ -84,18 +79,22 @@ export const getProposalPrDetailsController = async (req: Request, res: Response
 
 // edit proposal-pr
 export const editProposalPrController = async (req: Request, res: Response) => {
+    console.log("editProposalPrController", "-----------------------------------------------------");
     const { checkoutPrId, billingInfo, drItems } = req.body;
     try {
-        const { message, checkoutDetails, cartId, email, calculatedTotalAmount } =
+
+        const { message, checkoutDetails, cartId, email, calculatedTotalAmount, subtotal, discount, discountAmount } =
             await editProposalPr(checkoutPrId, billingInfo, drItems);
+
         if (cartId && email && billingInfo?.proposalStatus === 'sent') {
             fetchInvoiceDetailsPr(
                 cartId,
                 email,
                 billingInfo.managementFeePercentage ?? 0,
                 calculatedTotalAmount,
-                billingInfo.discount ?? 5,
+                billingInfo.discount || 0,
                 checkoutDetails,
+
             )
                 .then(() => logger.info(`Invoice processing initiated for cartId: ${cartId}`))
                 .catch((error) =>
@@ -118,6 +117,36 @@ export const editProposalPrController = async (req: Request, res: Response) => {
         const errorMessage = error.message || 'An unknown error occurred while updating proposal-pr';
 
         logger.error(`Error while updating proposal-pr (${statusCode}): ${errorMessage}`);
+
+        return res.status(statusCode).json({ error: errorMessage });
+    }
+};
+
+// sent proposal-pr edit proposal-pr
+export const updateSentProposalPrController = async (req: Request, res: Response) => {
+    console.log("updateSentProposalPrController", "-----------------------------------------------------");
+
+    const { checkoutPrId, billingInfo, drItems } = req.body;
+    try {
+
+        const result = await updateProposalPrTokenAndSendEmail(checkoutPrId, billingInfo, drItems);
+        const { message, token, expiresAt, checkoutDetails, cartId, calculatedTotalAmount, email } = result;
+
+        // ✅ Send response immediately
+        res.status(HttpStatus.OK).json({
+            message,
+            token,
+            expiresAt,
+            checkoutDetails,
+            cartId,
+            calculatedTotalAmount,
+            email,
+        });
+    } catch (error: any) {
+        const statusCode = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        const errorMessage = error.message || 'An unknown error occurred while updating and resending proposal-pr';
+
+        logger.error(`Error while updating and resending proposal-pr (${statusCode}): ${errorMessage}`);
 
         return res.status(statusCode).json({ error: errorMessage });
     }
@@ -146,7 +175,12 @@ export const downloadProposalPrController = async (req: Request, res: Response) 
                 where: { cart: { id: cartId } },
                 relations: ['dr'],
             });
-            const drCartItems = drItemsData.sort(
+            // Ensure quantity is properly set for each item (default to 1 if not set)
+            const drCartItemsWithQuantity = drItemsData.map(item => ({
+                ...item,
+                quantity: item.quantity ?? 1, // Explicitly set quantity from cart item
+            }));
+            const drCartItems = drCartItemsWithQuantity.sort(
                 (a, b) => parseFloat(b?.price?.toString() || '0') - parseFloat(a?.price?.toString() || '0'),
             );
 
@@ -167,7 +201,7 @@ export const downloadProposalPrController = async (req: Request, res: Response) 
 
             const transformCartData = transformDataPr(data);
 
-            const templatePath = resolve(__dirname, '../../../templates/invoicePrTemplate2.0.0.ejs');
+            const templatePath = resolve(__dirname, '../../../templates/invoicePrTemplate2.0.ejs');
             const html = await renderFile(templatePath, transformCartData);
 
             const pdfBuffer = await convertHtmlToPdfBuffer(html as string);

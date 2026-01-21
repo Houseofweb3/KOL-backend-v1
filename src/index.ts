@@ -32,7 +32,7 @@ import { adminInfluencerRoutes } from './routes';
 import { adminClientRoutes } from './routes';
 import { adminAuthRoutes } from './routes';
 import { adminProposalRoutes, adminProposalPrRoutes } from './routes';
-import { proposalClientRoutes } from './routes';
+import { proposalClientRoutes, proposalClientPrRoutes } from './routes';
 import { adminDashboardRoutes } from './routes/v1/admin/adminDashboardRoutes';
 import { bountyRoutes } from './routes/v1/bounty/bounty.routes';
 import { bountySubmissionRoutes } from './routes/v1/bounty/bountySubmission.routes';
@@ -107,6 +107,8 @@ app.use(`/api/v${ENV.VERSION}/admin/proposal`, adminProposalRoutes);
 app.use(`/api/v${ENV.VERSION}/proposal`, proposalClientRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/proposal-pr`, adminProposalPrRoutes);
+// Client Proposal-Pr Routes (public routes for token-based access)
+app.use(`/api/v${ENV.VERSION}/proposal-pr`, proposalClientPrRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
 

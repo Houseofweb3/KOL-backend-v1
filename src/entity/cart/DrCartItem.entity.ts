@@ -22,6 +22,17 @@ export class DrCartItem extends BaseModel {
     @Column({ type: 'text', nullable: true })
     note?: string;
 
+    // add a profOfWork field
+    @Column({ type: 'text', nullable: true })
+    profOfWork?: string;
+
+    @Column({ type: 'numeric', nullable: true, default: 1 })
+    quantity!: number;
+
+    // add a isClientApproved field
+    @Column({ type: 'boolean', nullable: true, default: false })
+    isClientApproved!: boolean;
+
     @ManyToOne(() => Cart, (cart) => cart.drCartItems)
     @JoinColumn({ name: 'cart_id' })
     cart!: Cart;

@@ -88,7 +88,7 @@ export const fetchInvoiceDetailsPr = async (
         const transformCartData = transformDataPr(data);
 
         // Generate HTML from EJS template using an absolute path
-        const templatePath = resolve(__dirname, '../../../templates/invoiceTemplate2.0.ejs');
+        const templatePath = resolve(__dirname, '../../../templates/invoicePrTemplate2.0.ejs');
         logger.info('****** templatePath ****');
         logger.info(transformCartData);
         const html = await renderFile(templatePath, transformCartData);

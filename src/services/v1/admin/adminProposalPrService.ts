@@ -93,7 +93,7 @@ export const createProposalPr = async (
         managementFeePercentage?: number | 0;
         discount?: number;
     },
-    drItems: { drId: string; price: number }[]
+    drItems: { drId: string; price: number; quantity?: number; note?: string; profOfWork?: string }[]
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
         try {
@@ -112,6 +112,9 @@ export const createProposalPr = async (
                 cartItem.cart = cart;
                 cartItem.dr = { id: item.drId } as any; // Assign DR by ID
                 cartItem.price = item.price;
+                cartItem.quantity = item.quantity ?? 1;
+                cartItem.note = item.note;
+                cartItem.profOfWork = item.profOfWork;
                 return cartItem;
             });
 
@@ -119,7 +122,7 @@ export const createProposalPr = async (
             logger.info(`Added ${drCartItems.length} DR items to cart: ${cart.id}`);
 
             /** ✅ Step 3: Create a CheckoutPr Entry **/
-            const totalAmount = drCartItems.reduce((sum, item) => sum + item.price, 0);
+            const totalAmount = drCartItems.reduce((sum, item) => sum + Number(item.price) * (item.quantity ?? 1), 0);
             const checkoutPr = new CheckoutPr();
             checkoutPr.cart = cart;
             checkoutPr.totalAmount = totalAmount;
@@ -220,12 +223,20 @@ export const getProposalPrDetails = async (checkoutPrId: string) => {
 export const editProposalPr = async (
     checkoutPrId: string,
     updatedBillingInfo: {
-        managementFeePercentage?: number | 0,
-        proposalStatus?: string,
-        invoiceStatus?: string,
-        paymentStatus?: string,
+        firstName?: string;
+        lastName?: string;
+        projectName?: string;
+        telegramId?: string;
+        projectUrl?: string;
+        campaignLiveDate?: Date;
+        note?: string;
+        managementFeePercentage?: number | 0;
+        discount?: number;
+        proposalStatus?: string;
+        invoiceStatus?: string;
+        paymentStatus?: string;
     },
-    updatedDrItems: { drId: string; price: number, note?: string, }[]
+    updatedDrItems: { drId: string; price: number; quantity?: number; note?: string; profOfWork?: string }[]
 ) => {
     return await AppDataSource.transaction(async (transactionalEntityManager) => {
         try {
@@ -251,39 +262,93 @@ export const editProposalPr = async (
 
 
             /** ✅ Step 3: Update Billing Details (Only if provided) **/
-            Object.assign(billingDetailsPr, {
-                managementFeePercentage: updatedBillingInfo.managementFeePercentage ?? billingDetailsPr.managementFeePercentage,
-                proposalStatus: updatedBillingInfo.proposalStatus ?? billingDetailsPr.proposalStatus,
-                invoiceStatus: updatedBillingInfo.invoiceStatus ?? billingDetailsPr.invoiceStatus,
-                paymentStatus: updatedBillingInfo.paymentStatus ?? billingDetailsPr.paymentStatus,
-            });
+            if (updatedBillingInfo.firstName) billingDetailsPr.firstName = updatedBillingInfo.firstName;
+            if (updatedBillingInfo.lastName) billingDetailsPr.lastName = updatedBillingInfo.lastName;
+            if (updatedBillingInfo.projectName !== undefined) billingDetailsPr.projectName = updatedBillingInfo.projectName;
+            if (updatedBillingInfo.telegramId !== undefined) billingDetailsPr.telegramId = updatedBillingInfo.telegramId;
+            if (updatedBillingInfo.projectUrl !== undefined) billingDetailsPr.projectUrl = updatedBillingInfo.projectUrl;
+            if (updatedBillingInfo.campaignLiveDate !== undefined) billingDetailsPr.campaignLiveDate = updatedBillingInfo.campaignLiveDate;
+            if (updatedBillingInfo.note !== undefined) billingDetailsPr.note = updatedBillingInfo.note;
+            if (updatedBillingInfo.managementFeePercentage !== undefined) billingDetailsPr.managementFeePercentage = updatedBillingInfo.managementFeePercentage;
+            if (updatedBillingInfo.discount !== undefined) billingDetailsPr.discount = updatedBillingInfo.discount;
+            if (updatedBillingInfo.proposalStatus !== undefined) billingDetailsPr.proposalStatus = updatedBillingInfo.proposalStatus;
+            if (updatedBillingInfo.invoiceStatus !== undefined) billingDetailsPr.invoiceStatus = updatedBillingInfo.invoiceStatus;
+            if (updatedBillingInfo.paymentStatus !== undefined) billingDetailsPr.paymentStatus = updatedBillingInfo.paymentStatus;
 
             await transactionalEntityManager.save(billingDetailsPr);
             logger.info(`Updated BillingDetailsPr for checkoutPr ID: ${checkoutPrId}`);
 
-            /** ✅ Step 4: Remove Existing DrCartItems **/
-            await transactionalEntityManager.delete(DrCartItem, { cart: { id: cart.id } });
-            logger.info(`Removed existing DR cart items for cart ID: ${cart.id}`);
-
-            /** ✅ Step 5: Add New DrCartItems **/
-            const newDrCartItems = updatedDrItems.map((item) => {
-                const cartItem = new DrCartItem();
-                cartItem.cart = cart;
-                cartItem.dr = { id: item.drId } as any;
-                cartItem.price = item.price;
-                cartItem.note = item.note;
-                return cartItem;
+            /** ✅ Step 4: Fetch Existing DrCartItems **/
+            const existingCartItems = await transactionalEntityManager.find(DrCartItem, {
+                where: { cart: { id: cart.id } },
+                relations: ['dr'],
             });
+            logger.info(`Found ${existingCartItems.length} existing DR cart items for cart ID: ${cart.id}`);
 
-            await transactionalEntityManager.save(newDrCartItems);
-            logger.info(`Added ${newDrCartItems.length} DR items to cart ID: ${cart.id}`);
+            /** ✅ Step 5: Update or Create DrCartItems **/
+            const updatedCartItems: DrCartItem[] = [];
+            const updatedDrIds = new Set(updatedDrItems.map(item => item.drId));
 
-            /** ✅ Step 6: Recalculate & Update `totalAmount` **/
-            const calculatedTotalAmount = newDrCartItems.reduce((sum, item) => sum + item.price, 0);
+            // Update existing items or create new ones
+            for (const item of updatedDrItems) {
+                const existingItem = existingCartItems.find(
+                    (cartItem) => cartItem.dr.id === item.drId
+                );
+
+                if (existingItem) {
+                    // Update existing item
+                    existingItem.price = item.price;
+                    existingItem.note = item.note ?? existingItem.note;
+                    existingItem.profOfWork = item.profOfWork ?? existingItem.profOfWork;
+                    existingItem.quantity = item.quantity ?? existingItem.quantity ?? 1; // Update quantity
+                    // Preserve isClientApproved status - don't reset it
+                    await transactionalEntityManager.save(existingItem);
+                    updatedCartItems.push(existingItem);
+                    logger.info(`Updated existing cart item for DR ID: ${item.drId}, quantity: ${existingItem.quantity}`);
+                } else {
+                    // Create new item
+                    const newCartItem = new DrCartItem();
+                    newCartItem.cart = cart;
+                    newCartItem.dr = { id: item.drId } as any;
+                    newCartItem.price = item.price;
+                    newCartItem.note = item.note;
+                    newCartItem.profOfWork = item.profOfWork;
+                    newCartItem.quantity = item.quantity ?? 1; // Set quantity, default to 1
+                    newCartItem.isClientApproved = false; // Default to false for new items
+                    const savedItem = await transactionalEntityManager.save(newCartItem);
+                    updatedCartItems.push(savedItem);
+                    logger.info(`Created new cart item for DR ID: ${item.drId}, quantity: ${savedItem.quantity}`);
+                }
+            }
+
+            // Remove items that are not in the updated list
+            const itemsToRemove = existingCartItems.filter(
+                (item) => !updatedDrIds.has(item.dr.id)
+            );
+
+            if (itemsToRemove.length > 0) {
+                await transactionalEntityManager.remove(itemsToRemove);
+                logger.info(`Removed ${itemsToRemove.length} cart items that were not in the update list`);
+            }
+
+            logger.info(`Updated ${updatedCartItems.length} DR items in cart ID: ${cart.id}`);
+
+            /** ✅ Step 6: Recalculate & Update totalAmount with Discount **/
+            // Calculate subtotal (sum of all items with quantity)
+            const subtotal = updatedCartItems.reduce(
+                (sum, item) => sum + Number(item.price) * (item.quantity ?? 1),
+                0
+            );
+
+            // Apply discount if provided (discount is a percentage)
+            const discount = updatedBillingInfo.discount ?? 0;
+            const discountAmount = discount > 0 ? (subtotal * discount) / 100 : 0;
+            const calculatedTotalAmount = subtotal - discountAmount;
             checkoutPr.totalAmount = calculatedTotalAmount;
+            billingDetailsPr.totalAmount = calculatedTotalAmount;
             await transactionalEntityManager.save(checkoutPr);
-
-            logger.info(`Updated totalAmount for checkoutPr ID: ${checkoutPrId}, New Total: ${checkoutPr.totalAmount}`);
+            await transactionalEntityManager.save(billingDetailsPr);
+            logger.info(`Updated totalAmount for checkoutPr ID: ${checkoutPrId}, Subtotal: ${subtotal}, Discount: ${discount}%, Discount Amount: ${discountAmount}, New Total: ${calculatedTotalAmount}`);
             const checkoutDetails = {
                 firstName: billingDetailsPr.firstName,
                 lastName: billingDetailsPr.lastName,
@@ -300,6 +365,9 @@ export const editProposalPr = async (
                 checkoutDetails,
                 cartId: cart.id,
                 calculatedTotalAmount,
+                subtotal,
+                discount,
+                discountAmount,
                 email: user?.email,
             };
 
