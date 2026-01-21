@@ -292,27 +292,27 @@ export const validateDomainLimit = async (email: string): Promise<void> => {
     // ✅ Skip domain limit check for ALLOWED_DOMAINS
     if (ALLOWED_DOMAINS.includes(emailDomain)) return;
 
-    try {
-        // Fetch count of users with the same domain from DB
-        const userRepository = AppDataSource.getRepository(User);
-        const domainCount = await userRepository.count({
-            where: { email: Like(`%@${emailDomain}`) },
-        });
-
-        if (domainCount >= 2) {
-            throw {
-                status: HttpStatus.FORBIDDEN,
-                message: 'Only 2 accounts per domain are allowed',
-            };
-        }
-    } catch (error: any) {
-        if (error.status) throw error; // Pass custom errors forward
-        logger.error(`Error validating domain limit: ${error.message}`);
-        throw {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: 'An unknown error occurred while validating the domain',
-        };
-    }
+//     try {
+//         // Fetch count of users with the same domain from DB
+//         const userRepository = AppDataSource.getRepository(User);
+//         const domainCount = await userRepository.count({
+//             where: { email: Like(`%@${emailDomain}`) },
+//         });
+// 
+//         // if (domainCount >= 2) {
+//         //     throw {
+//         //         status: HttpStatus.FORBIDDEN,
+//         //         message: 'Only 2 accounts per domain are allowed',
+//         //     };
+//         // }
+//     } catch (error: any) {
+//         if (error.status) throw error; // Pass custom errors forward
+//         logger.error(`Error validating domain limit: ${error.message}`);
+//         throw {
+//             status: HttpStatus.INTERNAL_SERVER_ERROR,
+//             message: 'An unknown error occurred while validating the domain',
+//         };
+//     }
 };
 
 export const createUser = async (
