@@ -112,8 +112,6 @@ app.use(`/api/v${ENV.VERSION}/proposal-pr`, proposalClientPrRoutes);
 
 app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
 
-
-
 // Bounty Routes
 app.use(`/api/v${ENV.VERSION}/user/bounty`, userProfileRoutes);
 
