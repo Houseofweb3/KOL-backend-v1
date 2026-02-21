@@ -1,147 +1,88 @@
-import 'reflect-metadata';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
 import { createServer, Server as HttpServer } from 'http';
 import express, { Application, Request, Response } from 'express';
 
 import { ENV } from './config/env';
 import logger from './config/logger';
-import swaggerDocument from './swagger.json';
 import { AppDataSource } from './config/data-source';
-
-// Import CORS middleware
 import corsMiddleware from './middleware/cors';
 
-// Importing routes
-import { cartRoutes } from './routes';
-import { optionRoutes } from './routes';
-import { userRoutes } from './routes';
-import { packageRoutes } from './routes';
-import { checkoutRoutes, checkoutPrRoutes } from './routes';
-import { questionRoutes } from './routes';
-import { utilsRoutes } from './routes';
-import { influencerRoutes } from './routes';
-import { invoiceRoutes } from './routes';
-import { packageItemRoutes } from './routes';
-import { packageCartItemRoutes } from './routes';
-import { influencerCartItemRoutes } from './routes';
-import { onboardingQuestionsRoutes } from './routes';
-import { userOnboardingSelectionRoutes } from './routes';
-import { couponRoutes } from './routes';
-import { adminInfluencerRoutes } from './routes';
-import { adminClientRoutes } from './routes';
-import { adminAuthRoutes } from './routes';
-import { adminProposalRoutes, adminProposalPrRoutes } from './routes';
-import { proposalClientRoutes, proposalClientPrRoutes } from './routes';
-import { adminDashboardRoutes } from './routes/v1/admin/adminDashboardRoutes';
-import { bountyRoutes } from './routes/v1/bounty/bounty.routes';
-import { bountySubmissionRoutes } from './routes/v1/bounty/bountySubmission.routes';
-import { bountyBookingRoutes } from './routes/v1/bounty/bountyBooking.routes';
-import { userProfileRoutes } from './routes/v1/bounty/user.route';
-import { dkRoutes } from './routes/v1/dr';
+import {
+    cartRoutes,
+    userRoutes,
+    checkoutRoutes,
+    checkoutPrRoutes,
+    utilsRoutes,
+    influencerRoutes,
+    invoiceRoutes,
+    packageCartItemRoutes,
+    influencerCartItemRoutes,
+    couponRoutes,
+    adminInfluencerRoutes,
+    adminClientRoutes,
+    adminAuthRoutes,
+    adminProposalRoutes,
+    adminProposalPrRoutes,
+    proposalClientRoutes,
+    proposalClientPrRoutes,
+    bountyRoutes,
+    adminDashboardRoutes,
+    dkRoutes,
+    userProfileRoutes,
+    bountyBookingRoutes,
+    bountySubmissionRoutes,
+    packageRoutes,
+} from './routes';
+
 
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
-const options = {
-    swaggerDefinition: swaggerDocument,
-    apis: ['./src/routes/*.ts', './src/models/*.ts'], // Path to the API docs
-};
-
-const specs = swaggerJsdoc(options);
-
-// Use CORS middleware
 app.use(corsMiddleware);
-
-// Middleware to parse JSON bodies
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // To parse URL-encoded data
+app.use(express.urlencoded({ extended: true }));
 
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
+const apiBase = `/api/v${ENV.VERSION}`;
 
-// v1 Routes
-// user auth routes
-app.use(`/api/v${ENV.VERSION}/auth`, userRoutes);
-// questionRoutes
-app.use(`/api/v${ENV.VERSION}/questions`, questionRoutes);
-// optionRoutes
-app.use(`/api/v${ENV.VERSION}/options`, optionRoutes);
-// onboarding-questions routes
-app.use(`/api/v${ENV.VERSION}/onboarding-questions`, onboardingQuestionsRoutes);
-// user-onboarding-selections routes
-app.use(`/api/v${ENV.VERSION}/user-onboarding-selections`, userOnboardingSelectionRoutes);
-// InfluencerRoutes
-app.use(`/api/v${ENV.VERSION}/influencer`, influencerRoutes);
-// package Routes
-app.use(`/api/v${ENV.VERSION}/packages`, packageRoutes);
-// Package Item Routes
-app.use(`/api/v${ENV.VERSION}/package-items`, packageItemRoutes);
-// Cart Routes
-app.use(`/api/v${ENV.VERSION}/cart`, cartRoutes);
-// influencer Cart Item Routes
-app.use(`/api/v${ENV.VERSION}/influencer-cart-item`, influencerCartItemRoutes);
-// package Cart Item Routes
-app.use(`/api/v${ENV.VERSION}/package-cart-item`, packageCartItemRoutes);
-// checkout Routes
-app.use(`/api/v${ENV.VERSION}/checkout`, checkoutRoutes);
-// checkoutPr Routes
-app.use(`/api/v${ENV.VERSION}/checkout-pr`, checkoutPrRoutes);
-// invoice Routes
-app.use(`/api/v${ENV.VERSION}/invoice`, invoiceRoutes);
+app.use(`${apiBase}/auth`, userRoutes);
+// app.use(`${apiBase}/questions`, questionRoutes);
+// app.use(`${apiBase}/options`, optionRoutes);
+// app.use(`${apiBase}/onboarding-questions`, onboardingQuestionsRoutes);
+// app.use(`${apiBase}/user-onboarding-selections`, userOnboardingSelectionRoutes);
+app.use(`${apiBase}/influencer`, influencerRoutes);
+app.use(`${apiBase}/packages`, packageRoutes);
+// app.use(`${apiBase}/package-items`, packageItemRoutes);
+app.use(`${apiBase}/cart`, cartRoutes);
+app.use(`${apiBase}/influencer-cart-item`, influencerCartItemRoutes);
+app.use(`${apiBase}/package-cart-item`, packageCartItemRoutes);
+app.use(`${apiBase}/checkout`, checkoutRoutes);
+app.use(`${apiBase}/checkout-pr`, checkoutPrRoutes);
+app.use(`${apiBase}/invoice`, invoiceRoutes);
+app.use(`${apiBase}/coupons`, couponRoutes);
+app.use(`${apiBase}/proposal`, proposalClientRoutes);
+app.use(`${apiBase}/proposal-pr`, proposalClientPrRoutes);
 
-// coupon Routes
-app.use(`/api/v${ENV.VERSION}/coupons`, couponRoutes);
-// utils Routes
-app.use(`/api/v${ENV.VERSION}/utils`, utilsRoutes);
+app.use(`${apiBase}/admin/auth`, adminAuthRoutes);
+app.use(`${apiBase}/admin/client`, adminClientRoutes);
+app.use(`${apiBase}/admin/dashboard-details`, adminDashboardRoutes);
+app.use(`${apiBase}/admin/influencer`, adminInfluencerRoutes);
+app.use(`${apiBase}/admin/proposal`, adminProposalRoutes);
+app.use(`${apiBase}/admin/dr`, dkRoutes);
+app.use(`${apiBase}/admin/proposal-pr`, adminProposalPrRoutes);
 
-// Admin Influencer Routes
-app.use(`/api/v${ENV.VERSION}/admin/influencer`, adminInfluencerRoutes);
+app.use(`${apiBase}/user/bounty`, userProfileRoutes);
+app.use(`${apiBase}/bounty`, bountyRoutes);
+app.use(`${apiBase}/bounty-booking`, bountyBookingRoutes);
+app.use(`${apiBase}/bounty-submission`, bountySubmissionRoutes);
 
-// Admin Client Routes
-app.use(`/api/v${ENV.VERSION}/admin/client`, adminClientRoutes);
-
-app.use(`/api/v${ENV.VERSION}/admin/auth`, adminAuthRoutes);
-
-app.use(`/api/v${ENV.VERSION}/admin/proposal`, adminProposalRoutes);
-// Client Proposal Routes (public routes for token-based access)
-app.use(`/api/v${ENV.VERSION}/proposal`, proposalClientRoutes);
-
-app.use(`/api/v${ENV.VERSION}/admin/proposal-pr`, adminProposalPrRoutes);
-// Client Proposal-Pr Routes (public routes for token-based access)
-app.use(`/api/v${ENV.VERSION}/proposal-pr`, proposalClientPrRoutes);
-
-app.use(`/api/v${ENV.VERSION}/admin/dashboard-details`, adminDashboardRoutes);
-
-// Bounty Routes
-app.use(`/api/v${ENV.VERSION}/user/bounty`, userProfileRoutes);
-
-// Bounty Routes
-app.use(`/api/v${ENV.VERSION}/bounty`, bountyRoutes);
-
-// Bounty Feedback Routes
-app.use(`/api/v${ENV.VERSION}/bounty-booking`, bountyBookingRoutes);
-
-// Bounty Submission Routes
-app.use(`/api/v${ENV.VERSION}/bounty-submission`, bountySubmissionRoutes);
-
-// DR Submission Routes
-app.use(`/api/v${ENV.VERSION}/admin/dr`, dkRoutes);
-
-// Dummy API
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
     res.send('It is working');
 });
 
-// Initialize TypeORM data source
 AppDataSource.initialize()
-    .then(async () => {
+    .then(() => {
         logger.info('Database connected successfully');
-
         const server: HttpServer = createServer(app);
-
-        server.listen(port, () => {
-            logger.info(`Server is running on port ${port}`);
-        });
+        server.listen(port, () => logger.info(`Server is running on port ${port}`));
     })
     .catch((error) => {
         logger.error('Database connection failed:', error);

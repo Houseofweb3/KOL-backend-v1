@@ -9,7 +9,6 @@ import { OTP } from '../../../entity/auth/Otp.entity';
 import { AppDataSource } from '../../../config/data-source';
 import { generateAccessToken, generateRefreshToken } from '../../../middleware/auth';
 import { sendWelcomeEmail, sendOtpEmail } from '../../../utils/communication/ses/emailSender';
-import { create } from 'domain';
 import { FindOperator, ILike } from 'typeorm';
 import { MessageApiClient } from '@cmdotcom/text-sdk';
 

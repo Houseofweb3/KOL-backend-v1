@@ -4,6 +4,7 @@ import { BaseModel } from '../../utils/baseEntities/BaseModel';
 import { UserCoupon } from '../couponCode/userCoupon.entity';
 import { UserOnboardingSelection } from '../onboarding/UserOnboardingSelection.entity';
 import { BountySubmission } from '../bounty/bountyRelation.entity';
+import { Role } from './Role.enum';
 
 export enum UserType {
     USER = 'user',
@@ -69,7 +70,7 @@ export class User extends BaseModel {
     })
     userType!: UserType;
 
-    // Admin role (null if regular user)
+    // Admin role (null if regular user) - legacy
     @Column({
         type: 'enum',
         enum: UserRole,
@@ -77,6 +78,15 @@ export class User extends BaseModel {
         default: null,
     })
     role?: UserRole | null;
+
+    // Client role for auth: admin | admin_user | user
+    @Column({
+        type: 'enum',
+        enum: Role,
+        default: Role.USER,
+        name: 'client_role',
+    })
+    clientRole!: Role;
 
     // Add json field to store address info
     @Column({ type: 'json', nullable: true })

@@ -1,18 +1,19 @@
 import express from 'express';
 
 import {
-    getAllUsersController, getUserByIdController, updateUserController
+    getAllUsersController,
+    getUserByIdController,
+    createClientController,
+    updateUserController,
+    downloadClientsController,
 } from '../../../controllers/v1/admin/adminClientController';
 
 const router = express.Router();
 
-// get all users route
+router.post('/', createClientController);
 router.get('/', getAllUsersController);
-
-// get user by id route
+router.get('/download', downloadClientsController);
 router.get('/:id', getUserByIdController);
-
-// update user route
 router.patch('/:id', updateUserController);
 
 export { router as adminClientRoutes };

@@ -21,6 +21,11 @@ export const generateRefreshToken = ({ id, type }: JwtPayload): string => {
     return jwt.sign({ id, type }, jwtRefreshSecret, { expiresIn: '7d' }); // Refresh token valid for 7 days
 };
 
+/** Single JWT token, expires in 3 days. Use for Admin and User (client) auth when refresh token is not used. */
+export const generateToken3Days = (payload: JwtPayload): string => {
+    return jwt.sign(payload, jwtSecret, { expiresIn: '3d' });
+};
+
 // TODO: This needs to be added in a lot of APIs. Do it carefully.
 export const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.header('Authorization');

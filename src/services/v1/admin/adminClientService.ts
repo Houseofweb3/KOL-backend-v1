@@ -1,10 +1,74 @@
+import bcrypt from 'bcryptjs';
 import logger from '../../../config/logger';
-import { User } from '../../../entity/auth';
+import { User, UserType, UserRole } from '../../../entity/auth';
 import { AppDataSource } from '../../../config/data-source';
 import { Brackets } from 'typeorm';
+import HttpStatus from 'http-status-codes';
+import { validateGmail, validateDomainLimit } from '../auth/user-service';
 
 const DEFAULT_SORT_FIELD = 'createdAt';
 const DEFAULT_SORT_ORDER = 'DESC';
+
+/**
+ * Create client (user) with same payload as signup. Password is hashed, defaults applied.
+ * Required: email, password, fullname, type. Rest optional / auto.
+ */
+export const createClient = async (
+    email: string,
+    password: string,
+    fullname?: string,
+    type?: string,
+    projectName?: string,
+    telegramId?: string,
+    projectUrl?: string,
+    phoneNumber?: string,
+    role?: string,
+    firstName?: string,
+    lastName?: string,
+    addressInfo?: Record<string, string>,
+    profilePicture?: string
+) => {
+    try {
+        validateGmail(email);
+        await validateDomainLimit(email);
+
+        const userRepository = AppDataSource.getRepository(User);
+        const existing = await userRepository.findOne({ where: { email } });
+        if (existing) {
+            const err = new Error('User with this email already exists');
+            (err as any).status = HttpStatus.CONFLICT;
+            throw err;
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const validRole = UserRole.USER;
+
+        const newUser = userRepository.create({
+            email,
+            password: hashedPassword,
+            fullname,
+            userType: (type as UserType) || UserType.USER,
+            projectName,
+            telegramId,
+            projectUrl,
+            phoneNumber,
+            firstName,
+            lastName,
+            role: validRole,
+            addressInfo,
+            profilePicture,
+            is_deleted: false,
+        });
+
+        const saved = await userRepository.save(newUser);
+        const { password: _p, ...userWithoutPassword } = saved;
+        return userWithoutPassword;
+    } catch (error: any) {
+        if (error.status) throw error;
+        logger.error(`Error while creating client: ${error.message}`);
+        throw error;
+    }
+};
 
 // serivce to get all users, add sorting and pagination for admin
 export const getAllUsers = async (
@@ -34,8 +98,10 @@ export const getAllUsers = async (
 
         const [users, total] = await query.getManyAndCount();
 
+        const usersWithoutPassword = users.map(({ password, ...user }) => user);
+
         return {
-            users,
+            users: usersWithoutPassword,
             pagination: {
                 page: page || 1, // Default to page 1
                 limit: limit || 10, // Default limit
@@ -50,31 +116,39 @@ export const getAllUsers = async (
     }
 };
 
+// get all clients for export/download (no pagination, no password)
+export const getAllClientsForExport = async () => {
+    try {
+        const userSelect = [
+            'user.id', 'user.email', 'user.fullname', 'user.profilePicture',
+            'user.firstName', 'user.lastName', 'user.projectName', 'user.telegramId',
+            'user.projectUrl', 'user.phoneNumber', 'user.is_deleted', 'user.userType',
+            'user.role', 'user.addressInfo', 'user.createdAt', 'user.updatedAt', 'user.deletedAt'
+        ];
+        const users = await AppDataSource.getRepository(User)
+            .createQueryBuilder('user')
+            .select(userSelect)
+            .orderBy('user.email', 'ASC')
+            .getMany();
+        return users;
+    } catch (error) {
+        logger.error('Error while fetching all clients for export:', error);
+        throw error;
+    }
+};
+
 // service to get user by id with try catch block
 export const getUserById = async (id: string) => {
     const userRepository = AppDataSource.getRepository(User);
     try {
         const user = await userRepository.findOneOrFail({ where: { id }, relations: ['carts.checkout'] });
-        return user;
+        const { password: _p, ...userWithoutPassword } = user;
+        return userWithoutPassword;
     } catch (error) {
         logger.error(`Error while fetching user with id ${id}`);
         throw error;
     }
 }
-
-
-// service to create user with try catch block
-export const createUser = async (user: User) => {
-    const userRepository = AppDataSource.getRepository(User);
-    try {
-        const newUser = await userRepository.save(user);
-        return newUser;
-    } catch (error) {
-        logger.error(`Error while creating user`);
-        throw error;
-    }
-};
-
 
 // service to update user with try catch block
 export const updateUser = async (id: string, user: User) => {

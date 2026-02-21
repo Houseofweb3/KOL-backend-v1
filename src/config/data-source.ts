@@ -8,7 +8,7 @@ import { PackageItem } from '../entity/package';
 import { PackageCartItem } from '../entity/cart';
 import { Influencer } from '../entity/influencer';
 import { InfluencerCartItem, DrCartItem } from '../entity/cart';
-import { User, RefreshToken } from '../entity/auth';
+import { User, Admin, RefreshToken } from '../entity/auth';
 import { BillingDetails } from '../entity/billingDetails';
 import { CheckoutPr } from '../entity/checkoutPr';
 import { BillingDetailsPr } from '../entity/billingDetailsPr';
@@ -37,6 +37,7 @@ export const AppDataSource = new DataSource({
     logging: false,
     entities: [
         User,
+        Admin,
         Influencer,
         Package,
         PackageItem,
