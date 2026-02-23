@@ -154,9 +154,18 @@ export async function sendProposalLinkEmail(
     clientName: string,
     proposalLink: string,
 ): Promise<any> {
+
+    let toAddresses = [];
+    if(email === 'kolops@houseofweb3.com') {
+       toAddresses = [email];
+    }else{
+        toAddresses = [email, 'kolops@houseofweb3.com'];
+    }
+
+    console.log('toAddresses', toAddresses);
     const info = await transporter.sendMail({
         from: '"Ampli5" <partnerships@houseofweb3.com>',
-        to: email,
+        to: toAddresses,
         subject: 'Review Your Proposal - Ampli5',
         text: `Dear ${clientName},
 

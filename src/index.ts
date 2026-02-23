@@ -1,12 +1,9 @@
 import 'reflect-metadata';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
 import { createServer, Server as HttpServer } from 'http';
 import express, { Application, Request, Response } from 'express';
 
 import { ENV } from './config/env';
 import logger from './config/logger';
-import swaggerDocument from './swagger.json';
 import { AppDataSource } from './config/data-source';
 
 // Import CORS middleware
@@ -43,12 +40,8 @@ import { dkRoutes } from './routes/v1/dr';
 const app: Application = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
-const options = {
-    swaggerDefinition: swaggerDocument,
-    apis: ['./src/routes/*.ts', './src/models/*.ts'], // Path to the API docs
-};
 
-const specs = swaggerJsdoc(options);
+
 
 // Use CORS middleware
 app.use(corsMiddleware);
@@ -56,8 +49,6 @@ app.use(corsMiddleware);
 // Middleware to parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // To parse URL-encoded data
-
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // v1 Routes
 // user auth routes
