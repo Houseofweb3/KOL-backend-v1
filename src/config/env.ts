@@ -7,7 +7,7 @@ dotenvSafe.config({
 });
 
 interface Env {
-  NODE_ENV: 'dev' | 'prod'; // Restrict to 'dev' or 'prod'
+  NODE_ENV: 'dev' | 'prod';
   PORT: string;
   DB_HOST: string;
   DB_PORT: string;
@@ -15,26 +15,48 @@ interface Env {
   DB_PASSWORD: string;
   DB_DATABASE: string;
   JWT_SECRET: string;
-  REFRESH_JWT_SECRET: string;
   VERSION: number;
-  REFRESH_TOKEN_EXPIRATION_DAYS: number
-
+  // AWS
+  AWS_S3_BUCKET_NAME: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
+  AWS_REGION: string;
+  // Email
+  EMAIL_USER: string;
+  EMAIL_PASS: string;
+  BOUNTY_EMAIL_USER: string;
+  BOUNTY_EMAIL_PASS: string;
+  // Client URLs
+  CLIENT_WEB_URL: string;
+  CLIENT_PROPOSAL_WEB_URL: string;
+  // OTP (admin/auth)
+  OTP_EXPIRY_MINUTES: number;
+  OTP_LENGTH: number;
 }
 
 export const ENV: Env = {
-  NODE_ENV: process.env.NODE_ENV as 'dev' | 'prod' || '', // Type assertion
-  PORT: process.env.PORT || '',
+  NODE_ENV: (process.env.NODE_ENV as 'dev' | 'prod') || 'dev',
+  PORT: process.env.PORT || '3000',
   DB_HOST: process.env.DB_HOST || '',
   DB_PORT: process.env.DB_PORT || '5432',
   DB_USERNAME: process.env.DB_USERNAME || '',
   DB_PASSWORD: process.env.DB_PASSWORD || '',
   DB_DATABASE: process.env.DB_DATABASE || '',
   JWT_SECRET: process.env.JWT_SECRET || '',
-  REFRESH_JWT_SECRET: process.env.REFRESH_JWT_SECRET || '',
   VERSION: parseInt(process.env.VERSION || '1', 10),
-  REFRESH_TOKEN_EXPIRATION_DAYS: parseInt(process.env.REFRESH_TOKEN_EXPIRATION_DAYS || "7", 10)
-
-}
+  AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME || '',
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
+  AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+  EMAIL_USER: process.env.EMAIL_USER || '',
+  EMAIL_PASS: process.env.EMAIL_PASS || '',
+  BOUNTY_EMAIL_USER: process.env.BOUNTY_EMAIL_USER || '',
+  BOUNTY_EMAIL_PASS: process.env.BOUNTY_EMAIL_PASS || '',
+  CLIENT_WEB_URL: process.env.CLIENT_WEB_URL || '',
+  CLIENT_PROPOSAL_WEB_URL: process.env.CLIENT_PROPOSAL_WEB_URL || '',
+  OTP_EXPIRY_MINUTES: parseInt(process.env.OTP_EXPIRY_MINUTES || '10', 10),
+  OTP_LENGTH: parseInt(process.env.OTP_LENGTH || '6', 10),
+};
 
 // Validate required variables
 const requiredVars = [

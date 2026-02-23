@@ -1,17 +1,15 @@
-// TODO: Check the API structures
-export * from './auth';
-export * from './cart';
-export * from './utils';
-export * from './payment';
-export * from './package';
-export * from './checkout';
-export * from './coupon';
-export * from './influencer';
-export * from './admin';
-export * from './bounty';
-export * from './client';
-export * from './dr';
-export * from './admin/adminDashboardRoutes';
-export * from './bounty/bountySubmission.routes';
-export * from './bounty/bountyBooking.routes';
-export * from './bounty/user.route';
+import express from 'express';
+import { adminRoutes } from './admin/index';
+import { webRoutes } from './web/index';
+
+/**
+ * All v1 API routes. Mounted at apiBase in app (e.g. /api/v1).
+ *   - admin/  → /api/v1/admin (auth: signup, login, logout, OTP + PATCH users/:id)
+ *   - web/    → /api/v1/web
+ */
+const router = express.Router();
+
+router.use('/admin', Array.isArray(adminRoutes) ? adminRoutes[0] : adminRoutes);
+router.use('/web', Array.isArray(webRoutes) ? webRoutes[0] : webRoutes);
+
+export const indexRoutes = router;

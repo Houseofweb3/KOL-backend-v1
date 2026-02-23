@@ -1,30 +1,6 @@
 import { DataSource } from 'typeorm';
-
 import { ENV } from './env';
-import { Cart } from '../entity/cart';
-import { Package } from '../entity/package';
-import { Checkout } from '../entity/checkout';
-import { PackageItem } from '../entity/package';
-import { PackageCartItem } from '../entity/cart';
-import { Influencer } from '../entity/influencer';
-import { InfluencerCartItem, DrCartItem } from '../entity/cart';
-import { User, Admin, RefreshToken } from '../entity/auth';
-import { BillingDetails } from '../entity/billingDetails';
-import { CheckoutPr } from '../entity/checkoutPr';
-import { BillingDetailsPr } from '../entity/billingDetailsPr';
-import { OTP } from '../entity/auth';
-import { Dr } from '../entity/dr';
-import {
-    Option,
-    Question,
-    OnboardingQuestion,
-    UserOnboardingSelection,
-} from '../entity/onboarding';
-import { CouponCode, UserCoupon } from '../entity/couponCode';
-import { Bounty, BountySubmission } from '../entity/bounty';
-import { ProposalToken } from '../entity/proposalToken/ProposalToken.entity';
-import { ProposalPrToken } from '../entity/proposalToken/ProposalPrToken.entity';
-
+import { User, Otp } from '../entity';
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -35,34 +11,7 @@ export const AppDataSource = new DataSource({
     database: ENV.DB_DATABASE,
     synchronize: true,
     logging: false,
-    entities: [
-        User,
-        Admin,
-        Influencer,
-        Package,
-        PackageItem,
-        InfluencerCartItem,
-        DrCartItem,
-        Cart,
-        PackageCartItem,
-        Checkout,
-        UserOnboardingSelection,
-        Question,
-        Option,
-        OnboardingQuestion,
-        RefreshToken,
-        BillingDetails,
-        CheckoutPr,
-        BillingDetailsPr,
-        UserCoupon,
-        CouponCode,
-        OTP,
-        Bounty,
-        BountySubmission,
-        Dr,
-        ProposalToken,
-        ProposalPrToken
-    ],
+    entities: [User, Otp],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
     ssl: {

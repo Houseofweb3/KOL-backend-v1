@@ -4,29 +4,20 @@ import HttpStatus from 'http-status-codes';
 import { Response, Request, NextFunction } from 'express';
 
 import { ENV } from '../config/env';
+import { UserRole } from '../constants/roles';
 
 const jwtSecret = ENV.JWT_SECRET;
-const jwtRefreshSecret = ENV.REFRESH_JWT_SECRET; // Optional: Use a different secret for refresh tokens
 
-interface JwtPayload {
+export interface JwtPayload {
     id: string;
-    type: any;
+    type: UserRole;
 }
 
-export const generateAccessToken = ({ id, type }: JwtPayload): string => {
-    return jwt.sign({ id, type }, jwtSecret, { expiresIn: '1h' }); // Access token valid for 1 hour
-};
-
-export const generateRefreshToken = ({ id, type }: JwtPayload): string => {
-    return jwt.sign({ id, type }, jwtRefreshSecret, { expiresIn: '7d' }); // Refresh token valid for 7 days
-};
-
-/** Single JWT token, expires in 3 days. Use for Admin and User (client) auth when refresh token is not used. */
+/** Single JWT token, expires in 3 days. Used for admin/auth. */
 export const generateToken3Days = (payload: JwtPayload): string => {
     return jwt.sign(payload, jwtSecret, { expiresIn: '3d' });
 };
 
-// TODO: This needs to be added in a lot of APIs. Do it carefully.
 export const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.header('Authorization');
     const token = authHeader && authHeader.split(' ')[1];
@@ -37,7 +28,7 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
             message: 'Access token is not provided',
         });
     }
-    jwt.verify(token, jwtSecret, (err, user) => {
+    jwt.verify(token, jwtSecret, (err, decoded) => {
         if (err) {
             if (err.name === 'TokenExpiredError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
@@ -56,33 +47,34 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
                 message: 'Internal server error',
             });
         }
-
-        // req.user = user as JwtPayload;
+        (req as any).user = decoded as JwtPayload;
         next();
     });
 };
 
-export const refreshToken = (req: Request, res: Response) => {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
+/** Verify JWT and require type === UserRole.ADMIN. Use for admin-only routes. */
+export const verifyAdminAuth = (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.header('Authorization');
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
-            message: 'Refresh token is required',
+            message: 'Access token is not provided',
         });
     }
-
-    jwt.verify(refreshToken, jwtRefreshSecret, (err: jwt.VerifyErrors | null, decoded: any) => {
+    jwt.verify(token, jwtSecret, (err, decoded) => {
         if (err) {
             if (err.name === 'TokenExpiredError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Refresh token has expired',
+                    message: 'Access token has expired',
                 });
             }
             if (err.name === 'JsonWebTokenError') {
                 return res.status(HttpStatus.UNAUTHORIZED).json({
                     success: false,
-                    message: 'Refresh token is not valid',
+                    message: 'Access token is not valid',
                 });
             }
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -90,29 +82,14 @@ export const refreshToken = (req: Request, res: Response) => {
                 message: 'Internal server error',
             });
         }
-
-        // Type assertion to JwtPayload
-        const user = decoded as JwtPayload;
-        if (!user) {
-            return res.status(HttpStatus.UNAUTHORIZED).json({
+        const payload = decoded as JwtPayload;
+        if (payload.type !== UserRole.ADMIN) {
+            return res.status(HttpStatus.FORBIDDEN).json({
                 success: false,
-                message: 'User not found',
+                message: 'Admin access required',
             });
         }
-
-        const newAccessToken = generateAccessToken(user);
-        res.json({
-            success: true,
-            accessToken: newAccessToken,
-        });
-    });
-};
-
-export const logout = (req: Request, res: Response) => {
-    // Optionally, invalidate the refresh token here
-    // This might involve removing the refresh token from a database or a blacklist
-    res.json({
-        success: true,
-        message: 'Logged out successfully',
+        (req as any).user = payload;
+        next();
     });
 };
