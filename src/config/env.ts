@@ -34,8 +34,12 @@ interface Env {
   OTP_LENGTH: number;
 }
 
+const rawNodeEnv = (process.env.NODE_ENV || 'dev').toLowerCase();
+const nodeEnv: 'dev' | 'prod' =
+  rawNodeEnv === 'production' || rawNodeEnv === 'prod' ? 'prod' : 'dev';
+
 export const ENV: Env = {
-  NODE_ENV: (process.env.NODE_ENV as 'dev' | 'prod') || 'dev',
+  NODE_ENV: nodeEnv,
   PORT: process.env.PORT || '3000',
   DB_HOST: process.env.DB_HOST || '',
   DB_PORT: process.env.DB_PORT || '5432',
@@ -76,7 +80,4 @@ requiredVars.forEach((key) => {
   }
 });
 
-// Validate NODE_ENV
-if (ENV.NODE_ENV !== 'dev' && ENV.NODE_ENV !== 'prod') {
-  throw new Error(`Invalid value for NODE_ENV: ${ENV.NODE_ENV}. Allowed values are 'dev' or 'prod'.`);
-}
+// NODE_ENV is normalized above to 'dev' | 'prod' (accepts 'development'/'production' too)
