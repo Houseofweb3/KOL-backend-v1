@@ -9,7 +9,7 @@ import { webRoutes } from './web/index';
  */
 const router = express.Router();
 
-router.use('/admin', Array.isArray(adminRoutes) ? adminRoutes[0] : adminRoutes);
-router.use('/web', Array.isArray(webRoutes) ? webRoutes[0] : webRoutes);
+router.use('/admin', adminRoutes);
+router.use('/web', webRoutes);
 
 export const indexRoutes = router;

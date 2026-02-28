@@ -1,2 +1,7 @@
 export * from './user.entity';
 export * from './otp.entity';
+export * from './influencer.entity';
+export * from './client.entity';
+export * from './cart.entity';
+export * from './cart-item.entity';
+export * from './cart-campaign-details.entity';

@@ -5,6 +5,7 @@ import { ENV } from './config/env';
 import logger from './config/logger';
 import { AppDataSource } from './config/data-source';
 import corsMiddleware from './middleware/cors';
+import { requestLogger } from './middleware/requestLogger';
 import { indexRoutes } from './routes/v1/index';
 
 const app: Application = express();
@@ -13,6 +14,7 @@ const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 const apiBase = `/api/v${ENV.VERSION}`;
 

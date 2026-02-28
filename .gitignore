@@ -49,3 +49,9 @@ coverage/
 
 # TypeScript specific files
 *.tsbuildinfo
+
+
+.env
+.env.dev
+.env.example
+.env.pro

@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { ENV } from './env';
-import { User, Otp } from '../entity';
+import { User, Otp, Influencer, Client, Cart, CartItem } from '../entity';
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
@@ -11,7 +11,7 @@ export const AppDataSource = new DataSource({
     database: ENV.DB_DATABASE,
     synchronize: true,
     logging: false,
-    entities: [User, Otp],
+    entities: [User, Otp, Influencer, Client, Cart, CartItem],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
     ssl: {
