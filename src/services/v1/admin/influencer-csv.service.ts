@@ -1,10 +1,10 @@
 import { Readable } from 'stream';
 import csv from 'csv-parser';
-import { createInfluencer, sellingPriceFromBuyingPrice, type CreateInfluencerData } from './influencer.service';
+import { createInfluencer, sellingPriceFromBuyingPrice, stripPriceToNumeric, type CreateInfluencerData } from './influencer.service';
 
 /**
- * CSV column headers for influencer intake (Ampli5-style).
- * Maps to Influencer entity fields. Use exact header names in CSV.
+ * CSV column headers for influencer intake. Maps to Influencer entity.
+ * Price from CSV → stored as buyPrice (numeric only); sellPrice = buyPrice + 16% rounded to nearest 100.
  */
 export const CSV_INFLUENCER_HEADER_MAP: Record<string, string> = {
     'Channel / Brand Name': 'name',
@@ -16,9 +16,9 @@ export const CSV_INFLUENCER_HEADER_MAP: Record<string, string> = {
     'Platform': 'platform',
     'Platform Link': 'platformLink',
     'Inventory': 'inventory',
+    'Price': 'buyPrice',
     'Buy Price': 'buyPrice',
     'Sell Price': 'sellPrice',
-    'Price': 'sellPrice',
     'CPM': 'cpm',
     'Avg Views': 'avgViews',
     'Industries': 'industries',
@@ -71,10 +71,16 @@ function normalizeName(val: string | null): string | null {
     return s;
 }
 
+/** Get raw value from row with trimmed key (CSV headers may have trailing tab/newline). */
+function getRaw(row: Record<string, string | null>, header: string): string | null {
+    const trimmed = header.trim();
+    return row[trimmed] ?? null;
+}
+
 /**
  * Map a single CSV row to influencer create payload.
- * Supports both "Channel / Brand Name" and "Name"; "Primary Contact Email" and "Email".
- * If name looks like a URL with @ (e.g. youtube.com/@handle), the part after @ is used as name.
+ * CSV "Price" → buyPrice (numeric only, $ etc stripped); sellPrice = buyPrice + 16% rounded to nearest 100.
+ * Supports "Channel / Brand Name" and "Name"; "Primary Contact Email" and "Email".
  * Returns null if name or email is missing.
  */
 export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInfluencerData | null {
@@ -89,43 +95,44 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
     const email = raw['Primary Contact Email'] ?? raw['Email'] ?? null;
     if (!name || !email) return null;
 
-    const buyPrice = raw['Buy Price'] ?? null;
+    const priceFromCsv = raw['Price'] ?? raw['Buy Price'] ?? null;
+    const buyPrice = priceFromCsv != null && priceFromCsv.trim() !== '' ? stripPriceToNumeric(priceFromCsv) : null;
     const sellPrice =
-        (buyPrice != null && buyPrice.trim() !== '' ? sellingPriceFromBuyingPrice(buyPrice) : null) ??
-        raw['Sell Price'] ??
-        raw['Price'] ??
-        null;
+        buyPrice != null
+            ? sellingPriceFromBuyingPrice(buyPrice)
+            : (raw['Sell Price'] != null && raw['Sell Price'].trim() !== '' ? stripPriceToNumeric(raw['Sell Price']) : null);
+
     return {
         name,
         email,
-        telegramId: raw['Telegram ID'] ?? null,
-        whatsAppNumber: raw['WhatsApp Number'] ?? null,
-        primaryCountry: raw['Primary Country'] ?? null,
-        primaryTimezone: raw['Primary Timezone'] ?? null,
-        platform: raw['Platform'] ?? null,
-        platformLink: raw['Platform Link'] ?? null,
-        inventory: raw['Inventory'] ?? null,
+        telegramId: getRaw(raw, 'Telegram ID'),
+        whatsAppNumber: getRaw(raw, 'WhatsApp Number'),
+        primaryCountry: getRaw(raw, 'Primary Country'),
+        primaryTimezone: getRaw(raw, 'Primary Timezone'),
+        platform: getRaw(raw, 'Platform'),
+        platformLink: getRaw(raw, 'Platform Link'),
+        inventory: getRaw(raw, 'Inventory'),
         buyPrice,
         sellPrice,
-        cpm: raw['CPM'] ?? null,
-        avgViews: raw['Avg Views'] ?? null,
-        industries: raw['Industries'] ?? null,
-        categories: raw['Categories'] ?? null,
-        primaryAudienceGeography: raw['Primary Audience Geography'] ?? null,
-        secondaryAudienceGeography: raw['Secondary Audience Geography'] ?? null,
-        ageScreenshotUrl: raw['Age Screenshot URL'] ?? null,
-        genderScreenshotUrl: raw['Gender Screenshot URL'] ?? null,
-        topCountriesScreenshotUrl: raw['Top Countries Screenshot URL'] ?? null,
-        paymentTerms: raw['Payment Terms'] ?? null,
-        turnaroundTimes: raw['Turnaround Times'] ?? null,
-        firstCollaborationImage1: null,
-        firstCollaborationImage2: null,
-        firstCollaborationImage3: null,
-        xLink: raw['X Link'] ?? null,
-        instagramLink: raw['Instagram Link'] ?? null,
-        youtubeLink: raw['YouTube Link'] ?? null,
-        tiktokLink: raw['TikTok Link'] ?? null,
-        newsletterLink: raw['Newsletter Link'] ?? null,
+        cpm: getRaw(raw, 'CPM') != null ? stripPriceToNumeric(getRaw(raw, 'CPM')) : null,
+        avgViews: getRaw(raw, 'Avg Views'),
+        industries: getRaw(raw, 'Industries'),
+        categories: getRaw(raw, 'Categories'),
+        primaryAudienceGeography: getRaw(raw, 'Primary Audience Geography'),
+        secondaryAudienceGeography: getRaw(raw, 'Secondary Audience Geography'),
+        ageScreenshotUrl: getRaw(raw, 'Age Screenshot URL'),
+        genderScreenshotUrl: getRaw(raw, 'Gender Screenshot URL'),
+        topCountriesScreenshotUrl: getRaw(raw, 'Top Countries Screenshot URL'),
+        paymentTerms: getRaw(raw, 'Payment Terms'),
+        turnaroundTimes: getRaw(raw, 'Turnaround Times'),
+        firstCollaborationImage1: getRaw(raw, 'First Collaboration Image 1'),
+        firstCollaborationImage2: getRaw(raw, 'First Collaboration Image 2'),
+        firstCollaborationImage3: getRaw(raw, 'First Collaboration Image 3'),
+        xLink: getRaw(raw, 'X Link'),
+        instagramLink: getRaw(raw, 'Instagram Link'),
+        youtubeLink: getRaw(raw, 'YouTube Link'),
+        tiktokLink: getRaw(raw, 'TikTok Link'),
+        newsletterLink: getRaw(raw, 'Newsletter Link'),
         finalConfirmation: toBool(row['Final Confirmation']),
         isVerified: true,
     };

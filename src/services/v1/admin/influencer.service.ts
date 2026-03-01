@@ -5,12 +5,20 @@ import { Influencer } from '../../../entity/influencer.entity';
 
 const DEFAULT_PAGE = 1;
 
-/** Parse buying/sell price from string or number. Returns null if invalid or empty. */
-export function parsePrice(val: string | number | null | undefined): number | null {
+/** Strip $ and any non-numeric characters; keep digits and one decimal point. Returns numeric string for storage. */
+export function stripPriceToNumeric(val: string | number | null | undefined): string | null {
     if (val == null) return null;
-    const s = String(val).replace(/[$,]/g, '').trim();
+    const s = String(val).replace(/[^\d.]/g, '').trim();
     if (s === '') return null;
     const n = parseFloat(s);
+    return Number.isFinite(n) && n >= 0 ? String(n) : null;
+}
+
+/** Parse buying/sell price from string or number. Strips $ and non-numeric. Returns null if invalid or empty. */
+export function parsePrice(val: string | number | null | undefined): number | null {
+    const str = stripPriceToNumeric(val);
+    if (str == null) return null;
+    const n = parseFloat(str);
     return Number.isFinite(n) && n >= 0 ? n : null;
 }
 

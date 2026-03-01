@@ -3,6 +3,7 @@ import HttpStatus from 'http-status-codes';
 import { AppDataSource } from '../../../config/data-source';
 import { ProposalLink } from '../../../entity/proposal-link.entity';
 import { Cart } from '../../../entity/cart.entity';
+import { CartStatus } from '../../../constants/cart';
 import { ENV } from '../../../config/env';
 import { sendProposalLinkEmail } from '../../../notifications/proposal-link-email';
 
@@ -60,6 +61,9 @@ export async function createProposalLink(cartId: string): Promise<CreateProposal
         throw err;
     }
     const clientId = cart.clientId;
+
+    cart.status = CartStatus.SEND;
+    await cartRepo.save(cart);
 
     let saved: ProposalLink;
     const existing = await linkRepo.findOne({

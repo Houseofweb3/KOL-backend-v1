@@ -1,4 +1,5 @@
 import HttpStatus from 'http-status-codes';
+import { In } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Cart } from '../../../entity/cart.entity';
 import { CartItem } from '../../../entity/cart-item.entity';
@@ -42,21 +43,20 @@ function mapCartToDto(cart: Cart, items: CartItem[]): CartDTO {
     };
 }
 
-async function getOrCreateCart(clientId: string): Promise<Cart> {
+/** Get existing cart for client (e.g. latest). Returns null if none. */
+async function getLatestCartByClient(clientId: string): Promise<Cart | null> {
     const cartRepo = AppDataSource.getRepository(Cart);
-    let cart = await cartRepo.findOne({ where: { clientId } });
-    if (!cart) {
-        cart = cartRepo.create({ clientId, status: CART_STATUS_DEFAULT });
-        cart = await cartRepo.save(cart);
-    }
-    return cart;
+    return cartRepo.findOne({
+        where: { clientId },
+        order: { createdAt: 'DESC' },
+    });
 }
 
 export const getCartForClient = async (clientId: string): Promise<CartDTO> => {
     const cartRepo = AppDataSource.getRepository(Cart);
     const itemRepo = AppDataSource.getRepository(CartItem);
 
-    let cart = await cartRepo.findOne({ where: { clientId } });
+    let cart = await getLatestCartByClient(clientId);
     if (!cart) {
         cart = cartRepo.create({ clientId, status: CART_STATUS_DEFAULT });
         cart = await cartRepo.save(cart);
@@ -74,7 +74,7 @@ export const removeFromCart = async (clientId: string, influencerId: string): Pr
     const cartRepo = AppDataSource.getRepository(Cart);
     const itemRepo = AppDataSource.getRepository(CartItem);
 
-    const cart = await cartRepo.findOne({ where: { clientId } });
+    const cart = await getLatestCartByClient(clientId);
     if (!cart) {
         const err = new Error('Cart not found');
         (err as any).status = HttpStatus.NOT_FOUND;
@@ -99,9 +99,8 @@ export interface CreateCartItemInput {
 }
 
 /**
- * Create or replace cart with multiple items in one request.
+ * Create a new cart (new proposal) with the given items. Each call creates a new cart; no reuse, no delete.
  * Client id comes from auth. For each item: influencer must exist, not deleted, and have sellPrice.
- * Existing cart items are replaced by the given list (same influencer id can appear once; quantity is used as given).
  */
 export const createCart = async (
     clientId: string,
@@ -113,7 +112,6 @@ export const createCart = async (
         throw err;
     }
 
-    const influencerRepo = AppDataSource.getRepository(Influencer);
     const normalized: { influencerId: string; quantity: number }[] = [];
     for (let i = 0; i < itemsInput.length; i++) {
         const raw = itemsInput[i];
@@ -132,10 +130,10 @@ export const createCart = async (
         normalized.push({ influencerId, quantity });
     }
 
-    // Resolve all influencers and prices (required for cart item: influencerId, quantity, price from entity)
     const influencerIds = [...new Set(normalized.map((n) => n.influencerId))];
+    const influencerRepo = AppDataSource.getRepository(Influencer);
     const influencers = await influencerRepo.find({
-        where: influencerIds.map((id) => ({ id, isDeleted: false })),
+        where: { id: In(influencerIds), isDeleted: false },
     });
     const influencerMap = new Map(influencers.map((inf) => [inf.id, inf]));
 
@@ -153,15 +151,16 @@ export const createCart = async (
         }
     }
 
-    const cart = await getOrCreateCart(clientId);
+    const cartRepo = AppDataSource.getRepository(Cart);
+    const cart = cartRepo.create({ clientId, status: CART_STATUS_DEFAULT });
+    const savedCart = await cartRepo.save(cart);
+
     const itemRepo = AppDataSource.getRepository(CartItem);
-
-    await itemRepo.delete({ cartId: cart.id });
-
+    const savedItems: CartItem[] = [];
     for (const { influencerId, quantity } of normalized) {
         const influencer = influencerMap.get(influencerId)!;
         const item = itemRepo.create({
-            cartId: cart.id,
+            cartId: savedCart.id,
             influencerId,
             quantity,
             price: normalizePriceForDecimal(influencer.sellPrice),
@@ -169,9 +168,9 @@ export const createCart = async (
             notes: null,
             proofOfWork: null,
         });
-        await itemRepo.save(item);
+        const saved = await itemRepo.save(item);
+        savedItems.push(saved);
     }
 
-    const items = await itemRepo.find({ where: { cartId: cart.id } });
-    return mapCartToDto(cart, items);
+    return mapCartToDto(savedCart, savedItems);
 };

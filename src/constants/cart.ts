@@ -2,6 +2,7 @@
 export enum CartStatus {
     GENERATE = 'generate',
     SEND = 'send',
+    UPDATED = 'updated',
     APPROVED = 'approved',
 }
 

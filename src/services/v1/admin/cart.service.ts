@@ -10,7 +10,7 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
-const VALID_STATUSES: string[] = [CartStatus.GENERATE, CartStatus.SEND, CartStatus.APPROVED];
+const VALID_STATUSES: string[] = [CartStatus.GENERATE, CartStatus.SEND, CartStatus.UPDATED, CartStatus.APPROVED];
 
 function normalizePriceForDecimal(raw: string | number | null | undefined): string {
     if (raw == null || String(raw).trim() === '') return '0.00';
@@ -219,7 +219,7 @@ export const getCart = async (cartId: string): Promise<AdminCartDTO> => {
 };
 
 /**
- * Create or replace cart for a client (admin). One cart per client; replaces existing items and pricing.
+ * Create a new cart (new proposal) for a client (admin). Each call creates a new cart; no reuse, no delete.
  * Validates client and all influencers exist. Computes subtotal, discount, management fee, total.
  */
 export const createCart = async (input: AdminCreateCartInput): Promise<AdminCartDTO> => {
@@ -276,29 +276,24 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
 
     const cartRepo = AppDataSource.getRepository(Cart);
     const itemRepo = AppDataSource.getRepository(CartItem);
-    let cart = await cartRepo.findOne({ where: { clientId: client.id } });
-    if (cart) {
-        await itemRepo.delete({ cartId: cart.id });
-    } else {
-        cart = cartRepo.create({
-            clientId: client.id,
-            status: CART_STATUS_DEFAULT,
-            subtotal: '0',
-            discountPercent: '0',
-            discountAmount: '0',
-            managementFeePercent: '15',
-            managementFeeAmount: '0',
-            total: '0',
-        });
-        cart = await cartRepo.save(cart);
-    }
+    const cart = cartRepo.create({
+        clientId: client.id,
+        status: CART_STATUS_DEFAULT,
+        subtotal: '0',
+        discountPercent: '0',
+        discountAmount: '0',
+        managementFeePercent: '15',
+        managementFeeAmount: '0',
+        total: '0',
+    });
+    const savedCart = await cartRepo.save(cart);
 
     let subtotalNum = 0;
     for (const { influencerId, quantity, price, notes, proofOfWork } of normalized) {
         const lineTotal = quantity * parseFloat(price);
         subtotalNum += lineTotal;
         const item = itemRepo.create({
-            cartId: cart!.id,
+            cartId: savedCart.id,
             influencerId,
             quantity,
             price,
@@ -314,20 +309,20 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
     const managementFeeAmountNum = afterDiscount * (managementFeePercent / 100);
     const totalNum = afterDiscount + managementFeeAmountNum;
 
-    cart!.subtotal = subtotalStr;
-    cart!.discountPercent = String(discountPercent);
-    cart!.discountAmount = discountAmountNum.toFixed(2);
-    cart!.managementFeePercent = String(managementFeePercent);
-    cart!.managementFeeAmount = managementFeeAmountNum.toFixed(2);
-    cart!.total = totalNum.toFixed(2);
-    await cartRepo.save(cart!);
+    savedCart.subtotal = subtotalStr;
+    savedCart.discountPercent = String(discountPercent);
+    savedCart.discountAmount = discountAmountNum.toFixed(2);
+    savedCart.managementFeePercent = String(managementFeePercent);
+    savedCart.managementFeeAmount = managementFeeAmountNum.toFixed(2);
+    savedCart.total = totalNum.toFixed(2);
+    await cartRepo.save(savedCart);
 
     const items = await itemRepo.find({
-        where: { cartId: cart!.id },
+        where: { cartId: savedCart.id },
         relations: ['influencer'],
         order: { createdAt: 'ASC' },
     });
-    return mapCartToAdminDto(cart!, items, { id: client.id, name: client.name, email: client.email });
+    return mapCartToAdminDto(savedCart, items, { id: client.id, name: client.name, email: client.email });
 }
 
 /**
@@ -381,6 +376,7 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
         cart.managementFeePercent = String(managementFeePercent);
         cart.managementFeeAmount = managementFeeAmountNum.toFixed(2);
         cart.total = totalNum.toFixed(2);
+        cart.status = CartStatus.UPDATED;
         await cartRepo.save(cart);
         const itemsAfter = await itemRepo.find({
             where: { cartId: cart.id },
@@ -492,6 +488,7 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
     cart.managementFeePercent = String(managementFeePercent);
     cart.managementFeeAmount = managementFeeAmountNum.toFixed(2);
     cart.total = totalNum.toFixed(2);
+    cart.status = CartStatus.UPDATED;
     await cartRepo.save(cart);
 
     const itemsAfter = await itemRepo.find({

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, Index, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany } from 'typeorm';
 import { BaseModel } from './baseEntities/BaseModel';
 import { Cart } from './cart.entity';
 
@@ -55,6 +55,6 @@ export class Client extends BaseModel {
     @Column({ default: false, name: 'is_deleted' })
     isDeleted!: boolean;
 
-    @OneToOne(() => Cart, (cart) => cart.client)
-    cart!: Cart | null;
+    @OneToMany(() => Cart, (cart) => cart.client)
+    carts!: Cart[];
 }

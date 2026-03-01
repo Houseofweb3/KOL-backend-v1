@@ -1,11 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { BaseModel } from './baseEntities/BaseModel';
 import { Client } from './client.entity';
 import { CartItem } from './cart-item.entity';
 import { CartStatus, CART_STATUS_DEFAULT } from '../constants/cart';
 
 /**
- * One cart per client. Holds influencer (service) line items.
+ * Cart (proposal) for a client. A client can have multiple carts (e.g. one per proposal).
  * status: generate (default) → send → approved.
  */
 @Entity('carts')
@@ -13,13 +13,13 @@ export class Cart extends BaseModel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'uuid', unique: true, name: 'client_id' })
+    @Column({ type: 'uuid', name: 'client_id' })
     clientId!: string;
 
     @Column({ type: 'varchar', enum: CartStatus, default: CART_STATUS_DEFAULT })
     status!: CartStatus;
 
-    @OneToOne(() => Client, (client) => client.cart, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Client, (client) => client.carts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'client_id' })
     client!: Client;
 

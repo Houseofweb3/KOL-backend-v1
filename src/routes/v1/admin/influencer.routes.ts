@@ -30,7 +30,7 @@ router.post('/upload-csv', (req, res, next) => {
 router.get('/:id', getInfluencerByIdController);
 router.post('/', createInfluencerController);
 router.patch('/:id', updateInfluencerController);
-router.delete('/:id', deleteInfluencerController);
 router.delete('/all', deleteAllInfluencersController);
+router.delete('/:id', deleteInfluencerController);
 
 export { router as adminInfluencerRoutes };
