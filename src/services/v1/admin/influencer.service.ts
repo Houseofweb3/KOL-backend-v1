@@ -4,6 +4,32 @@ import { AppDataSource } from '../../../config/data-source';
 import { Influencer } from '../../../entity/influencer.entity';
 
 const DEFAULT_PAGE = 1;
+
+/** Parse buying/sell price from string or number. Returns null if invalid or empty. */
+export function parsePrice(val: string | number | null | undefined): number | null {
+    if (val == null) return null;
+    const s = String(val).replace(/[$,]/g, '').trim();
+    if (s === '') return null;
+    const n = parseFloat(s);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/**
+ * Selling price = buying price + 16%, rounded to nearest 100 (closest 00).
+ * e.g. 554 → 554*1.16=642.64 → 600; 549 → 636.84 → 600.
+ */
+export function calculateSellingPriceFromBuying(buyingPrice: number): number {
+    const withMargin = buyingPrice * 1.16;
+    return Math.round(withMargin / 100) * 100;
+}
+
+/** Apply formula and return sell price as string for entity. If buyingPrice is invalid, returns null. */
+export function sellingPriceFromBuyingPrice(buyingPriceInput: string | number | null | undefined): string | null {
+    const buying = parsePrice(buyingPriceInput);
+    if (buying === null) return null;
+    return String(calculateSellingPriceFromBuying(buying));
+}
+
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
@@ -89,6 +115,86 @@ export const listInfluencers = async (options: ListInfluencersOptions = {}): Pro
     return { influencers, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
+/** Minimal influencer for dropdowns (admin cart: select influencer). Pagination, search by name/email, filter by platform (multi). */
+export interface InfluencerSelectItem {
+    id: string;
+    name: string;
+    platform: string | null;
+    platformLink: string | null;
+    inventory: string | null;
+    sellPrice: string | null;
+    firstCollaborationImage1: string | null;
+    firstCollaborationImage2: string | null;
+    firstCollaborationImage3: string | null;
+    avgViews: string | null;
+    cpm: string | null;
+    buyPrice: string | null;
+}
+
+export interface ListInfluencersForSelectResult {
+    influencers: InfluencerSelectItem[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+export const listInfluencersForSelect = async (options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    platform?: string[];
+} = {}): Promise<ListInfluencersForSelectResult> => {
+    const page = Math.max(1, options.page ?? DEFAULT_PAGE);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, options.limit ?? DEFAULT_LIMIT));
+    const search = options.search?.trim() ?? '';
+    const platformFilter = options.platform ?? [];
+
+    const repo = AppDataSource.getRepository(Influencer);
+    const qb = repo
+        .createQueryBuilder('i')
+        .select([
+            'i.id',
+            'i.name',
+            'i.platform',
+            'i.platformLink',
+            'i.inventory',
+            'i.sellPrice',
+            'i.firstCollaborationImage1',
+            'i.firstCollaborationImage2',
+            'i.firstCollaborationImage3',
+            'i.avgViews',
+            'i.cpm',
+            'i.buyPrice',
+        ])
+        .orderBy('i.name', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .andWhere('i.isDeleted = :isDeleted', { isDeleted: false });
+
+    if (search) {
+        qb.andWhere('(i.name ILike :search OR i.email ILike :search)', { search: `%${search}%` });
+    }
+    addOrWhereILike(qb, 'platform', platformFilter, 'platformFilter');
+
+    const [influencers, total] = await qb.getManyAndCount();
+    const items: InfluencerSelectItem[] = influencers.map((i) => ({
+        id: i.id,
+        name: i.name,
+        platform: i.platform ?? null,
+        platformLink: i.platformLink ?? null,
+        inventory: i.inventory ?? null,
+        sellPrice: i.sellPrice ?? null,
+        firstCollaborationImage1: i.firstCollaborationImage1 ?? null,
+        firstCollaborationImage2: i.firstCollaborationImage2 ?? null,
+        firstCollaborationImage3: i.firstCollaborationImage3 ?? null,
+        avgViews: i.avgViews ?? null,
+        cpm: i.cpm ?? null,
+        buyPrice: i.buyPrice ?? null,
+    }));
+    return { influencers: items, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
 export const getInfluencerById = async (id: string) => {
     const repo = AppDataSource.getRepository(Influencer);
     const influencer = await repo.findOne({ where: { id } });
@@ -137,6 +243,11 @@ export type CreateInfluencerData = {
 
 export const createInfluencer = async (data: CreateInfluencerData) => {
     const repo = AppDataSource.getRepository(Influencer);
+    const buyPrice = data.buyPrice ?? null;
+    const sellPrice =
+        (buyPrice != null && String(buyPrice).trim() !== ''
+            ? sellingPriceFromBuyingPrice(buyPrice)
+            : null) ?? data.sellPrice ?? null;
     const influencer = repo.create({
         name: data.name,
         email: data.email.toLowerCase(),
@@ -148,7 +259,7 @@ export const createInfluencer = async (data: CreateInfluencerData) => {
         platformLink: data.platformLink ?? null,
         inventory: data.inventory ?? null,
         buyPrice: data.buyPrice ?? null,
-        sellPrice: data.sellPrice ?? null,
+        sellPrice,
         cpm: data.cpm ?? null,
         avgViews: data.avgViews ?? null,
         industries: data.industries ?? null,
@@ -194,7 +305,11 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
     if (data.platform !== undefined) influencer.platform = data.platform;
     if (data.platformLink !== undefined) influencer.platformLink = data.platformLink;
     if (data.inventory !== undefined) influencer.inventory = data.inventory;
-    if (data.buyPrice !== undefined) influencer.buyPrice = data.buyPrice;
+    if (data.buyPrice !== undefined) {
+        influencer.buyPrice = data.buyPrice;
+        const computed = sellingPriceFromBuyingPrice(data.buyPrice);
+        influencer.sellPrice = computed ?? data.sellPrice ?? influencer.sellPrice;
+    }
     if (data.sellPrice !== undefined) influencer.sellPrice = data.sellPrice;
     if (data.cpm !== undefined) influencer.cpm = data.cpm;
     if (data.avgViews !== undefined) influencer.avgViews = data.avgViews;

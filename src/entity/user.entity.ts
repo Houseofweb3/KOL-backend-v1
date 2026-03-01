@@ -17,7 +17,7 @@ export class User extends BaseModel {
     @Column({ type: 'varchar', default: USER_ROLE_DEFAULT, length: 50 })
     role!: UserRole;
 
-    @Column({ default: false, name: 'is_verified' })
+    @Column({ default: true, name: 'is_verified' })
     isVerified!: boolean;
 
     @Column({ default: false, name: 'is_deleted' })

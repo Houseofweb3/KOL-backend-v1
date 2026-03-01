@@ -182,8 +182,6 @@ export const clientVerifyOtp = async (email: string, code: string) => {
             id: client.id,
             name: client.name,
             email: client.email,
-            projectName: null,
-            projectUrl: null,
             telegramId: client.telegramId ?? null,
             whatsAppNumber: client.whatsAppNumber ?? null,
         },

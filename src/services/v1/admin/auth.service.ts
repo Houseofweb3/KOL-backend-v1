@@ -30,8 +30,6 @@ export const adminSignup = async (email: string, password: string) => {
         email: email.toLowerCase(),
         password: hashedPassword,
         role: USER_ROLE_DEFAULT,
-        isVerified: false,
-        isDeleted: false,
     });
     const saved = await repo.save(user);
     const { password: _p, ...userWithoutPassword } = saved;

@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     listInfluencersController,
+    listInfluencersForSelectController,
     getInfluencerByIdController,
     createInfluencerController,
     updateInfluencerController,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.use(verifyAdminAuth);
 
 router.get('/', listInfluencersController);
+router.get('/select', listInfluencersForSelectController);
 router.post('/upload-csv', (req, res, next) => {
     uploadCsvMiddleware(req, res, (err: any) => {
         if (err) {

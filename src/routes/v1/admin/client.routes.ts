@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     listClientsController,
+    listClientsForSelectController,
     getClientByIdController,
     createClientController,
     updateClientController,
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use(verifyAdminAuth);
 
 router.get('/', listClientsController);
+router.get('/select', listClientsForSelectController);
 router.post('/upload-csv', (req, res, next) => {
     uploadCsvMiddleware(req, res, (err: any) => {
         if (err) {

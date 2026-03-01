@@ -26,10 +26,19 @@ export class CartItem extends BaseModel {
     @JoinColumn({ name: 'influencer_id' })
     influencer!: Influencer;
 
+    @Column({ type: 'varchar', name: 'notes', nullable: true })
+    notes!: string | null | undefined;
+    
+    /** List of proof-of-work links (URLs). Stored as JSON array. */
+    @Column({ type: 'jsonb', name: 'proof_of_work', nullable: true })
+    proofOfWork!: string[] | null;
+
     @Column({ type: 'int', default: 1 })
     quantity!: number;
 
     /** Price per unit when added to cart (snapshot). */
     @Column({ type: 'decimal', precision: 12, scale: 2, name: 'price' })
     price!: string;
+
+
 }

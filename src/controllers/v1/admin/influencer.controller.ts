@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import {
     listInfluencers,
+    listInfluencersForSelect,
     getInfluencerById,
     createInfluencer,
     updateInfluencer,
@@ -61,6 +62,22 @@ export const listInfluencersController = async (req: Request, res: Response) => 
     } catch (error: any) {
         const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         logger.error(`List influencers error (${status}): ${error.message}`);
+        return res.status(status).json({ error: error.message });
+    }
+};
+
+/** GET /admin/influencer/select - list influencers for dropdown (limited fields). Pagination + search by name/email + filter by platform (multi). */
+export const listInfluencersForSelectController = async (req: Request, res: Response) => {
+    try {
+        const page = req.query.page ? parseInt(String(req.query.page), 10) : undefined;
+        const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : undefined;
+        const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+        const platform = parseQueryArray(req.query.platform);
+        const result = await listInfluencersForSelect({ page, limit, search, platform });
+        return res.status(HttpStatus.OK).json(result);
+    } catch (error: any) {
+        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        logger.error(`List influencers for select error (${status}): ${error.message}`);
         return res.status(status).json({ error: error.message });
     }
 };

@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import csv from 'csv-parser';
-import { createInfluencer, type CreateInfluencerData } from './influencer.service';
+import { createInfluencer, sellingPriceFromBuyingPrice, type CreateInfluencerData } from './influencer.service';
 
 /**
  * CSV column headers for influencer intake (Ampli5-style).
@@ -89,7 +89,12 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
     const email = raw['Primary Contact Email'] ?? raw['Email'] ?? null;
     if (!name || !email) return null;
 
-    const sellPrice = raw['Sell Price'] ?? raw['Price'] ?? null;
+    const buyPrice = raw['Buy Price'] ?? null;
+    const sellPrice =
+        (buyPrice != null && buyPrice.trim() !== '' ? sellingPriceFromBuyingPrice(buyPrice) : null) ??
+        raw['Sell Price'] ??
+        raw['Price'] ??
+        null;
     return {
         name,
         email,
@@ -100,7 +105,7 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
         platform: raw['Platform'] ?? null,
         platformLink: raw['Platform Link'] ?? null,
         inventory: raw['Inventory'] ?? null,
-        buyPrice: raw['Buy Price'] ?? null,
+        buyPrice,
         sellPrice,
         cpm: raw['CPM'] ?? null,
         avgViews: raw['Avg Views'] ?? null,

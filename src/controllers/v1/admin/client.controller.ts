@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import {
     listClients,
+    listClientsForSelect,
     getClientById,
     createClient,
     updateClient,
@@ -22,6 +23,21 @@ export const listClientsController = async (req: Request, res: Response) => {
     } catch (error: any) {
         const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         logger.error(`List clients error (${status}): ${error.message}`);
+        return res.status(status).json({ error: error.message });
+    }
+};
+
+/** GET /admin/client/select - list clients for dropdown (id, name, email only). Pagination + search by name or email. */
+export const listClientsForSelectController = async (req: Request, res: Response) => {
+    try {
+        const page = req.query.page ? parseInt(String(req.query.page), 10) : undefined;
+        const limit = req.query.limit ? parseInt(String(req.query.limit), 10) : undefined;
+        const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+        const result = await listClientsForSelect({ page, limit, search });
+        return res.status(HttpStatus.OK).json(result);
+    } catch (error: any) {
+        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        logger.error(`List clients for select error (${status}): ${error.message}`);
         return res.status(status).json({ error: error.message });
     }
 };

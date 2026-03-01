@@ -13,7 +13,7 @@
 | **Auth** | Required: `Authorization: Bearer <client_token>` |
 | **Purpose** | Set the client’s cart to exactly the given list of items (replaces existing cart contents). |
 
-**Payload:** `items` (array of `influencerId` + `quantity`) and optionally **`campaign`** (name, project name, project URL, email, Telegram id, WhatsApp number). **Price** for cart items is taken from the **Influencer** entity. **Client ID** and **Cart ID** are set by the backend and not sent in the payload.
+**Payload:** `items` (array of `influencerId` + `quantity`) only. **Price** for cart items is taken from the **Influencer** entity. **Client ID** and **Cart ID** are set by the backend and not sent in the payload.
 
 ---
 
@@ -38,20 +38,9 @@ export interface CreateCartItemInput {
     quantity: number;      // positive integer
 }
 
-/** Optional campaign/contact details for the cart. clientId and cartId are set by the backend. */
-export interface CreateCartCampaignInput {
-    name?: string | null;
-    projectName?: string | null;
-    projectUrl?: string | null;
-    email?: string | null;
-    telegramId?: string | null;
-    whatsAppNumber?: string | null;
-}
-
 /** Request body for POST /api/v1/web/cart/create */
 export interface CreateCartPayload {
     items: CreateCartItemInput[];
-    campaign?: CreateCartCampaignInput | null;
 }
 
 /** One line item in the cart response (same as other cart APIs) */
@@ -62,10 +51,11 @@ export interface CartItemDTO {
     price: string;  // decimal string, from Influencer.sellPrice at create time
 }
 
-/** Response: full cart (same as GET /cart, add, remove, update) */
+/** Response: full cart (same as GET /cart, create, remove) */
 export interface CartDTO {
     id: string;
     clientId: string;
+    status: string;  // 'generate' | 'send' | 'approved'; default 'generate'
     items: CartItemDTO[];
 }
 
@@ -82,42 +72,22 @@ export interface ApiError {
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `items` | array | Yes | Non-empty array of `{ influencerId, quantity }`. |
-| `campaign` | object | No | Campaign/contact details for this cart (stored with the cart). All fields optional. |
 
-**Items** – each element:
+Each element:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `influencerId` | string (UUID) | Yes | Influencer id. Must exist, not deleted, and have `sellPrice` set. |
 | `quantity` | number | Yes | Positive integer. |
 
-**Campaign** – optional object (do **not** send `clientId` or `cartId`; they are set by the backend):
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | No | Contact/campaign name. |
-| `projectName` | string | No | Project name. |
-| `projectUrl` | string | No | Project URL. |
-| `email` | string | No | Email. |
-| `telegramId` | string | No | Telegram id. |
-| `whatsAppNumber` | string | No | WhatsApp number. |
-
-**Example body (items + campaign):**
+**Example body:**
 
 ```json
 {
   "items": [
     { "influencerId": "uuid-influencer-1", "quantity": 2 },
     { "influencerId": "uuid-influencer-2", "quantity": 1 }
-  ],
-  "campaign": {
-    "name": "John Doe",
-    "projectName": "My Campaign",
-    "projectUrl": "https://example.com",
-    "email": "john@example.com",
-    "telegramId": "@johndoe",
-    "whatsAppNumber": "+1234567890"
-  }
+  ]
 }
 ```
 
@@ -131,6 +101,7 @@ Returns the cart after create/replace (same shape as other cart APIs).
 {
   "id": "cart-uuid",
   "clientId": "client-uuid",
+  "status": "generate",
   "items": [
     {
       "id": "cart-item-uuid-1",
@@ -172,14 +143,6 @@ const payload: CreateCartPayload = {
     { influencerId: 'uuid-1', quantity: 2 },
     { influencerId: 'uuid-2', quantity: 1 },
   ],
-  campaign: {
-    name: 'John Doe',
-    projectName: 'My Campaign',
-    projectUrl: 'https://example.com',
-    email: 'john@example.com',
-    telegramId: '@johndoe',
-    whatsAppNumber: '+1234567890',
-  },
 };
 
 const res = await fetch(`${API_BASE}/api/v1/web/cart/create`, {
@@ -204,6 +167,5 @@ const cart: CartDTO = data;
 - **Replace semantics:** Existing cart items are **replaced** by the given `items` list. The cart is not merged with previous contents.
 - **Data from Influencer:** For each item the backend loads the Influencer, checks it exists and is not deleted, and uses its **sellPrice** for the cart line (required by `CartItem`). No other payload fields are needed for cart item creation.
 - **Duplicate influencer ids:** If the same `influencerId` appears multiple times in `items`, multiple lines are created (one per entry). To have a single line per influencer, send one entry per influencer with the desired quantity.
-- **Campaign details:** If you send `campaign` with any of `name`, `projectName`, `projectUrl`, `email`, `telegramId`, `whatsAppNumber`, they are stored in the **CartCampaignDetails** entity linked to this cart. **Client ID** and **Cart ID** are set by the backend; do not send them. If the cart already had campaign details, they are updated.
 
-Use this doc together with `API_WEB_CART.md` for the rest of the cart APIs (get, add, remove, update).
+Use this doc together with `API_WEB_CART.md` for get cart and remove from cart.

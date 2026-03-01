@@ -10,4 +10,4 @@ export enum UserRole {
 }
 
 /** Default role when creating a new user. */
-export const USER_ROLE_DEFAULT = UserRole.ADMIN_USER;
+export const USER_ROLE_DEFAULT = UserRole.ADMIN;

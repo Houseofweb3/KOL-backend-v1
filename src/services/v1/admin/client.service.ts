@@ -53,6 +53,48 @@ export const listClients = async (options: ListClientsOptions = {}): Promise<Lis
     return { clients, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
+/** Minimal client for dropdowns (admin cart: select client). Pagination + search by name or email. */
+export interface ClientSelectItem {
+    id: string;
+    name: string;
+    email: string;
+}
+
+export interface ListClientsForSelectResult {
+    clients: ClientSelectItem[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+export const listClientsForSelect = async (options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+} = {}): Promise<ListClientsForSelectResult> => {
+    const page = Math.max(1, options.page ?? DEFAULT_PAGE);
+    const limit = Math.min(MAX_LIMIT, Math.max(1, options.limit ?? DEFAULT_LIMIT));
+    const search = options.search?.trim() ?? '';
+
+    const repo = AppDataSource.getRepository(Client);
+    const qb = repo
+        .createQueryBuilder('c')
+        .select(['c.id', 'c.name', 'c.email'])
+        .orderBy('c.name', 'ASC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .andWhere('c.isDeleted = :isDeleted', { isDeleted: false });
+
+    if (search) {
+        qb.andWhere('(c.name ILike :search OR c.email ILike :search)', { search: `%${search}%` });
+    }
+
+    const [clients, total] = await qb.getManyAndCount();
+    const items: ClientSelectItem[] = clients.map((c) => ({ id: c.id, name: c.name, email: c.email }));
+    return { clients: items, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
 export const getClientById = async (id: string) => {
     const repo = AppDataSource.getRepository(Client);
     const client = await repo.findOne({ where: { id } });
