@@ -133,6 +133,13 @@ async function getCartProposalData(cartId: string, iconCache: Record<string, str
     });
 
     const items = allItems.filter((item) => item.isApproved === true);
+    if (items.length === 0) {
+        const err = new Error(
+            'Cannot generate proposal PDF: at least one cart item must be approved by the client before downloading the PDF.'
+        );
+        (err as any).status = HttpStatus.BAD_REQUEST;
+        throw err;
+    }
 
     const discountPercent = parseFloat(String(cart.discountPercent ?? '0'));
     const managementFeePercent = parseFloat(String(cart.managementFeePercent ?? '15'));
