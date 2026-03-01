@@ -247,10 +247,10 @@
             <!-- Table Container -->
             <div id="tableContainer">
                 <!-- Check if any influencer has notes to determine column count -->
-                <% let hasAnyNotes=false; influencerPRs.forEach(function(influencer) { if (influencer.notes &&
+                <% let hasAnyNotes=false; influencers.forEach(function(influencer) { if (influencer.notes &&
                     influencer.notes.trim() !=='' ) { hasAnyNotes=true; } }); %>
                     <!-- Check if any influencer has profOfWork -->
-                    <% let hasAnyProfOfWork=false; influencerPRs.forEach(function(influencer) { if
+                    <% let hasAnyProfOfWork=false; influencers.forEach(function(influencer) { if
                         (influencer.profOfWork && influencer.profOfWork.trim() !=='' ) { hasAnyProfOfWork=true; } }); %>
 
                         <!-- Table Header -->
@@ -264,7 +264,7 @@
                             <div style="color: #374151; font-weight: 500; text-align: end">Total Price</div>
                         </div>
                         <div id="tableBody">
-                            <% influencerPRs.forEach(function(influencer) { %>
+                            <% influencers.forEach(function(influencer) { %>
                                 <!-- Table Row -->
                                 <div class="table-row-container">
 
@@ -321,15 +321,10 @@
                                                 </a>
                                             </p>
                                             <% } %>
-                                                <!-- <p style="font-size: 0.875rem; color: #6b7280; margin: 0 0 4px 0">Geography - <%=
-                                        influencer.location %>
-                                </p>
-                                <p style="font-size: 0.875rem; color: #374151; margin: 0">
-                                    <%= influencer.integratedVideos %> Integrated Video
-                                </p> -->
+                                                
                                     </div>
                                     <div class="table-cell" style="text-align: start; color: #111827">
-                                        <%= influencer.contentType %>
+                                        <%= influencer.deliverables %>
                                     </div>
                                     <div class="table-cell"
                                         style="text-align: center; color: #111827; font-weight: 500;">
@@ -352,9 +347,6 @@
                                         </span>
                                     </div>
                                     <% } %>
-
-
-
 
                                         <% }); %>
                         </div>
@@ -382,12 +374,6 @@
                             <span>Management Fee: (<%= managementFeePercentage %>%)</span>
                             <span>$<%= managementFee %></span>
                         </div>
-                        <!-- <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                        <span>Airdrops for KOL community (<%= airDropFeePercentage %>%)</span>
-                        <span>
-                            $<%= airDropFee %>
-                        </span>
-                    </div> -->
                         <div
                             style="display: flex; justify-content: space-between; padding-top: 12px; margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
                             <span style="font-weight: 600">Total</span>

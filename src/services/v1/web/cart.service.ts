@@ -165,6 +165,9 @@ export const createCart = async (
             influencerId,
             quantity,
             price: normalizePriceForDecimal(influencer.sellPrice),
+            isApproved: true,
+            notes: null,
+            proofOfWork: null,
         });
         await itemRepo.save(item);
     }

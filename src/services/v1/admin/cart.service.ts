@@ -27,6 +27,12 @@ export interface AdminCartItemDTO {
     price: string;
     notes?: string | null;
     proofOfWork?: string[] | null;
+    isApproved?: boolean;
+    /** From influencer (included when items are loaded with influencer relation). */
+    platform?: string | null;
+    platformLink?: string | null;
+    inventory?: string | null;
+    influencerName?: string | null;
 }
 
 export interface AdminCartDTO {
@@ -137,6 +143,7 @@ export const listCarts = async (options: ListCartsOptions = {}): Promise<ListCar
     for (const cart of carts) {
         const items = await itemRepo.find({
             where: { cartId: cart.id },
+            relations: ['influencer'],
             order: { createdAt: 'ASC' },
         });
         const client = (cart as any).client;
@@ -171,14 +178,22 @@ function mapCartToAdminDto(
         client: client
             ? { id: client.id, name: client.name, email: client.email }
             : { id: cart.clientId, name: '', email: '' },
-        items: items.map((item) => ({
-            id: item.id,
-            influencerId: item.influencerId,
-            quantity: item.quantity,
-            price: item.price,
-            notes: item.notes ?? null,
-            proofOfWork: item.proofOfWork ?? null,
-        })),
+        items: items.map((item) => {
+            const inf = (item as any).influencer;
+            return {
+                id: item.id,
+                influencerId: item.influencerId,
+                quantity: item.quantity,
+                price: item.price,
+                notes: item.notes ?? null,
+                proofOfWork: item.proofOfWork ?? null,
+                isApproved: item.isApproved ?? false,
+                platform: inf?.platform ?? null,
+                platformLink: inf?.platformLink ?? null,
+                inventory: inf?.inventory ?? null,
+                influencerName: inf?.name ?? null,
+            };
+        }),
     };
 }
 
@@ -194,7 +209,11 @@ export const getCart = async (cartId: string): Promise<AdminCartDTO> => {
         (err as any).status = HttpStatus.NOT_FOUND;
         throw err;
     }
-    const items = await itemRepo.find({ where: { cartId: cart.id }, order: { createdAt: 'ASC' } });
+    const items = await itemRepo.find({
+        where: { cartId: cart.id },
+        relations: ['influencer'],
+        order: { createdAt: 'ASC' },
+    });
     const client = (cart as any).client;
     return mapCartToAdminDto(cart, items, client);
 };
@@ -303,7 +322,11 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
     cart!.total = totalNum.toFixed(2);
     await cartRepo.save(cart!);
 
-    const items = await itemRepo.find({ where: { cartId: cart!.id }, order: { createdAt: 'ASC' } });
+    const items = await itemRepo.find({
+        where: { cartId: cart!.id },
+        relations: ['influencer'],
+        order: { createdAt: 'ASC' },
+    });
     return mapCartToAdminDto(cart!, items, { id: client.id, name: client.name, email: client.email });
 }
 
@@ -338,7 +361,11 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
 
     if (input.items === undefined) {
         // Only update cart-level percentages; recalc totals from existing items
-        const items = await itemRepo.find({ where: { cartId: cart.id }, order: { createdAt: 'ASC' } });
+        const items = await itemRepo.find({
+            where: { cartId: cart.id },
+            relations: ['influencer'],
+            order: { createdAt: 'ASC' },
+        });
         let subtotalNum = 0;
         for (const item of items) {
             subtotalNum += item.quantity * parseFloat(String(item.price));
@@ -355,7 +382,11 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
         cart.managementFeeAmount = managementFeeAmountNum.toFixed(2);
         cart.total = totalNum.toFixed(2);
         await cartRepo.save(cart);
-        const itemsAfter = await itemRepo.find({ where: { cartId: cart.id }, order: { createdAt: 'ASC' } });
+        const itemsAfter = await itemRepo.find({
+            where: { cartId: cart.id },
+            relations: ['influencer'],
+            order: { createdAt: 'ASC' },
+        });
         return mapCartToAdminDto(cart, itemsAfter, clientInfo);
     }
 
@@ -463,7 +494,11 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
     cart.total = totalNum.toFixed(2);
     await cartRepo.save(cart);
 
-    const itemsAfter = await itemRepo.find({ where: { cartId: cart.id }, order: { createdAt: 'ASC' } });
+    const itemsAfter = await itemRepo.find({
+        where: { cartId: cart.id },
+        relations: ['influencer'],
+        order: { createdAt: 'ASC' },
+    });
     return mapCartToAdminDto(cart, itemsAfter, clientInfo);
 };
 

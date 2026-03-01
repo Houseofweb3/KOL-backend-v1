@@ -90,6 +90,27 @@ GET /api/v1/admin/cart/ba1eef61-c376-48d0-ab0d-0ec6bab0062f
 
 ---
 
+## Download cart proposal PDF
+
+**GET** `/api/v1/admin/cart/:id/proposal-pdf`
+
+**Auth:** `Authorization: Bearer <admin_token>`.
+
+**Path:** `id` – cart UUID.
+
+**Success (200):** Response is a PDF file (attachment). Content-Type: `application/pdf`, Content-Disposition: `attachment; filename="proposal-{id}.pdf"`. The PDF uses **`src/templates/invoiceTemplate2.0.ejs`**: first page is the AMPLI5.AI intro (logo, tagline, “AMPLI5.AI”, “Our Pitch?”, overview), then a page break and “Project Investment” with the influencers table and summary (subtotal, discount, management fee, total).
+
+**Not found (404):** `{ "error": "Cart not found" }`.
+
+**Example:**
+
+```bash
+GET /api/v1/admin/cart/ba1eef61-c376-48d0-ab0d-0ec6bab0062f/proposal-pdf
+# Save as: proposal-ba1eef61-c376-48d0-ab0d-0ec6bab0062f.pdf
+```
+
+---
+
 **Create cart:** **POST** `/api/v1/admin/cart` – body: `clientId`, `discountPercent?`, `managementFeePercent?`, `items: [{ influencerId, quantity, price, notes?, proofOfWork? }]`. See **`API_ADMIN_CART_CREATE.md`**.
 
 **Update cart:** **PATCH** `/api/v1/admin/cart/:id` – client cannot be changed; update pricing (discount/fee) and/or sync items (update price/notes/proofOfWork, add/remove influencers). See **`API_ADMIN_CART_UPDATE.md`**.
@@ -120,6 +141,8 @@ DELETE /api/v1/admin/cart/ba1eef61-c376-48d0-ab0d-0ec6bab0062f
 
 **Folder structure (admin cart):**
 
-- `src/routes/v1/admin/cart.routes.ts` – GET `/`, GET `/:id`, POST `/`, PATCH `/:id`, DELETE `/:id`
-- `src/controllers/v1/admin/cart.controller.ts` – listCartsController, getCartController, createCartController, updateCartController, deleteCartController
+- `src/routes/v1/admin/cart.routes.ts` – GET `/`, GET `/:id/proposal-pdf`, GET `/:id`, POST `/`, PATCH `/:id`, DELETE `/:id`
+- `src/controllers/v1/admin/cart.controller.ts` – listCartsController, getCartController, getCartProposalPdfController, createCartController, updateCartController, deleteCartController
 - `src/services/v1/admin/cart.service.ts` – listCarts, getCart, createCart, updateCart, deleteCart
+- `src/services/v1/admin/cart-pdf.service.ts` – generateCartProposalPdf (EJS + Puppeteer)
+- `src/templates/invoiceTemplate2.0.ejs` – proposal PDF template (first page + Project Investment)

@@ -40,5 +40,7 @@ export class CartItem extends BaseModel {
     @Column({ type: 'decimal', precision: 12, scale: 2, name: 'price' })
     price!: string;
 
+    @Column({ type: 'boolean', default: false, name: 'is_approved' })
+    isApproved!: boolean;
 
 }

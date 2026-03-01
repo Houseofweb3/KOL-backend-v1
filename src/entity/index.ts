@@ -5,3 +5,5 @@ export * from './client.entity';
 export * from './cart.entity';
 export * from './cart-item.entity';
 export * from './cart-campaign-details.entity';
+export * from './proposal-link.entity';
+export * from './billing-info.entity';

@@ -2,6 +2,7 @@ import HttpStatus from 'http-status-codes';
 import { Request, Response } from 'express';
 import logger from '../../../config/logger';
 import { listCarts, getCart, createCart, updateCart, deleteCart } from '../../../services/v1/admin/cart.service';
+import { generateCartProposalPdf } from '../../../services/v1/admin/cart-pdf.service';
 
 /**
  * GET /admin/cart - list all carts with pagination, search by client (name/email), filter by status.
@@ -18,6 +19,24 @@ export const listCartsController = async (req: Request, res: Response) => {
     } catch (error: any) {
         const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
         logger.error(`Admin list carts error (${status}): ${error.message}`);
+        return res.status(status).json({ error: error.message });
+    }
+};
+
+/**
+ * GET /admin/cart/:id/proposal-pdf - generate and download cart proposal PDF.
+ */
+export const getCartProposalPdfController = async (req: Request, res: Response) => {
+    try {
+        const cartId = req.params.id;
+        const pdfBuffer = await generateCartProposalPdf(cartId);
+        const filename = `proposal-${cartId}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.send(pdfBuffer);
+    } catch (error: any) {
+        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        logger.error(`Admin cart proposal PDF error (${status}): ${error.message}`);
         return res.status(status).json({ error: error.message });
     }
 };
