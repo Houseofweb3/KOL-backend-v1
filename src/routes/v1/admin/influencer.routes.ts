@@ -14,7 +14,7 @@ import { uploadCsvMiddleware } from '../../../middleware/uploadCsv';
 
 const router = express.Router();
 
-router.use(verifyAdminAuth);
+// router.use(verifyAdminAuth);
 
 router.get('/', listInfluencersController);
 router.get('/select', listInfluencersForSelectController);

@@ -2,7 +2,7 @@ import { ENV } from '../config/env';
 import logger from '../config/logger';
 import { getNotificationTransporter } from './transporter';
 
-const NOTIFY_RECIPIENTS = process.env.NOTIFY_EMAIL?.split(',').filter(Boolean) as string[];
+const NOTIFY_RECIPIENTS = (process.env.NOTIFY_EMAIL?.split(',') ?? []).filter(Boolean) as string[];
 
 export type ClientOnboardFormType = 'creator' | 'brand';
 

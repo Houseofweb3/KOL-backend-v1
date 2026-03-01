@@ -118,16 +118,16 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
         topCountriesScreenshotUrl: raw['Top Countries Screenshot URL'] ?? null,
         paymentTerms: raw['Payment Terms'] ?? null,
         turnaroundTimes: raw['Turnaround Times'] ?? null,
-        firstCollaborationImage1: raw['First Collaboration Image 1'] ?? null,
-        firstCollaborationImage2: raw['First Collaboration Image 2'] ?? null,
-        firstCollaborationImage3: raw['First Collaboration Image 3'] ?? null,
+        firstCollaborationImage1: null,
+        firstCollaborationImage2: null,
+        firstCollaborationImage3: null,
         xLink: raw['X Link'] ?? null,
         instagramLink: raw['Instagram Link'] ?? null,
         youtubeLink: raw['YouTube Link'] ?? null,
         tiktokLink: raw['TikTok Link'] ?? null,
         newsletterLink: raw['Newsletter Link'] ?? null,
         finalConfirmation: toBool(row['Final Confirmation']),
-        isVerified: false,
+        isVerified: true,
     };
 }
 
