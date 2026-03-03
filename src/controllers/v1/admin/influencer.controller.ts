@@ -105,6 +105,7 @@ export const createInfluencerController = async (req: Request, res: Response) =>
         for (const key of INFLUENCER_CREATE_KEYS) {
             if (key !== 'name' && key !== 'email' && key in body) data[key] = body[key];
         }
+        if (Array.isArray(body.contentTypes)) data.contentTypes = body.contentTypes;
         const influencer = await createInfluencer(data as CreateInfluencerData);
         return res.status(HttpStatus.CREATED).json(influencer);
     } catch (error: any) {
@@ -121,6 +122,7 @@ export const updateInfluencerController = async (req: Request, res: Response) =>
         for (const key of INFLUENCER_UPDATE_KEYS) {
             if (key in body) data[key] = body[key];
         }
+        if (Array.isArray(body.contentTypes)) data.contentTypes = body.contentTypes;
         const influencer = await updateInfluencer(req.params.id, data as UpdateInfluencerData);
         return res.status(HttpStatus.OK).json(influencer);
     } catch (error: any) {

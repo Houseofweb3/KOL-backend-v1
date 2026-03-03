@@ -203,6 +203,18 @@ export const listInfluencersForSelect = async (options: {
     return { influencers: items, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
+/** Content type item for API (GET response and create/update payload). */
+export interface ContentTypeItem {
+    id?: string;
+    contentType: string;
+    quantity: string;
+    avgView: string;
+    price: string;
+    sellingPrice?: string | null;
+    cpm?: string | null;
+}
+
+/** GET influencer by id; returns influencer + contentTypes (one row built from influencer fields – no extra entity). */
 export const getInfluencerById = async (id: string) => {
     const repo = AppDataSource.getRepository(Influencer);
     const influencer = await repo.findOne({ where: { id } });
@@ -211,7 +223,21 @@ export const getInfluencerById = async (id: string) => {
         (err as any).status = HttpStatus.NOT_FOUND;
         throw err;
     }
-    return influencer;
+    const contentTypes =
+        influencer.inventory != null || influencer.buyPrice != null || influencer.avgViews != null
+            ? [
+                  {
+                      id: influencer.id,
+                      contentType: influencer.inventory ?? '',
+                      quantity: '1',
+                      avgView: influencer.avgViews ?? '',
+                      price: influencer.buyPrice ?? '',
+                      sellingPrice: influencer.sellPrice ?? null,
+                      cpm: influencer.cpm ?? null,
+                  },
+              ]
+            : [];
+    return { ...influencer, contentTypes };
 };
 
 export type CreateInfluencerData = {
@@ -247,16 +273,20 @@ export type CreateInfluencerData = {
     newsletterLink?: string | null;
     finalConfirmation?: boolean;
     isVerified?: boolean;
-};
+    /** For create: first item mapped to influencer inventory/buyPrice/sellPrice/avgViews/cpm (no extra entity). */
+    contentTypes?: ContentTypeItem[];
+}
 
-export const createInfluencer = async (data: CreateInfluencerData) => {
-    const repo = AppDataSource.getRepository(Influencer);
-    const buyPrice = data.buyPrice ?? null;
+/** Build influencer entity fields. When ct is set, use ct for inventory/price (one influencer per content type). */
+function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem) {
+    const price = ct?.price ?? data.buyPrice ?? null;
     const sellPrice =
-        (buyPrice != null && String(buyPrice).trim() !== ''
-            ? sellingPriceFromBuyingPrice(buyPrice)
-            : null) ?? data.sellPrice ?? null;
-    const influencer = repo.create({
+        ct != null
+            ? (ct.sellingPrice ?? sellingPriceFromBuyingPrice(ct.price)) ?? null
+            : (data.buyPrice != null && String(data.buyPrice).trim() !== ''
+                  ? sellingPriceFromBuyingPrice(data.buyPrice)
+                  : null) ?? data.sellPrice ?? null;
+    return {
         name: data.name,
         email: data.email.toLowerCase(),
         telegramId: data.telegramId ?? null,
@@ -265,11 +295,11 @@ export const createInfluencer = async (data: CreateInfluencerData) => {
         primaryTimezone: data.primaryTimezone ?? null,
         platform: data.platform ?? null,
         platformLink: data.platformLink ?? null,
-        inventory: data.inventory ?? null,
-        buyPrice: data.buyPrice ?? null,
+        inventory: ct?.contentType ?? data.inventory ?? null,
+        buyPrice: ct?.price ?? data.buyPrice ?? null,
         sellPrice,
-        cpm: data.cpm ?? null,
-        avgViews: data.avgViews ?? null,
+        cpm: ct?.cpm ?? data.cpm ?? null,
+        avgViews: ct?.avgView ?? data.avgViews ?? null,
         industries: data.industries ?? null,
         categories: data.categories ?? null,
         primaryAudienceGeography: data.primaryAudienceGeography ?? null,
@@ -290,8 +320,30 @@ export const createInfluencer = async (data: CreateInfluencerData) => {
         finalConfirmation: data.finalConfirmation ?? false,
         isVerified: data.isVerified ?? false,
         isDeleted: false,
-    });
-    return repo.save(influencer);
+    };
+}
+
+/**
+ * Create influencer(s). If contentTypes has multiple items, creates one influencer per item
+ * (same profile, each with that item's inventory/price). Returns saved entity/entities only (no contentTypes array).
+ */
+export const createInfluencer = async (
+    data: CreateInfluencerData
+): Promise<Influencer | Influencer[]> => {
+    const repo = AppDataSource.getRepository(Influencer);
+    const items = Array.isArray(data.contentTypes) ? data.contentTypes : [];
+    if (items.length <= 1) {
+        const firstCt = items[0];
+        const influencer = repo.create(baseInfluencerFromData(data, firstCt));
+        return repo.save(influencer);
+    }
+    const created: Influencer[] = [];
+    for (const ct of items) {
+        const influencer = repo.create(baseInfluencerFromData(data, ct));
+        const saved = await repo.save(influencer);
+        created.push(saved);
+    }
+    return created;
 };
 
 export type UpdateInfluencerData = Partial<CreateInfluencerData>;
@@ -340,7 +392,54 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
     if (data.newsletterLink !== undefined) influencer.newsletterLink = data.newsletterLink;
     if (data.finalConfirmation !== undefined) influencer.finalConfirmation = data.finalConfirmation;
     if (data.isVerified !== undefined) influencer.isVerified = data.isVerified;
-    return repo.save(influencer);
+
+    if (Array.isArray(data.contentTypes) && data.contentTypes.length > 0) {
+        const withId = data.contentTypes.find((ct) => ct.id != null && String(ct.id).trim() !== '');
+        const withoutId = data.contentTypes.filter((ct) => ct.id == null || String(ct.id).trim() === '');
+        const rowForExisting = withId ?? data.contentTypes[0];
+        influencer.inventory = rowForExisting.contentType;
+        influencer.buyPrice = rowForExisting.price;
+        influencer.sellPrice =
+            rowForExisting.sellingPrice ?? sellingPriceFromBuyingPrice(rowForExisting.price) ?? influencer.sellPrice;
+        influencer.cpm = rowForExisting.cpm ?? null;
+        influencer.avgViews = rowForExisting.avgView ?? null;
+        for (const ct of withoutId) {
+            const createData: CreateInfluencerData = {
+                name: data.name ?? influencer.name,
+                email: data.email ?? influencer.email,
+                telegramId: data.telegramId ?? influencer.telegramId,
+                whatsAppNumber: data.whatsAppNumber ?? influencer.whatsAppNumber,
+                primaryCountry: data.primaryCountry ?? influencer.primaryCountry,
+                primaryTimezone: data.primaryTimezone ?? influencer.primaryTimezone,
+                platform: data.platform ?? influencer.platform,
+                platformLink: data.platformLink ?? influencer.platformLink,
+                industries: data.industries ?? influencer.industries,
+                categories: data.categories ?? influencer.categories,
+                primaryAudienceGeography: data.primaryAudienceGeography ?? influencer.primaryAudienceGeography,
+                secondaryAudienceGeography: data.secondaryAudienceGeography ?? influencer.secondaryAudienceGeography,
+                ageScreenshotUrl: data.ageScreenshotUrl ?? influencer.ageScreenshotUrl,
+                genderScreenshotUrl: data.genderScreenshotUrl ?? influencer.genderScreenshotUrl,
+                topCountriesScreenshotUrl: data.topCountriesScreenshotUrl ?? influencer.topCountriesScreenshotUrl,
+                paymentTerms: data.paymentTerms ?? influencer.paymentTerms,
+                turnaroundTimes: data.turnaroundTimes ?? influencer.turnaroundTimes,
+                firstCollaborationImage1: data.firstCollaborationImage1 ?? influencer.firstCollaborationImage1,
+                firstCollaborationImage2: data.firstCollaborationImage2 ?? influencer.firstCollaborationImage2,
+                firstCollaborationImage3: data.firstCollaborationImage3 ?? influencer.firstCollaborationImage3,
+                xLink: data.xLink ?? influencer.xLink,
+                instagramLink: data.instagramLink ?? influencer.instagramLink,
+                youtubeLink: data.youtubeLink ?? influencer.youtubeLink,
+                tiktokLink: data.tiktokLink ?? influencer.tiktokLink,
+                newsletterLink: data.newsletterLink ?? influencer.newsletterLink,
+                finalConfirmation: data.finalConfirmation ?? influencer.finalConfirmation,
+                isVerified: data.isVerified ?? influencer.isVerified,
+                contentTypes: [{ ...ct, contentType: ct.contentType, quantity: ct.quantity ?? '1', avgView: ct.avgView, price: ct.price, sellingPrice: ct.sellingPrice ?? undefined, cpm: ct.cpm ?? undefined }],
+            };
+            await createInfluencer(createData);
+        }
+    }
+
+    await repo.save(influencer);
+    return getInfluencerById(id);
 };
 
 export const deleteInfluencer = async (id: string) => {
