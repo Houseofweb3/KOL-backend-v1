@@ -7,3 +7,5 @@ export * from './cart-item.entity';
 export * from './cart-campaign-details.entity';
 export * from './proposal-link.entity';
 export * from './billing-info.entity';
+export * from './media-folder.entity';
+export * from './media-file.entity';

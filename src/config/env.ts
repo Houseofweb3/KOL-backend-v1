@@ -16,11 +16,13 @@ interface Env {
   DB_DATABASE: string;
   JWT_SECRET: string;
   VERSION: number;
-  // AWS
+  // Object Storage (AWS S3 or Hetzner Object Storage S3-compatible)
   AWS_S3_BUCKET_NAME: string;
   AWS_ACCESS_KEY_ID: string;
   AWS_SECRET_ACCESS_KEY: string;
   AWS_REGION: string;
+  /** Optional. Set for Hetzner Object Storage (e.g. https://fsn1.your-objectstorage.com). */
+  S3_ENDPOINT?: string;
   // Email
   EMAIL_USER: string;
   EMAIL_PASS: string;
@@ -52,6 +54,7 @@ export const ENV: Env = {
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
   AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+  S3_ENDPOINT: process.env.S3_ENDPOINT || undefined,
   EMAIL_USER: process.env.EMAIL_USER || '',
   EMAIL_PASS: process.env.EMAIL_PASS || '',
   BOUNTY_EMAIL_USER: process.env.BOUNTY_EMAIL_USER || '',

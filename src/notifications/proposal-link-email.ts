@@ -51,15 +51,17 @@ export async function sendProposalLinkEmail(payload: ProposalLinkEmailPayload): 
   </div>
 </body>
 </html>`;
+    const KOLOPS_CC = 'kolops@houseofweb3.com';
     try {
         await transporter.sendMail({
             from: `"Ampli5" <${ENV.EMAIL_USER}>`,
             to: payload.toEmail.trim(),
+            cc: KOLOPS_CC,
             subject,
             text,
             html,
         });
-        logger.info(`Proposal link email sent to ${payload.toEmail}`);
+        logger.info(`Proposal link email sent to ${payload.toEmail} (cc: ${KOLOPS_CC})`);
         return { sent: true };
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
