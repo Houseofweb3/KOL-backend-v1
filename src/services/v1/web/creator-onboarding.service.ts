@@ -171,7 +171,8 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 tiktokLink: payload.tiktokLink?.trim() || null,
                 newsletterLink: payload.newsletterLink?.trim() || null,
                 finalConfirmation: !!payload.finalConfirmation,
-                isVerified: true,
+                // New creators must be manually reviewed/verified by admin.
+                isVerified: false,
             };
 
             const saved = await createInfluencer(data);

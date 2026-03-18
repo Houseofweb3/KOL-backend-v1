@@ -38,6 +38,30 @@ export function sellingPriceFromBuyingPrice(buyingPriceInput: string | number | 
     return String(calculateSellingPriceFromBuying(buying));
 }
 
+/** Parse avg views (strip non-numeric). Returns null if invalid/empty/<=0. */
+export function parseAvgViews(val: string | number | null | undefined): number | null {
+    if (val == null) return null;
+    const s = String(val).replace(/[^\d.]/g, '').trim();
+    if (s === '') return null;
+    const n = parseFloat(s);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * CPM-like metric: (price / avgViews) * 1000.
+ * Returns string (trimmed) or null when inputs are missing/invalid.
+ */
+export function calculatePricePerThousand(priceInput: string | number | null | undefined, avgViewsInput: string | number | null | undefined): string | null {
+    const price = parsePrice(priceInput);
+    const views = parseAvgViews(avgViewsInput);
+    if (price == null || views == null) return null;
+    const value = (price / views) * 1000;
+    if (!Number.isFinite(value) || value < 0) return null;
+    // keep 2 decimals, but avoid trailing .00
+    const fixed = value.toFixed(2);
+    return fixed.replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+}
+
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
@@ -136,6 +160,7 @@ export interface InfluencerSelectItem {
     firstCollaborationImage3: string | null;
     avgViews: string | null;
     cpm: string | null;
+    ccp: string | null;
     buyPrice: string | null;
 }
 
@@ -173,6 +198,7 @@ export const listInfluencersForSelect = async (options: {
             'i.firstCollaborationImage3',
             'i.avgViews',
             'i.cpm',
+            'i.ccp',
             'i.buyPrice',
         ])
         .orderBy('i.name', 'ASC')
@@ -198,6 +224,8 @@ export const listInfluencersForSelect = async (options: {
         firstCollaborationImage3: i.firstCollaborationImage3 ?? null,
         avgViews: i.avgViews ?? null,
         cpm: i.cpm ?? null,
+        // Always compute/normalize `ccp` from buyPrice + avgViews.
+        ccp: calculatePricePerThousand(i.buyPrice, i.avgViews) ?? null,
         buyPrice: i.buyPrice ?? null,
     }));
     return { influencers: items, total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -212,6 +240,7 @@ export interface ContentTypeItem {
     price: string;
     sellingPrice?: string | null;
     cpm?: string | null;
+    ccp?: string | null;
 }
 
 /** GET influencer by id; returns influencer + contentTypes (one row built from influencer fields – no extra entity). */
@@ -234,6 +263,8 @@ export const getInfluencerById = async (id: string) => {
                       price: influencer.buyPrice ?? '',
                       sellingPrice: influencer.sellPrice ?? null,
                       cpm: influencer.cpm ?? null,
+                      // Always compute/normalize `ccp` from buyPrice + avgViews.
+                      ccp: calculatePricePerThousand(influencer.buyPrice, influencer.avgViews) ?? null,
                   },
               ]
             : [];
@@ -253,6 +284,7 @@ export type CreateInfluencerData = {
     buyPrice?: string | null;
     sellPrice?: string | null;
     cpm?: string | null;
+    ccp?: string | null;
     avgViews?: string | null;
     industries?: string | null;
     categories?: string | null;
@@ -286,6 +318,10 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
             : (data.buyPrice != null && String(data.buyPrice).trim() !== ''
                   ? sellingPriceFromBuyingPrice(data.buyPrice)
                   : null) ?? data.sellPrice ?? null;
+
+    const avgViews = ct?.avgView ?? data.avgViews ?? null;
+    const computedCpm = calculatePricePerThousand(sellPrice, avgViews);
+    const computedCcp = calculatePricePerThousand(price, avgViews);
     return {
         name: data.name,
         email: data.email.toLowerCase(),
@@ -298,8 +334,10 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
         inventory: ct?.contentType ?? data.inventory ?? null,
         buyPrice: ct?.price ?? data.buyPrice ?? null,
         sellPrice,
-        cpm: ct?.cpm ?? data.cpm ?? null,
-        avgViews: ct?.avgView ?? data.avgViews ?? null,
+        cpm: ct?.cpm ?? data.cpm ?? computedCpm ?? null,
+        // `ccp` must be derived from buyPrice + avgViews. If not computable, store NULL.
+        ccp: computedCcp ?? null,
+        avgViews,
         industries: data.industries ?? null,
         categories: data.categories ?? null,
         primaryAudienceGeography: data.primaryAudienceGeography ?? null,
@@ -369,10 +407,30 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
         influencer.buyPrice = data.buyPrice;
         const computed = sellingPriceFromBuyingPrice(data.buyPrice);
         influencer.sellPrice = computed ?? data.sellPrice ?? influencer.sellPrice;
+        // `ccp` is always derived from buyPrice + avgViews.
+        const computedCcp = calculatePricePerThousand(influencer.buyPrice, data.avgViews ?? influencer.avgViews);
+        influencer.ccp = computedCcp ?? null;
     }
     if (data.sellPrice !== undefined) influencer.sellPrice = data.sellPrice;
     if (data.cpm !== undefined) influencer.cpm = data.cpm;
     if (data.avgViews !== undefined) influencer.avgViews = data.avgViews;
+
+    // If avgViews changed and CPM/CCP aren't explicitly set, recompute (if possible).
+    if (data.avgViews !== undefined) {
+        if (data.cpm === undefined) {
+            const computedCpm = calculatePricePerThousand(influencer.sellPrice, influencer.avgViews);
+            if (computedCpm != null) influencer.cpm = computedCpm;
+        }
+        // `ccp` is always derived from buyPrice + avgViews.
+        const computedCcp = calculatePricePerThousand(influencer.buyPrice, influencer.avgViews);
+        influencer.ccp = computedCcp ?? null;
+    }
+
+    // If caller sent `ccp` (any value), ignore it and still enforce derived value.
+    if (data.ccp !== undefined && data.buyPrice === undefined && data.avgViews === undefined) {
+        const computedCcp = calculatePricePerThousand(influencer.buyPrice, influencer.avgViews);
+        influencer.ccp = computedCcp ?? null;
+    }
     if (data.industries !== undefined) influencer.industries = data.industries;
     if (data.categories !== undefined) influencer.categories = data.categories;
     if (data.primaryAudienceGeography !== undefined) influencer.primaryAudienceGeography = data.primaryAudienceGeography;
@@ -403,6 +461,14 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
             rowForExisting.sellingPrice ?? sellingPriceFromBuyingPrice(rowForExisting.price) ?? influencer.sellPrice;
         influencer.cpm = rowForExisting.cpm ?? null;
         influencer.avgViews = rowForExisting.avgView ?? null;
+        // Always derive `ccp` from buyPrice + avgViews; if not computable, store NULL.
+        influencer.ccp = calculatePricePerThousand(influencer.buyPrice, influencer.avgViews) ?? null;
+
+        // Auto compute CPM if not provided.
+        if (rowForExisting.cpm == null) {
+            const computedCpm = calculatePricePerThousand(influencer.sellPrice, influencer.avgViews);
+            if (computedCpm != null) influencer.cpm = computedCpm;
+        }
         for (const ct of withoutId) {
             const createData: CreateInfluencerData = {
                 name: data.name ?? influencer.name,
@@ -432,7 +498,8 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
                 newsletterLink: data.newsletterLink ?? influencer.newsletterLink,
                 finalConfirmation: data.finalConfirmation ?? influencer.finalConfirmation,
                 isVerified: data.isVerified ?? influencer.isVerified,
-                contentTypes: [{ ...ct, contentType: ct.contentType, quantity: ct.quantity ?? '1', avgView: ct.avgView, price: ct.price, sellingPrice: ct.sellingPrice ?? undefined, cpm: ct.cpm ?? undefined }],
+                // `ccp` will be computed inside baseInfluencerFromData.
+                contentTypes: [{ ...ct, contentType: ct.contentType, quantity: ct.quantity ?? '1', avgView: ct.avgView, price: ct.price, sellingPrice: ct.sellingPrice ?? undefined, cpm: ct.cpm ?? undefined, ccp: undefined }],
             };
             await createInfluencer(createData);
         }

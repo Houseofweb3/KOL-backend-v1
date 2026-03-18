@@ -16,7 +16,7 @@ import { uploadInfluencersFromCsv } from '../../../services/v1/admin/influencer-
 
 const INFLUENCER_CREATE_KEYS = [
     'name', 'email', 'telegramId', 'whatsAppNumber', 'primaryCountry', 'primaryTimezone',
-    'platform', 'platformLink', 'inventory', 'buyPrice', 'sellPrice', 'cpm', 'avgViews',
+    'platform', 'platformLink', 'inventory', 'buyPrice', 'sellPrice', 'cpm', 'ccp', 'avgViews',
     'industries', 'categories', 'primaryAudienceGeography', 'secondaryAudienceGeography',
     'ageScreenshotUrl', 'genderScreenshotUrl', 'topCountriesScreenshotUrl', 'paymentTerms', 'turnaroundTimes',
     'firstCollaborationImage1', 'firstCollaborationImage2', 'firstCollaborationImage3',

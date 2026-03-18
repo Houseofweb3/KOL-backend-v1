@@ -1,6 +1,7 @@
 import { Brackets } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Influencer } from '../../../entity/influencer.entity';
+import { calculatePricePerThousand } from '../admin/influencer.service';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -58,7 +59,9 @@ const WEB_INFLUENCER_SELECT = [
     'i.platformLink',
     'i.inventory',
     'i.sellPrice',
+    'i.buyPrice',
     'i.cpm',
+    'i.ccp',
     'i.avgViews',
     'i.industries',
     'i.categories',
@@ -109,5 +112,11 @@ export const webListInfluencers = async (
     }
 
     const [influencers, total] = await qb.getManyAndCount();
+
+    // Always compute/normalize `ccp` from buyPrice + avgViews.
+    influencers.forEach((inf) => {
+        inf.ccp = calculatePricePerThousand(inf.buyPrice, inf.avgViews) ?? null;
+    });
+
     return { influencers, total, page, limit, totalPages: Math.ceil(total / limit) };
 };

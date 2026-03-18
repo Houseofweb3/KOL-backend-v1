@@ -56,6 +56,10 @@ export class Influencer extends BaseModel {
     cpm!: string | null;
 
     @Index()
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    ccp!: string | null;
+
+    @Index()
     @Column({ type: 'varchar', length: 50, nullable: true, name: 'avg_views' })
     avgViews!: string | null;
 

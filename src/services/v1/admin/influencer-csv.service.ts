@@ -20,6 +20,7 @@ export const CSV_INFLUENCER_HEADER_MAP: Record<string, string> = {
     'Buy Price': 'buyPrice',
     'Sell Price': 'sellPrice',
     'CPM': 'cpm',
+    'CCP': 'ccp',
     'Avg Views': 'avgViews',
     'Industries': 'industries',
     'Categories': 'categories',
@@ -115,6 +116,7 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
         buyPrice,
         sellPrice,
         cpm: getRaw(raw, 'CPM') != null ? stripPriceToNumeric(getRaw(raw, 'CPM')) : null,
+        ccp: getRaw(raw, 'CCP') != null ? stripPriceToNumeric(getRaw(raw, 'CCP')) : null,
         avgViews: getRaw(raw, 'Avg Views'),
         industries: getRaw(raw, 'Industries'),
         categories: getRaw(raw, 'Categories'),
@@ -134,7 +136,8 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
         tiktokLink: getRaw(raw, 'TikTok Link'),
         newsletterLink: getRaw(raw, 'Newsletter Link'),
         finalConfirmation: toBool(row['Final Confirmation']),
-        isVerified: true,
+        // New influencers from CSV intake must be manually reviewed/verified.
+        isVerified: false,
     };
 }
 
