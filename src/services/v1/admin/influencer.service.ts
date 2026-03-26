@@ -249,7 +249,7 @@ export const getInfluencerById = async (id: string) => {
     const influencer = await repo.findOne({ where: { id } });
     if (!influencer) {
         const err = new Error('Influencer not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
+        (err as unknown as { status: number }).status = HttpStatus.NOT_FOUND;
         throw err;
     }
     const contentTypes =
@@ -335,8 +335,7 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
         buyPrice: ct?.price ?? data.buyPrice ?? null,
         sellPrice,
         cpm: ct?.cpm ?? data.cpm ?? computedCpm ?? null,
-        // `ccp` must be derived from buyPrice + avgViews. If not computable, store NULL.
-        ccp: computedCcp ?? null,
+        ccp: ct?.ccp ?? data.ccp ?? computedCcp ?? null,
         avgViews,
         industries: data.industries ?? null,
         categories: data.categories ?? null,
@@ -391,7 +390,7 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
     const influencer = await repo.findOne({ where: { id } });
     if (!influencer) {
         const err = new Error('Influencer not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
+        (err as unknown as { status: number }).status = HttpStatus.NOT_FOUND;
         throw err;
     }
     if (data.name != null) influencer.name = data.name;
@@ -514,7 +513,7 @@ export const deleteInfluencer = async (id: string) => {
     const influencer = await repo.findOne({ where: { id } });
     if (!influencer) {
         const err = new Error('Influencer not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
+        (err as unknown as { status: number }).status = HttpStatus.NOT_FOUND;
         throw err;
     }
     influencer.isDeleted = true;

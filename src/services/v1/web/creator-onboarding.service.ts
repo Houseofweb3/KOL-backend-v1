@@ -57,6 +57,7 @@ export interface CreatorOnboardingInventoryItem {
     rate: string;
     averageViews?: string;
     cpm?: string;
+    ccp?: string;
 }
 
 /** Request body: matches frontend CreatorOnboardingFormData. */
@@ -103,12 +104,12 @@ export interface CreatorOnboardingResult {
 export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload): Promise<CreatorOnboardingResult> {
     if (!payload.channelBrandName?.trim()) {
         const err = new Error('Channel / Brand Name is required.');
-        (err as any).status = HttpStatus.BAD_REQUEST;
+        (err as unknown as { status: number }).status = HttpStatus.BAD_REQUEST;
         throw err;
     }
     if (!payload.primaryContactEmail?.trim()) {
         const err = new Error('Primary Contact Email is required.');
-        (err as any).status = HttpStatus.BAD_REQUEST;
+        (err as unknown as { status: number }).status = HttpStatus.BAD_REQUEST;
         throw err;
     }
 
@@ -136,6 +137,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
             const sellPrice = buyPrice != null ? sellingPriceFromBuyingPrice(buyPrice) : null;
             const avgViews = inv.averageViews != null ? String(inv.averageViews).trim() || null : null;
             const cpm = inv.cpm != null && String(inv.cpm).trim() !== '' ? stripPriceToNumeric(inv.cpm) : null;
+            const ccp = inv.ccp != null && String(inv.ccp).trim() !== '' ? stripPriceToNumeric(inv.ccp) : null;
 
             const data: CreateInfluencerData = {
                 name,
@@ -150,6 +152,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 buyPrice: buyPrice ?? null,
                 sellPrice,
                 cpm,
+                ccp,
                 avgViews,
                 industries: toStr(payload.industries),
                 categories: toStr(payload.categories),
@@ -183,7 +186,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
 
     if (influencerIds.length === 0) {
         const err = new Error('No inventory items with a rate were selected. Please select at least one item and enter a rate.');
-        (err as any).status = HttpStatus.BAD_REQUEST;
+        (err as unknown as { status: number }).status = HttpStatus.BAD_REQUEST;
         throw err;
     }
 
