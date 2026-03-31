@@ -6,6 +6,11 @@ import HttpStatus from 'http-status-codes';
 import { AppDataSource } from '../../../config/data-source';
 import { Cart } from '../../../entity/cart.entity';
 import { CartItem } from '../../../entity/cart-item.entity';
+import {
+    CART_CURRENCY_DEFAULT,
+    getCartCurrencyDisplayName,
+    getCartCurrencySymbol,
+} from '../../../constants/cart';
 
 /** Base folder for platform icon SVGs (paths in PLATFORM_MAP are relative to this). */
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -49,6 +54,12 @@ export interface InvoiceInfluencer {
 export interface InvoiceTemplateViewData {
     influencers: InvoiceInfluencer[];
     influencerLength: number;
+    /** ISO code, e.g. USD, INR, AED */
+    currencyCode: string;
+    /** Prefix for numeric amounts in the table and summary */
+    currencySymbol: string;
+    /** Full name for subtitle, e.g. US Dollar */
+    currencyDisplayName: string;
     totalPrice: string;
     discount: number;
     discountAmount: string;
@@ -168,9 +179,15 @@ async function getCartProposalData(cartId: string, iconCache: Record<string, str
     });
 
     const managementFeePercentStr = String(cart.managementFeePercent ?? '15');
+    const currencyCode = (cart.currency || CART_CURRENCY_DEFAULT).toString().trim().toUpperCase();
+    const currencySymbol = getCartCurrencySymbol(currencyCode);
+    const currencyDisplayName = getCartCurrencyDisplayName(currencyCode);
     return {
         influencers,
         influencerLength: influencers.length,
+        currencyCode,
+        currencySymbol,
+        currencyDisplayName,
         totalPrice: subtotalNum.toFixed(2),
         discount: discountPercent,
         discountAmount: discountAmountNum.toFixed(2),

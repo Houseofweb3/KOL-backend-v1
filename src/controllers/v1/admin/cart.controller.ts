@@ -67,6 +67,8 @@ export const createCartController = async (req: Request, res: Response) => {
         const items = Array.isArray(body.items) ? body.items : [];
         const result = await createCart({
             clientId,
+            currency: body.currency,
+            ratio: body.ratio,
             managementFeePercent,
             discountPercent,
             items,
@@ -86,6 +88,8 @@ export const updateCartController = async (req: Request, res: Response) => {
     try {
         const body = req.body || {};
         const result = await updateCart(req.params.id, {
+            currency: body.currency,
+            ratio: body.ratio,
             discountPercent: body.discountPercent,
             managementFeePercent: body.managementFeePercent,
             items: Array.isArray(body.items) ? body.items : undefined,

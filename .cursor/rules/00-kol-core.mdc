@@ -1,0 +1,21 @@
+---
+description: Core engineering rules for KOL backend
+alwaysApply: true
+---
+
+# KOL Backend (core rules)
+
+- Keep changes **minimal and consistent** with existing patterns in `src/` (controllers/services/entities/utils).
+- Never commit secrets:
+  - Avoid editing `.env` (prefer `.env.example` for new vars).
+  - If a change requires a new env var, also update validation/loading in config (and document it).
+- Prefer **TypeScript-first**: typed inputs/outputs, no `any` unless unavoidable.
+- Error handling:
+  - Don’t swallow errors.
+  - Return consistent HTTP errors/messages and log server-side context.
+- Data integrity:
+  - Avoid “magic numbers”; centralize in `src/constants/**`.
+  - When updating pricing/business rules, update shared utilities/constants so web/admin flows stay aligned.
+- PR-quality bar:
+  - Run `npm run lint` and `npm run build` (or `start:prod`) after non-trivial changes.
+  - Keep edits formatted (Prettier) and avoid unrelated refactors in the same change.

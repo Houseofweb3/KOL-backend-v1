@@ -6,6 +6,7 @@ import { adminInfluencerRoutes } from './influencer.routes';
 import { adminCartRoutes } from './cart.routes';
 import { adminDatabaseRoutes } from './database.routes';
 import { adminMediaRoutes } from './media.routes';
+import { adminRateRoutes } from './rate.routes';
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use('/influencer', adminInfluencerRoutes);
 router.use('/cart', adminCartRoutes);
 router.use('/database', adminDatabaseRoutes);
 router.use('/media', adminMediaRoutes);
+router.use('/rate', adminRateRoutes);
 
 export const adminRoutes = router;

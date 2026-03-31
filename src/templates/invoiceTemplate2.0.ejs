@@ -224,6 +224,12 @@
             <p style="font-size: 22px; font-weight: normal">
                 The below proposal contains the cost of <%= influencerLength %> influencers
             </p>
+            <p style="font-size: 18px; font-weight: 600; color: #374151; margin-top: 16px; margin-bottom: 0">
+                Currency: <%= typeof currencyCode !== 'undefined' ? currencyCode : 'USD' %> (<%= typeof currencyDisplayName !== 'undefined' ? currencyDisplayName : 'US Dollar' %>)
+            </p>
+            <p style="font-size: 15px; font-weight: normal; color: #6b7280; margin-top: 8px">
+                All amounts in this proposal are quoted in <%= typeof currencyCode !== 'undefined' ? currencyCode : 'USD' %>.
+            </p>
         </div>
 
         <!-- Investment Section -->
@@ -260,8 +266,8 @@
                             <div style="color: #374151; font-weight: 500">Website</div>
                             <div style="color: #374151; font-weight: 500; text-align: start">Deliverables</div>
                             <div style="color: #374151; font-weight: 500; text-align: center">Quantity</div>
-                            <div style="color: #374151; font-weight: 500; text-align: end">Unit Price</div>
-                            <div style="color: #374151; font-weight: 500; text-align: end">Total Price</div>
+                            <div style="color: #374151; font-weight: 500; text-align: end">Unit Price (<%= typeof currencyCode !== 'undefined' ? currencyCode : 'USD' %>)</div>
+                            <div style="color: #374151; font-weight: 500; text-align: end">Total Price (<%= typeof currencyCode !== 'undefined' ? currencyCode : 'USD' %>)</div>
                         </div>
                         <div id="tableBody">
                             <% influencers.forEach(function(influencer) { %>
@@ -334,10 +340,10 @@
                                             <%= quantity %>
                                     </div>
                                     <div class="table-cell" style="text-align: end; color: #111827; font-weight: 500;">
-                                        $<%= unitPrice.toFixed(2) %>
+                                        <%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= unitPrice.toFixed(2) %>
                                     </div>
                                     <div class="table-cell" style="text-align: end; color: #111827; font-weight: 500;">
-                                        $<%= lineTotal.toFixed(2) %>
+                                        <%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= lineTotal.toFixed(2) %>
                                     </div>
                                 </div>
                                 <% if (influencer.notes) { %>
@@ -358,26 +364,26 @@
             <div style="background-color: #a762fe; color: #ffffff; border-radius: 8px; padding: 24px; width: 50%;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                     <span>Subtotal</span>
-                    <span>$<%= totalPrice %></span>
+                    <span><%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= totalPrice %></span>
                 </div>
                 <% if (discount && discount> 0) { %>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #ffd700;">
                         <span>Discount (<%= discount %>% off)</span>
-                        <span>-$<%= discountAmount %></span>
+                        <span>-<%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= discountAmount %></span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                         <span>Total After Discount</span>
-                        <span>$<%= totalPriceAfterDiscount %></span>
+                        <span><%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= totalPriceAfterDiscount %></span>
                     </div>
                     <% } %>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
                             <span>Management Fee: (<%= managementFeePercentage %>%)</span>
-                            <span>$<%= managementFee %></span>
+                            <span><%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= managementFee %></span>
                         </div>
                         <div
                             style="display: flex; justify-content: space-between; padding-top: 12px; margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
                             <span style="font-weight: 600">Total</span>
-                            <span style="font-weight: 600">$<%= totalPriceWithFee %></span>
+                            <span style="font-weight: 600"><%= typeof currencySymbol !== 'undefined' ? currencySymbol : '$' %><%= totalPriceWithFee %></span>
                         </div>
             </div>
         </div>

@@ -4,7 +4,19 @@ import { Cart } from '../../../entity/cart.entity';
 import { CartItem } from '../../../entity/cart-item.entity';
 import { Client } from '../../../entity/client.entity';
 import { Influencer } from '../../../entity/influencer.entity';
-import { CartStatus, CART_STATUS_DEFAULT } from '../../../constants/cart';
+import {
+    CartStatus,
+    CART_STATUS_DEFAULT,
+    CartCurrency,
+    CART_CURRENCY_DEFAULT,
+    resolveCartCurrency,
+} from '../../../constants/cart';
+import {
+    formatPriceRatioForDb,
+    parseProposalRatioFromBody,
+    proposalUnitPriceFromSellPrice,
+} from '../../../utils/cart-proposal-pricing';
+import type { Repository } from 'typeorm';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -12,12 +24,41 @@ const MAX_LIMIT = 100;
 
 const VALID_STATUSES: string[] = [CartStatus.GENERATE, CartStatus.SEND, CartStatus.UPDATED, CartStatus.APPROVED];
 
+function cartCurrencyFromInput(raw: unknown): CartCurrency {
+    try {
+        return resolveCartCurrency(raw);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Invalid currency';
+        const err = new Error(msg);
+        (err as { status?: number }).status = HttpStatus.BAD_REQUEST;
+        throw err;
+    }
+}
+
 function normalizePriceForDecimal(raw: string | number | null | undefined): string {
     if (raw == null || String(raw).trim() === '') return '0.00';
     const cleaned = String(raw).replace(/[$,]/g, '').trim();
     const num = parseFloat(cleaned);
     if (!Number.isFinite(num) || num < 0) return '0.00';
     return num.toFixed(2);
+}
+
+async function reapplyProposalPricesFromSellPriceAndRatio(
+    cartId: string,
+    ratio: number,
+    itemRepo: Repository<CartItem>,
+): Promise<void> {
+    const items = await itemRepo.find({ where: { cartId }, relations: ['influencer'] });
+    for (const item of items) {
+        const inf = (item as CartItem & { influencer?: Influencer }).influencer;
+        if (!inf?.sellPrice) {
+            const err = new Error(`Influencer ${item.influencerId} has no sell price; cannot apply ratio`);
+            (err as { status?: number }).status = HttpStatus.BAD_REQUEST;
+            throw err;
+        }
+        item.price = proposalUnitPriceFromSellPrice(inf.sellPrice, ratio);
+        await itemRepo.save(item);
+    }
 }
 
 export interface AdminCartItemDTO {
@@ -39,6 +80,9 @@ export interface AdminCartDTO {
     id: string;
     clientId: string;
     status: string;
+    currency: CartCurrency;
+    /** Sell-price multiplier used for line proposal amounts; null if lines used explicit prices only. */
+    priceRatio: string | null;
     createdAt: string;
     subtotal: string;
     discountPercent: string;
@@ -58,7 +102,11 @@ export interface AdminCartDTO {
 export interface AdminCreateCartItemInput {
     influencerId: string;
     quantity: number;
-    price: string | number;
+    /**
+     * Optional when backend is ratio-converting (INR/AED) or when you want to use influencer.sellPrice directly (USD).
+     * When provided, backend normalizes it and uses it as the line unit price.
+     */
+    price?: string | number;
     notes?: string | null;
     proofOfWork?: string[] | null;
 }
@@ -66,6 +114,13 @@ export interface AdminCreateCartItemInput {
 /** Payload for admin create cart (create/replace cart for client). */
 export interface AdminCreateCartInput {
     clientId: string;
+    /** One of USD, INR, AED. Defaults to USD when omitted. */
+    currency?: string;
+    /**
+     * Required when `currency` is INR or AED (frontend sends the same rate shown in UI; backend does not fetch live rates).
+     * Optional when `currency` is USD: if set, line price = sellPrice × ratio (markup); if omitted, use item `price` or sellPrice × 1.
+     */
+    ratio?: string | number;
     managementFeePercent?: string | number;
     discountPercent?: string | number;
     items: AdminCreateCartItemInput[];
@@ -84,13 +139,24 @@ export interface AdminUpdateCartItemInput {
 export interface AdminAddCartItemInput {
     influencerId: string;
     quantity: number;
-    price: string | number;
+    /**
+     * Optional when backend is ratio-converting (INR/AED) or when using current cart currency.
+     * When omitted, backend uses influencer.sellPrice (USD) or influencer.sellPrice × cart.priceRatio (if present).
+     */
+    price?: string | number;
     notes?: string | null;
     proofOfWork?: string[] | null;
 }
 
 /** Payload for admin update cart. Client cannot be changed. items = full desired set (updates + adds); omitted items are removed. */
 export interface AdminUpdateCartInput {
+    /** When set, must be USD, INR, or AED. */
+    currency?: string;
+    /**
+     * When changing currency to INR/AED, send the same `ratio` the frontend used (required). Backend does not fetch live rates.
+     * When changing currency to USD without `ratio`, lines are recalculated as sellPrice × 1.
+     */
+    ratio?: string | number;
     discountPercent?: string | number;
     managementFeePercent?: string | number;
     /** If provided: sync items (update by id, add by influencerId, remove if not listed). If omitted: keep existing items, only recalc totals from cart-level discount/fee. */
@@ -168,6 +234,8 @@ function mapCartToAdminDto(
         id: cart.id,
         clientId: cart.clientId,
         status: cart.status,
+        currency: (cart.currency as CartCurrency) ?? CART_CURRENCY_DEFAULT,
+        priceRatio: cart.priceRatio ?? null,
         createdAt: cart.createdAt.toISOString(),
         subtotal: cart.subtotal ?? '0.00',
         discountPercent: cart.discountPercent ?? '0',
@@ -243,13 +311,22 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
         throw err;
     }
 
+    const cartCurrency = cartCurrencyFromInput(input.currency);
+
+    let ratioNum: number | null = null;
+    if (cartCurrency !== CART_CURRENCY_DEFAULT) {
+        // sellPrice is USD; INR/AED lines = sellPrice × ratio. Ratio must come from frontend (e.g. after GET /admin/rate).
+        ratioNum = parseProposalRatioFromBody(input.ratio);
+    } else if (input.ratio !== undefined) {
+        ratioNum = parseProposalRatioFromBody(input.ratio);
+    }
+
     const influencerRepo = AppDataSource.getRepository(Influencer);
     const normalized: { influencerId: string; quantity: number; price: string; notes: string | null; proofOfWork: string[] | null }[] = [];
     for (let i = 0; i < itemsInput.length; i++) {
         const raw = itemsInput[i];
         const influencerId = raw?.influencerId != null ? String(raw.influencerId).trim() : '';
         const quantity = Number(raw?.quantity);
-        const price = normalizePriceForDecimal(raw?.price);
         if (!influencerId) {
             const err = new Error(`items[${i}]: influencerId is required`);
             (err as any).status = HttpStatus.BAD_REQUEST;
@@ -266,6 +343,27 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
             (err as any).status = HttpStatus.NOT_FOUND;
             throw err;
         }
+        let price: string;
+        if (ratioNum != null) {
+            if (!inf.sellPrice) {
+                const err = new Error(`items[${i}]: influencer has no sell price; required when ratio is set`);
+                (err as any).status = HttpStatus.BAD_REQUEST;
+                throw err;
+            }
+            price = proposalUnitPriceFromSellPrice(inf.sellPrice, ratioNum);
+        } else {
+            if (raw?.price !== undefined && String(raw.price).trim() !== '') {
+                price = normalizePriceForDecimal(raw.price);
+            } else {
+                // Default behavior: use influencer.sellPrice directly (USD) when admin currency is USD.
+                if (!inf.sellPrice) {
+                    const err = new Error(`items[${i}]: influencer has no sell price and price is required`);
+                    (err as any).status = HttpStatus.BAD_REQUEST;
+                    throw err;
+                }
+                price = proposalUnitPriceFromSellPrice(inf.sellPrice, 1);
+            }
+        }
         const notes = raw.notes != null ? String(raw.notes).trim() || null : null;
         const proofOfWork = Array.isArray(raw.proofOfWork) ? raw.proofOfWork.filter((u): u is string => typeof u === 'string') : null;
         normalized.push({ influencerId, quantity, price, notes, proofOfWork: proofOfWork?.length ? proofOfWork : null });
@@ -279,6 +377,8 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
     const cart = cartRepo.create({
         clientId: client.id,
         status: CART_STATUS_DEFAULT,
+        currency: cartCurrency,
+        priceRatio: ratioNum != null ? formatPriceRatioForDb(ratioNum) : null,
         subtotal: '0',
         discountPercent: '0',
         discountAmount: '0',
@@ -354,8 +454,32 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
             ? Math.max(0, Math.min(100, Number(input.managementFeePercent) ?? 15))
             : parseFloat(String(cart.managementFeePercent ?? '15'));
 
+    const originalCurrency = cart.currency;
+    const targetCurrency = input.currency !== undefined ? cartCurrencyFromInput(input.currency) : originalCurrency;
+
+    let ratioToApply: number | null = null;
+    if (input.ratio !== undefined) {
+        ratioToApply = parseProposalRatioFromBody(input.ratio);
+    } else if (input.currency !== undefined && targetCurrency !== originalCurrency) {
+        if (targetCurrency === CART_CURRENCY_DEFAULT) {
+            ratioToApply = 1;
+        } else {
+            const err = new Error('ratio is required when changing cart currency to INR or AED (use the same value shown on the frontend)');
+            (err as { status?: number }).status = HttpStatus.BAD_REQUEST;
+            throw err;
+        }
+    }
+
+    if (input.currency !== undefined) {
+        cart.currency = targetCurrency;
+    }
+
     if (input.items === undefined) {
         // Only update cart-level percentages; recalc totals from existing items
+        if (ratioToApply != null) {
+            await reapplyProposalPricesFromSellPriceAndRatio(cart.id, ratioToApply, itemRepo);
+            cart.priceRatio = formatPriceRatioForDb(ratioToApply);
+        }
         const items = await itemRepo.find({
             where: { cartId: cart.id },
             relations: ['influencer'],
@@ -428,7 +552,7 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
             }
             item.quantity = q;
         }
-        if (u.price !== undefined) item.price = normalizePriceForDecimal(u.price);
+        if (ratioToApply == null && u.price !== undefined) item.price = normalizePriceForDecimal(u.price);
         if (u.notes !== undefined) item.notes = u.notes != null ? String(u.notes).trim() || null : null;
         if (u.proofOfWork !== undefined) {
             item.proofOfWork = Array.isArray(u.proofOfWork) ? u.proofOfWork.filter((x): x is string => typeof x === 'string') : null;
@@ -441,7 +565,6 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
         const raw = addList[i];
         const influencerId = String(raw.influencerId).trim();
         const quantity = Number(raw.quantity);
-        const price = normalizePriceForDecimal(raw.price);
         if (!influencerId) {
             const err = new Error(`items[${i}]: influencerId is required for new item`);
             (err as any).status = HttpStatus.BAD_REQUEST;
@@ -458,17 +581,50 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
             (err as any).status = HttpStatus.NOT_FOUND;
             throw err;
         }
+        let priceForLine: string;
+        if (ratioToApply != null) {
+            if (!inf.sellPrice) {
+                const err = new Error(`items[${i}]: influencer has no sell price; required when ratio is set`);
+                (err as any).status = HttpStatus.BAD_REQUEST;
+                throw err;
+            }
+            priceForLine = proposalUnitPriceFromSellPrice(inf.sellPrice, ratioToApply);
+        } else {
+            // If admin provided explicit price, use it. Otherwise derive from influencer.sellPrice using:
+            // - current cart.priceRatio (if present), else ratio 1 (USD).
+            if (raw.price !== undefined && String(raw.price).trim() !== '') {
+                priceForLine = normalizePriceForDecimal(raw.price);
+            } else {
+                if (!inf.sellPrice) {
+                    const err = new Error(`items[${i}]: influencer has no sell price; required when price is omitted`);
+                    (err as any).status = HttpStatus.BAD_REQUEST;
+                    throw err;
+                }
+                const cartRatio = cart.priceRatio != null ? parseFloat(String(cart.priceRatio)) : 1;
+                if (!Number.isFinite(cartRatio) || cartRatio <= 0) {
+                    const err = new Error(`Invalid cart priceRatio; cannot derive price for items[${i}]`);
+                    (err as any).status = HttpStatus.INTERNAL_SERVER_ERROR;
+                    throw err;
+                }
+                priceForLine = proposalUnitPriceFromSellPrice(inf.sellPrice, cartRatio);
+            }
+        }
         const notes = raw.notes != null ? String(raw.notes).trim() || null : null;
         const proofOfWork = Array.isArray(raw.proofOfWork) ? raw.proofOfWork.filter((u): u is string => typeof u === 'string') : null;
         const newItem = itemRepo.create({
             cartId: cart.id,
             influencerId,
             quantity,
-            price,
+            price: priceForLine,
             notes: notes ?? undefined,
             proofOfWork: proofOfWork?.length ? proofOfWork : null,
         });
         await itemRepo.save(newItem);
+    }
+
+    if (ratioToApply != null) {
+        await reapplyProposalPricesFromSellPriceAndRatio(cart.id, ratioToApply, itemRepo);
+        cart.priceRatio = formatPriceRatioForDb(ratioToApply);
     }
 
     // Recalc totals

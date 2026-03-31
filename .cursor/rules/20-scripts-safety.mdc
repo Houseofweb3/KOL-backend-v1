@@ -1,0 +1,18 @@
+---
+description: Safety rules for one-off scripts in src/scripts/*
+globs: src/scripts/**/*.ts
+alwaysApply: false
+---
+
+# Scripts safety
+
+- Scripts must be **safe to run**:
+  - Prefer idempotent updates (can re-run without corrupting data).
+  - Avoid destructive operations unless explicitly required and guarded.
+- Add a clear entrypoint:
+  - Read config/env the same way as the app does.
+  - Exit with non-zero code on failure.
+- For write-heavy scripts:
+  - Process in batches; avoid loading entire tables into memory.
+  - Use transactions where appropriate.
+- If the script changes money/pricing fields, reuse shared pricing utilities/constants to avoid admin/web mismatches.

@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMan
 import { BaseModel } from './baseEntities/BaseModel';
 import { Client } from './client.entity';
 import { CartItem } from './cart-item.entity';
-import { CartStatus, CART_STATUS_DEFAULT } from '../constants/cart';
+import { CartStatus, CART_STATUS_DEFAULT, CartCurrency, CART_CURRENCY_DEFAULT } from '../constants/cart';
 
 /**
  * Cart (proposal) for a client. A client can have multiple carts (e.g. one per proposal).
@@ -18,6 +18,17 @@ export class Cart extends BaseModel {
 
     @Column({ type: 'varchar', enum: CartStatus, default: CART_STATUS_DEFAULT })
     status!: CartStatus;
+
+    /** Proposal / line-item amounts are interpreted in this currency (USD, INR, AED). */
+    @Column({ type: 'varchar', length: 3, default: CART_CURRENCY_DEFAULT })
+    currency!: CartCurrency;
+
+    /**
+     * Multiplier applied to each influencer's sell price to produce line `CartItem.price` (proposal unit amount).
+     * Null when the cart was built from explicit line prices only (admin, no ratio in payload).
+     */
+    @Column({ type: 'decimal', precision: 12, scale: 4, name: 'price_ratio', nullable: true })
+    priceRatio!: string | null;
 
     @ManyToOne(() => Client, (client) => client.carts, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'client_id' })

@@ -38,9 +38,9 @@ export const createCartController = async (req: AuthedRequest, res: Response) =>
             .status(HttpStatus.UNAUTHORIZED)
             .json({ error: 'Client context is missing from request. Is auth middleware applied?' });
     }
-    const { items } = req.body || {};
+    const { items, currency, ratio } = req.body || {};
     try {
-        const cart = await createCart(client.id, Array.isArray(items) ? items : []);
+        const cart = await createCart(client.id, Array.isArray(items) ? items : [], currency, ratio);
         return res.status(HttpStatus.OK).json(cart);
     } catch (error: any) {
         const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;

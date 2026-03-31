@@ -1,0 +1,24 @@
+---
+description: TypeScript/Express/TypeORM conventions for src/*
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Backend TypeScript conventions
+
+- **Controllers** (`src/controllers/**`)
+  - Parse/validate request input; no heavy business logic.
+  - Delegate to a service and return the service result as the HTTP response.
+- **Services** (`src/services/**`)
+  - Own business rules, pricing, and DB writes.
+  - Keep admin/web behavior aligned by reusing shared helpers in `src/utils/**` + `src/constants/**`.
+- **Entities/DB**
+  - Prefer repository/query-builder patterns already used in the codebase.
+  - When multiple writes must succeed together, use a transaction (don’t partially update).
+- **Validation**
+  - Validate IDs, required fields, and numeric ranges (especially money/pricing).
+  - Normalize currency/amount precision consistently (avoid float drift).
+- **Logging**
+  - Log actionable context (IDs, counts), not PII/secrets/tokens.
+- **API shape**
+  - Keep response shapes stable; if you must change one, update both web/admin endpoints and any shared types/constants.

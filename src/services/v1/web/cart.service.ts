@@ -4,15 +4,22 @@ import { AppDataSource } from '../../../config/data-source';
 import { Cart } from '../../../entity/cart.entity';
 import { CartItem } from '../../../entity/cart-item.entity';
 import { Influencer } from '../../../entity/influencer.entity';
-import { CART_STATUS_DEFAULT } from '../../../constants/cart';
+import { CART_STATUS_DEFAULT, CartCurrency, CART_CURRENCY_DEFAULT, resolveCartCurrency } from '../../../constants/cart';
+import {
+    formatPriceRatioForDb,
+    parseProposalRatioWithDefault,
+    proposalUnitPriceFromSellPrice,
+} from '../../../utils/cart-proposal-pricing';
 
-/** Normalize price string (e.g. "$200" or "1,200.50") to decimal-safe string for CartItem.price column. */
-function normalizePriceForDecimal(raw: string | null | undefined): string {
-    if (raw == null || String(raw).trim() === '') return '0.00';
-    const cleaned = String(raw).replace(/[$,]/g, '').trim();
-    const num = parseFloat(cleaned);
-    if (!Number.isFinite(num) || num < 0) return '0.00';
-    return num.toFixed(2);
+function cartCurrencyFromInput(raw: unknown): CartCurrency {
+    try {
+        return resolveCartCurrency(raw);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Invalid currency';
+        const err = new Error(msg);
+        (err as { status?: number }).status = HttpStatus.BAD_REQUEST;
+        throw err;
+    }
 }
 
 export interface CartItemDTO {
@@ -26,6 +33,8 @@ export interface CartDTO {
     id: string;
     clientId: string;
     status: string;
+    currency: CartCurrency;
+    priceRatio: string | null;
     items: CartItemDTO[];
 }
 
@@ -34,6 +43,8 @@ function mapCartToDto(cart: Cart, items: CartItem[]): CartDTO {
         id: cart.id,
         clientId: cart.clientId,
         status: cart.status,
+        currency: (cart.currency as CartCurrency) ?? CART_CURRENCY_DEFAULT,
+        priceRatio: cart.priceRatio ?? null,
         items: items.map((item) => ({
             id: item.id,
             influencerId: item.influencerId,
@@ -58,7 +69,7 @@ export const getCartForClient = async (clientId: string): Promise<CartDTO> => {
 
     let cart = await getLatestCartByClient(clientId);
     if (!cart) {
-        cart = cartRepo.create({ clientId, status: CART_STATUS_DEFAULT });
+        cart = cartRepo.create({ clientId, status: CART_STATUS_DEFAULT, currency: CART_CURRENCY_DEFAULT, priceRatio: null });
         cart = await cartRepo.save(cart);
     }
     const items = await itemRepo.find({ where: { cartId: cart.id } });
@@ -101,10 +112,13 @@ export interface CreateCartItemInput {
 /**
  * Create a new cart (new proposal) with the given items. Each call creates a new cart; no reuse, no delete.
  * Client id comes from auth. For each item: influencer must exist, not deleted, and have sellPrice.
+ * Line `price` = sellPrice × ratio (ratio defaults to 1 when omitted).
  */
 export const createCart = async (
     clientId: string,
     itemsInput: CreateCartItemInput[],
+    currencyInput?: unknown,
+    ratioInput?: unknown,
 ): Promise<CartDTO> => {
     if (!Array.isArray(itemsInput) || itemsInput.length === 0) {
         const err = new Error('items array is required and must contain at least one entry');
@@ -151,19 +165,27 @@ export const createCart = async (
         }
     }
 
+    const ratio = parseProposalRatioWithDefault(ratioInput, 1);
+
     const cartRepo = AppDataSource.getRepository(Cart);
-    const cart = cartRepo.create({ clientId, status: CART_STATUS_DEFAULT });
+    const cart = cartRepo.create({
+        clientId,
+        status: CART_STATUS_DEFAULT,
+        currency: cartCurrencyFromInput(currencyInput),
+        priceRatio: formatPriceRatioForDb(ratio),
+    });
     const savedCart = await cartRepo.save(cart);
 
     const itemRepo = AppDataSource.getRepository(CartItem);
     const savedItems: CartItem[] = [];
     for (const { influencerId, quantity } of normalized) {
         const influencer = influencerMap.get(influencerId)!;
+        const unitPrice = proposalUnitPriceFromSellPrice(influencer.sellPrice, ratio);
         const item = itemRepo.create({
             cartId: savedCart.id,
             influencerId,
             quantity,
-            price: normalizePriceForDecimal(influencer.sellPrice),
+            price: unitPrice,
             isApproved: true,
             notes: null,
             proofOfWork: null,
