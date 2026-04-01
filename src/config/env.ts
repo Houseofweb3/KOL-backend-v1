@@ -17,6 +17,8 @@ interface Env {
   JWT_SECRET: string;
   VERSION: number;
   ANTHROPIC_API_KEY?: string;
+  /** Optional. Free key from https://www.alphavantage.co — used for admin FX rate API. */
+  ALPHA_VANTAGE_API_KEY?: string;
   // Object Storage (AWS S3 or Hetzner Object Storage S3-compatible)
   AWS_S3_BUCKET_NAME: string;
   AWS_ACCESS_KEY_ID: string;
@@ -52,6 +54,7 @@ export const ENV: Env = {
   JWT_SECRET: process.env.JWT_SECRET || '',
   VERSION: parseInt(process.env.VERSION || '1', 10),
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || undefined,
+  ALPHA_VANTAGE_API_KEY: process.env.ALPHA_VANTAGE_API_KEY || undefined,
   AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME || '',
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',

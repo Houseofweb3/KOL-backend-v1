@@ -1,21 +1,21 @@
-import Anthropic from '@anthropic-ai/sdk';
 import HttpStatus from 'http-status-codes';
 import { ENV } from '../../../config/env';
 
-const client = new Anthropic({ apiKey: ENV.ANTHROPIC_API_KEY });
-
 type RateSource = 'live' | 'static';
 
+const ALPHA_VANTAGE_BASE = 'https://www.alphavantage.co/query';
+
 /**
- * Static fallback rates used when live provider fails.
- * Keep these conservative and update occasionally.
- *
+ * Static fallback rates used when live provider fails (no key, rate limit, unsupported pair, etc.).
  * Interpretation: 1 unit of `from` equals `rate` units of `to`.
  */
 const STATIC_RATES: Record<string, Record<string, number>> = {
   USD: {
     INR: 93.5,
     AED: 3.67,
+    SGD: 1.35,
+    EUR: 0.92,
+    GBP: 0.79,
   },
 };
 
@@ -24,15 +24,12 @@ const getStaticRate = (from: string, to: string): number | null => {
   const t = to.toUpperCase();
   if (f === t) return 1;
 
-  // direct
   const direct = STATIC_RATES[f]?.[t];
   if (Number.isFinite(direct)) return direct;
 
-  // inverse (if we have USD->X, compute X->USD, etc.)
   const invBase = STATIC_RATES[t]?.[f];
   if (Number.isFinite(invBase) && invBase !== 0) return 1 / invBase;
 
-  // via USD (common case)
   if (f !== 'USD' && t !== 'USD') {
     const fToUsd = getStaticRate(f, 'USD');
     const usdToT = getStaticRate('USD', t);
@@ -42,45 +39,89 @@ const getStaticRate = (from: string, to: string): number | null => {
   return null;
 };
 
-const parseRatio = (text: string): number => {
-  const raw = text.trim();
-  const ratio = parseFloat(raw);
-  if (!Number.isFinite(ratio)) {
-    const err: any = new Error('Could not parse ratio from Claude');
-    err.status = HttpStatus.INTERNAL_SERVER_ERROR;
-    err.raw = raw;
-    throw err;
-  }
-  return ratio;
-};
+type AlphaVantageJson = Record<string, unknown>;
 
+function parseAlphaVantageExchangeRate(data: AlphaVantageJson, fromCode: string, toCode: string): number {
+  const note = data.Note;
+  const errMsg = data['Error Message'];
+  const info = data.Information;
+  if (typeof note === 'string' && note.length > 0) {
+    const e = new Error('Alpha Vantage rate limit or usage note returned') as Error & { status?: number };
+    e.status = HttpStatus.TOO_MANY_REQUESTS;
+    throw e;
+  }
+  if (typeof errMsg === 'string' && errMsg.length > 0) {
+    const e = new Error(`Alpha Vantage: ${errMsg}`) as Error & { status?: number };
+    e.status = HttpStatus.BAD_GATEWAY;
+    throw e;
+  }
+  if (typeof info === 'string' && info.length > 0) {
+    const e = new Error('Alpha Vantage: invalid API key or request') as Error & { status?: number };
+    e.status = HttpStatus.BAD_GATEWAY;
+    throw e;
+  }
+
+  const block = data['Realtime Currency Exchange Rate'];
+  if (!block || typeof block !== 'object') {
+    const e = new Error(`No exchange rate block for ${fromCode} -> ${toCode}`) as Error & { status?: number };
+    e.status = HttpStatus.INTERNAL_SERVER_ERROR;
+    throw e;
+  }
+
+  const rateStr = (block as Record<string, unknown>)['5. Exchange Rate'];
+  if (typeof rateStr !== 'string') {
+    const e = new Error(`No rate field for ${fromCode} -> ${toCode}`) as Error & { status?: number };
+    e.status = HttpStatus.INTERNAL_SERVER_ERROR;
+    throw e;
+  }
+
+  const rate = parseFloat(rateStr.trim());
+  if (!Number.isFinite(rate) || rate <= 0) {
+    const e = new Error(`Invalid exchange rate for ${fromCode} -> ${toCode}`) as Error & { status?: number };
+    e.status = HttpStatus.INTERNAL_SERVER_ERROR;
+    throw e;
+  }
+
+  return rate;
+}
+
+/**
+ * Live ratio: amount_in_to = amount_in_from * rate (Alpha Vantage CURRENCY_EXCHANGE_RATE).
+ * Requires ALPHA_VANTAGE_API_KEY in env (free key from https://www.alphavantage.co/support/#api-key).
+ */
 export const getLiveExchangeRateRatio = async (from: string, to: string): Promise<number> => {
-  if (!ENV.ANTHROPIC_API_KEY) {
-    const err: any = new Error('ANTHROPIC_API_KEY is not configured');
-    err.status = HttpStatus.INTERNAL_SERVER_ERROR;
-    throw err;
-  }
-
   const fromCode = from.toUpperCase();
   const toCode = to.toUpperCase();
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 100,
-    messages: [
-      {
-        role: 'user',
-        content: `What is the current live exchange rate from ${fromCode} to ${toCode}?
+  if (fromCode === toCode) return 1;
 
-Reply with ONLY a single decimal number — the exchange rate ratio. Nothing else. No text, no symbols, no explanation.
-Example reply: 0.011924`,
-      },
-    ],
+  const apiKey = ENV.ALPHA_VANTAGE_API_KEY?.trim();
+  if (!apiKey) {
+    const err = new Error('ALPHA_VANTAGE_API_KEY is not configured') as Error & { status?: number };
+    err.status = HttpStatus.INTERNAL_SERVER_ERROR;
+    throw err;
+  }
+
+  const params = new URLSearchParams({
+    function: 'CURRENCY_EXCHANGE_RATE',
+    from_currency: fromCode,
+    to_currency: toCode,
+    apikey: apiKey,
   });
 
-  const first = message.content?.[0];
-  const ratioText = typeof (first as any)?.text === 'string' ? (first as any).text : '';
-  return parseRatio(ratioText);
+  const url = `${ALPHA_VANTAGE_BASE}?${params.toString()}`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const err = new Error(
+      `Alpha Vantage HTTP error (${response.status}) for ${fromCode} -> ${toCode}`,
+    ) as Error & { status?: number };
+    err.status = HttpStatus.BAD_GATEWAY;
+    throw err;
+  }
+
+  const data = (await response.json()) as AlphaVantageJson;
+  return parseAlphaVantageExchangeRate(data, fromCode, toCode);
 };
 
 export const getExchangeRateRatioWithFallback = async (
@@ -90,15 +131,15 @@ export const getExchangeRateRatioWithFallback = async (
   try {
     const ratio = await getLiveExchangeRateRatio(from, to);
     return { ratio, source: 'live' };
-  } catch(error: any) {
-    console.error('Error fetching live exchange rate ratio:', error);
+  } catch {
     const staticRatio = getStaticRate(from, to);
     if (staticRatio == null) {
-      const err: any = new Error('Could not fetch live ratio and no static fallback is configured for this pair');
+      const err = new Error(
+        'Could not fetch live ratio and no static fallback is configured for this pair',
+      ) as Error & { status?: number };
       err.status = HttpStatus.SERVICE_UNAVAILABLE;
       throw err;
     }
     return { ratio: staticRatio, source: 'static' };
   }
 };
-

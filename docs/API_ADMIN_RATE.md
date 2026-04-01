@@ -1,6 +1,16 @@
 # Admin Exchange Rate API
 
-**Admin-only.** Returns a live exchange-rate ratio using Anthropic.
+**Admin-only.** Returns an exchange-rate ratio using **Alpha Vantage** (`CURRENCY_EXCHANGE_RATE`) when `ALPHA_VANTAGE_API_KEY` is set, otherwise falls back to **static** rates for supported pairs.
+
+## Setup
+
+Add a free API key to `.env` (get one at [Alpha Vantage](https://www.alphavantage.co/support/#api-key)):
+
+```env
+ALPHA_VANTAGE_API_KEY=your_key_here
+```
+
+If the key is missing or Alpha Vantage errors (rate limit, invalid key, etc.), the response still returns **200** with `"source": "static"` when a static pair exists.
 
 ## 1) Get exchange ratio
 
@@ -22,31 +32,29 @@
 ```json
 {
   "success": true,
-  "from": "INR",
-  "to": "USD",
-  "ratio": 0.011924,
+  "from": "USD",
+  "to": "INR",
+  "ratio": 93.5,
   "source": "live"
 }
 ```
 
-### How to use `ratio`
+`source` is `"live"` when Alpha Vantage succeeded, or `"static"` when the live call failed and a built-in fallback was used.
 
-The backend asks the model to return the ratio as a single decimal:
+### How to use `ratio`
 
 `amount_in_to = amount_in_from * ratio`
 
-Example:
-`5000 INR * 0.011924 = 59.62 USD`
+Example: `100 USD * 93.5 = 9350 INR`
 
 ### Notes
 
-- `ratio` is parsed from Anthropic output.
-- If live rate fetching fails, the API will return a **static fallback** ratio and set `"source": "static"`.
-- Keep the request params uppercase (backend also uppercases them).
+- Alpha Vantage free tier has **request limits**; heavy polling may return a note and trigger static fallback.
+- If live fetch fails and there is **no** static rate for that pair, the API returns an error (503).
+- Keep query params uppercase (backend uppercases them).
 
 ### Typical admin cart flow (non-USD)
 
 1. Call **`GET /api/v1/admin/rate?from=USD&to=INR`** (or `to=AED`).
 2. Show `ratio` in the UI.
-3. Send the **same** `ratio` in **`POST /api/v1/admin/cart`** or **`PATCH /api/v1/admin/cart/:id`** with `currency: "INR"` (or `"AED"`). The cart service does **not** re-fetch the rate; see `API_ADMIN_CART_CURRENCY.md`.
-
+3. Send the **same** `ratio` in **`POST /api/v1/admin/cart`** or **`PATCH /api/v1/admin/cart/:id`** with `currency: "INR"` (or `"AED"`). See `API_ADMIN_CART_CURRENCY.md`.

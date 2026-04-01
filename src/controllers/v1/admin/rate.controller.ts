@@ -24,12 +24,16 @@ export const getExchangeRateController = async (req: Request, res: Response) => 
       ratio,
       source,
     });
-  } catch (error: any) {
-    const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-    logger.error(`Admin get exchange rate error (${status}): ${error.message}`);
+  } catch (error: unknown) {
+    const status =
+      typeof error === 'object' && error && 'status' in error
+        ? ((error as { status?: number }).status || HttpStatus.INTERNAL_SERVER_ERROR)
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    logger.error(`Admin get exchange rate error (${status}): ${message}`);
     return res.status(status).json({
       success: false,
-      error: error.message || 'Internal server error',
+      error: message,
     });
   }
 };
