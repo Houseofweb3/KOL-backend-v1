@@ -1,56 +1,9 @@
 import HttpStatus from 'http-status-codes';
 import { createInfluencer, sellingPriceFromBuyingPrice, stripPriceToNumeric, type CreateInfluencerData } from '../admin/influencer.service';
 import { sendClientOnboardNotification } from '../../../notifications/client-onboard';
+import { PLATFORM_INVENTORY_OPTIONS } from '../../../constants/creator-onboarding-options';
 
-/** Must match creator-onboarding frontend Step 4 (platform → inventory item labels). */
-const PLATFORM_INVENTORY_OPTIONS: Record<string, string[]> = {
-    X: [
-        'Single tweet',
-        'Thread (5–7 tweets)',
-        'Quote tweet',
-        'Pinned tweet (7 days)',
-        'AMA (X Spaces – 60 mins)',
-        'Article',
-    ],
-    Youtube: [
-        'Integrated video (≤3 mins)',
-        'Sponsored-by tag',
-        'Dedicated review / breakdown video',
-        'Streams/Live trading video',
-        'Shorts',
-    ],
-    Instagram: [
-        'IG Reel – Original (Creator produces content) ( 24 hours )',
-        'IG Reel – Adapted (Brand provides content)( 24 hours )',
-        'IG Reel – Repost (Brand provides content) ( 24h )',
-        'IG Reel – Original (Creator produces content) ( 7 hours )',
-        'IG Reel – Adapted (Brand provides content)( 7 hours )',
-        'IG Reel – Repost (Brand provides content) ( 7h )',
-        'Carousel (3–5 slides)',
-        'Story sequence (3 slides)',
-        'Link in bio placement (7 days)',
-        'Reel pinned (7 days)',
-        'IG Reel – Original (Creator produces content)',
-    ],
-    TikTok: [
-        'Tik Tok Original(with collab tag)',
-        'Tik Tok Adapted(with collab tag)',
-        'Tik Tok Live',
-        'Tik Tok Story(3 carousel stories)',
-    ],
-    Newsletter: [
-        'Sponsored-by mention (top)',
-        'Sponsored-by mention (footer)',
-        'Contextual integration within main content',
-    ],
-    'PR/Editorial': ['Organic PR with backlink', 'Thematic article (brand included in narrative)'],
-    Spotify: [
-        'Dedicated podcast episode',
-        'Podcast sponsored mention',
-        'Short clips distribution (IG / Shorts / TikTok)',
-        'Short virtual podcast (IG / Shorts / TikTok)',
-    ],
-};
+export { INDUSTRY_CATEGORY_OPTIONS, PLATFORM_INVENTORY_OPTIONS } from '../../../constants/creator-onboarding-options';
 
 export interface CreatorOnboardingInventoryItem {
     selected: boolean;
