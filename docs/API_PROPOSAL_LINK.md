@@ -1,6 +1,6 @@
 # Proposal link flow
 
-One-time proposal links for clients: admin generates a link, client opens it (e.g. `https://www.ampli5.ai/proposals/{token}`), views cart data, submits billing info and confirms; the link is then invalidated.
+One-time proposal links for clients: admin generates a link such as `https://www.ampli5.ai/proposals/{clientSlug}/{date}/{cartId}`, the client opens it, views cart data, submits billing info and confirms; the link is then invalidated.
 
 ---
 
@@ -18,14 +18,23 @@ One-time proposal links for clients: admin generates a link, client opens it (e.
 {
   "proposalLinkId": "uuid",
   "token": "eyJhbGc...",
-  "url": "https://www.ampli5.ai/proposals/eyJhbGc...",
+  "url": "https://www.ampli5.ai/proposals/acme-corp/2026-04-01/cart-uuid",
+  "path": {
+    "clientSlug": "acme-corp",
+    "date": "2026-04-01",
+    "cartId": "cart-uuid"
+  },
   "emailSent": true
 }
 ```
 
-- **url** – Full URL; also sent to the client’s email (from the cart’s client).
+- **url** – Client app URL shape: **`/proposals/{clientSlug}/{YYYY-MM-DD}/{cartId}`** (no query string).  
+  - `clientSlug` – from client name (lowercase, URL-safe, max 80 chars).  
+  - `date` – cart **`createdAt` in UTC** as `YYYY-MM-DD`.  
+  - `cartId` – cart UUID.  
+- **path** – Same segments as in **url** for admin UI without parsing. The full **url** is also sent in the client email.
 - **emailSent** – `true` if the proposal link email was sent to the client; `false` if not (e.g. no email configured or send failed). If `false`, response may include **emailError**.
-- **token** – JWT (no expiry); invalidation is done by marking the link as used in DB.
+- **token** – JWT returned for **legacy** client URLs only (`GET/POST /api/v1/web/proposal/:token`); it is **not** appended to **url**.
 
 The client receives an email with subject “Your proposal is ready – Ampli5” and a link to the proposal page.
 
@@ -33,13 +42,26 @@ The client receives an email with subject “Your proposal is ready – Ampli5�
 
 ---
 
-## Web: Get proposal cart (by token)
+## Web: Get proposal cart (readable path)
+
+**GET** `/api/v1/web/proposal/slug/:clientSlug/:date/:cartId`
+
+**Auth:** None. The path must match the cart (client name slug, cart `createdAt` date UTC, cart id), and there must be an **unused** proposal link row for that cart.
+
+**Example:**  
+`GET /api/v1/web/proposal/slug/acme-corp/2026-04-01/ba1eef61-c376-48d0-ab0d-0ec6bab0062f`
+
+**Errors:** 400 if path does not match cart; 404 cart or proposal link not found; 410 link already used.
+
+---
+
+## Web: Get proposal cart (legacy — token only in path)
 
 **GET** `/api/v1/web/proposal/:token`
 
 **Auth:** None. Token in URL validates access.
 
-**Path:** `token` – JWT from the proposal URL (e.g. from `https://www.ampli5.ai/proposals/{token}`).
+**Path:** `token` – JWT from an old-style link (`/proposals/{token}` only).
 
 **Success (200):**
 
@@ -85,7 +107,15 @@ Each **item** includes **`isApproved`** (boolean) for the client to set when sub
 
 ---
 
-## Web: Submit proposal (item acceptance + billing + confirm)
+## Web: Submit proposal (readable path)
+
+**POST** `/api/v1/web/proposal/slug/:clientSlug/:date/:cartId/submit`
+
+Same **body** as legacy submit. No query parameters.
+
+---
+
+## Web: Submit proposal (legacy — token in path)
 
 **POST** `/api/v1/web/proposal/:token/submit`
 
@@ -140,7 +170,7 @@ Each **item** includes **`isApproved`** (boolean) for the client to set when sub
 - **Cart totals** (subtotal, discountAmount, managementFeeAmount, total) are **recalculated on the backend** using **only items where `is_approved` is true**. The cart’s discount and management fee percentages are applied to this accepted-items subtotal.
 - **Cart** `status` is set to **`approved`** (from `CartStatus` enum).
 - **Billing info** is saved in `billing_info` (one per cart).
-- **Proposal link** is marked as used (`used_at` set); same token returns 410 for GET/POST.
+- **Proposal link** is marked as used (`used_at` set); further slug or legacy token requests return 410 for GET/POST.
 
 **Errors:** 400 (e.g. terms not confirmed), 404, 410 (link already used).
 

@@ -6,6 +6,11 @@ import { Cart } from '../../../entity/cart.entity';
 import { CartStatus } from '../../../constants/cart';
 import { ENV } from '../../../config/env';
 import { sendProposalLinkEmail } from '../../../notifications/proposal-link-email';
+import {
+    buildProposalClientUrl,
+    formatCartCreatedDateForProposalUrl,
+    slugifyClientNameForProposal,
+} from '../../../utils/proposal-url';
 
 const jwtSecret = ENV.JWT_SECRET;
 const PROPOSAL_JWT_NAMESPACE = 'proposal';
@@ -40,7 +45,14 @@ export function verifyProposalToken(token: string): ProposalTokenPayload {
 export interface CreateProposalLinkResult {
     proposalLinkId: string;
     token: string;
+    /** Full client URL: /proposals/{clientSlug}/{YYYY-MM-DD}/{cartId} */
     url: string;
+    /** Parsed path segments (for admin UI / deep links without parsing URL). */
+    path: {
+        clientSlug: string;
+        date: string;
+        cartId: string;
+    };
     emailSent: boolean;
     emailError?: string;
 }
@@ -48,7 +60,8 @@ export interface CreateProposalLinkResult {
 /**
  * Create or reuse a proposal link for a cart. If a proposal link already exists for this cart, the existing
  * row is updated (usedAt cleared) and a new token/URL is returned. Otherwise a new link is created.
- * Returns URL to send in email (e.g. https://www.ampli5.ai/proposals/{token}).
+ * Returns URL to send in email:
+ * `{base}/proposals/{client-slug}/{cart-created-date-UTC}/{cartId}`.
  */
 export async function createProposalLink(cartId: string): Promise<CreateProposalLinkResult> {
     const cartRepo = AppDataSource.getRepository(Cart);
@@ -89,11 +102,16 @@ export async function createProposalLink(cartId: string): Promise<CreateProposal
     });
 
     const baseUrl = (ENV.CLIENT_PROPOSAL_WEB_URL || '').replace(/\/$/, '');
-    const url = baseUrl ? `${baseUrl}/proposals/${token}` : `/proposals/${token}`;
-
     const client = (cart as any).client;
     const clientEmail = client?.email?.trim() || '';
     const clientName = client?.name?.trim() || 'Client';
+    const clientSlug = slugifyClientNameForProposal(clientName);
+    const date = formatCartCreatedDateForProposalUrl(cart.createdAt);
+    const cartUuid = cart.id;
+
+    const url = baseUrl
+        ? buildProposalClientUrl(baseUrl, clientName, cart.createdAt, cartUuid)
+        : `/proposals/${clientSlug}/${date}/${cartUuid}`;
     const emailResult = await sendProposalLinkEmail({
         toEmail: clientEmail,
         clientName,
@@ -104,6 +122,7 @@ export async function createProposalLink(cartId: string): Promise<CreateProposal
         proposalLinkId: saved.id,
         token,
         url,
+        path: { clientSlug, date, cartId: cartUuid },
         emailSent: emailResult.sent,
         ...(emailResult.error && { emailError: emailResult.error }),
     };
