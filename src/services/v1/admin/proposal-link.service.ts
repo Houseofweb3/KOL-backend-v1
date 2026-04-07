@@ -5,6 +5,7 @@ import { ProposalLink } from '../../../entity/proposal-link.entity';
 import { Cart } from '../../../entity/cart.entity';
 import { CartStatus } from '../../../constants/cart';
 import { ENV } from '../../../config/env';
+import logger from '../../../config/logger';
 import { sendProposalLinkEmail } from '../../../notifications/proposal-link-email';
 import {
     buildProposalClientUrl,
@@ -112,11 +113,19 @@ export async function createProposalLink(cartId: string): Promise<CreateProposal
     const url = baseUrl
         ? buildProposalClientUrl(baseUrl, clientName, cart.createdAt, cartUuid)
         : `/proposals/${clientSlug}/${date}/${cartUuid}`;
+    logger.info(
+        `Proposal link: sending email (cartId=${cart.id}, proposalLinkId=${saved.id}, to=${clientEmail || 'n/a'}, url=${url})`
+    );
     const emailResult = await sendProposalLinkEmail({
         toEmail: clientEmail,
         clientName,
         proposalUrl: url,
     });
+    if (!emailResult.sent) {
+        logger.warn(
+            `Proposal link: email send failed (cartId=${cart.id}, proposalLinkId=${saved.id}, to=${clientEmail || 'n/a'}, error=${emailResult.error || 'unknown'})`
+        );
+    }
 
     return {
         proposalLinkId: saved.id,

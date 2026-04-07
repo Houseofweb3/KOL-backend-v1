@@ -1,0 +1,2 @@
+export const AUTO_PROPOSAL_MAX_INFLUENCERS = 25;
+
