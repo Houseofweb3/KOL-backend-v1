@@ -17,6 +17,7 @@ export const PLATFORM_INVENTORY_OPTIONS: Record<string, string[]> = {
         'Dedicated review / breakdown video',
         'Streams/Live trading video',
         'Shorts',
+        "Collab Tag"
     ],
     Instagram: [
         'IG Reel – Original (Creator produces content) ( 24 hours )',

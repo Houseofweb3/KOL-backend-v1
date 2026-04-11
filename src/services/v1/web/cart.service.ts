@@ -11,6 +11,22 @@ import {
     proposalUnitPriceFromSellPrice,
 } from '../../../utils/cart-proposal-pricing';
 
+/**
+ * Build cart line `proofOfWork` URLs from influencer media/screenshots (no dedicated PoW column on influencers).
+ * Order: collaboration images, then audience screenshots.
+ */
+function proofOfWorkUrlsFromInfluencer(inf: Influencer): string[] | null {
+    const urls: string[] = [];
+    const push = (u: string | null | undefined) => {
+        const t = u?.trim();
+        if (t) urls.push(t);
+    };
+    push(inf.ageScreenshotUrl);
+    push(inf.genderScreenshotUrl);
+    push(inf.topCountriesScreenshotUrl);
+    return urls.length ? urls : null;
+}
+
 function cartCurrencyFromInput(raw: unknown): CartCurrency {
     try {
         return resolveCartCurrency(raw);
@@ -188,7 +204,7 @@ export const createCart = async (
             price: unitPrice,
             isApproved: true,
             notes: null,
-            proofOfWork: null,
+            proofOfWork: proofOfWorkUrlsFromInfluencer(influencer),
         });
         const saved = await itemRepo.save(item);
         savedItems.push(saved);
