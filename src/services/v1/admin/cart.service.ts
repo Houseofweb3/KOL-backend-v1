@@ -43,6 +43,48 @@ function normalizePriceForDecimal(raw: string | number | null | undefined): stri
     return num.toFixed(2);
 }
 
+/**
+ * Normalize `proofOfWork` for cart_items JSONB: `string[]`, or one string with URLs on separate lines
+ * (or comma/semicolon/pipe-separated when multiple `http` URLs appear on one line).
+ */
+function normalizeProofOfWorkFromBody(value: unknown): string[] | null {
+    if (value == null) return null;
+
+    const pushFromString = (raw: string, into: string[]) => {
+        const s = raw.trim();
+        if (!s) return;
+        const byLine = s.split(/\r\n|\n|\r/).map((x) => x.trim()).filter(Boolean);
+        if (byLine.length > 1) {
+            into.push(...byLine);
+            return;
+        }
+        const line = byLine[0] ?? s;
+        if (/\s*[,;|]\s*/.test(line) && /https?:\/\//i.test(line)) {
+            const split = line.split(/\s*[,;|]\s*/).map((x) => x.trim()).filter(Boolean);
+            if (split.length > 1) {
+                into.push(...split);
+                return;
+            }
+        }
+        into.push(line);
+    };
+
+    if (Array.isArray(value)) {
+        const out: string[] = [];
+        for (const el of value) {
+            if (typeof el !== 'string') continue;
+            pushFromString(el, out);
+        }
+        return out.length ? out : null;
+    }
+    if (typeof value === 'string') {
+        const out: string[] = [];
+        pushFromString(value, out);
+        return out.length ? out : null;
+    }
+    return null;
+}
+
 async function reapplyProposalPricesFromSellPriceAndRatio(
     cartId: string,
     ratio: number,
@@ -108,7 +150,8 @@ export interface AdminCreateCartItemInput {
      */
     price?: string | number;
     notes?: string | null;
-    proofOfWork?: string[] | null;
+    /** Array of URLs, or one string with URLs separated by newlines (or commas between http URLs). */
+    proofOfWork?: string | string[] | null;
 }
 
 /** Payload for admin create cart (create/replace cart for client). */
@@ -132,7 +175,7 @@ export interface AdminUpdateCartItemInput {
     quantity?: number;
     price?: string | number;
     notes?: string | null;
-    proofOfWork?: string[] | null;
+    proofOfWork?: string | string[] | null;
 }
 
 /** Add new line to cart (no id). */
@@ -145,7 +188,7 @@ export interface AdminAddCartItemInput {
      */
     price?: string | number;
     notes?: string | null;
-    proofOfWork?: string[] | null;
+    proofOfWork?: string | string[] | null;
 }
 
 /** Payload for admin update cart. Client cannot be changed. items = full desired set (updates + adds); omitted items are removed. */
@@ -365,8 +408,8 @@ export const createCart = async (input: AdminCreateCartInput): Promise<AdminCart
             }
         }
         const notes = raw.notes != null ? String(raw.notes).trim() || null : null;
-        const proofOfWork = Array.isArray(raw.proofOfWork) ? raw.proofOfWork.filter((u): u is string => typeof u === 'string') : null;
-        normalized.push({ influencerId, quantity, price, notes, proofOfWork: proofOfWork?.length ? proofOfWork : null });
+        const proofOfWork = normalizeProofOfWorkFromBody(raw.proofOfWork);
+        normalized.push({ influencerId, quantity, price, notes, proofOfWork });
     }
 
     const discountPercent = Math.max(0, Math.min(100, Number(input.discountPercent) || 0));
@@ -555,7 +598,7 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
         if (ratioToApply == null && u.price !== undefined) item.price = normalizePriceForDecimal(u.price);
         if (u.notes !== undefined) item.notes = u.notes != null ? String(u.notes).trim() || null : null;
         if (u.proofOfWork !== undefined) {
-            item.proofOfWork = Array.isArray(u.proofOfWork) ? u.proofOfWork.filter((x): x is string => typeof x === 'string') : null;
+            item.proofOfWork = normalizeProofOfWorkFromBody(u.proofOfWork);
         }
         await itemRepo.save(item);
     }
@@ -610,14 +653,14 @@ export const updateCart = async (cartId: string, input: AdminUpdateCartInput): P
             }
         }
         const notes = raw.notes != null ? String(raw.notes).trim() || null : null;
-        const proofOfWork = Array.isArray(raw.proofOfWork) ? raw.proofOfWork.filter((u): u is string => typeof u === 'string') : null;
+        const proofOfWork = normalizeProofOfWorkFromBody(raw.proofOfWork);
         const newItem = itemRepo.create({
             cartId: cart.id,
             influencerId,
             quantity,
             price: priceForLine,
             notes: notes ?? undefined,
-            proofOfWork: proofOfWork?.length ? proofOfWork : null,
+            proofOfWork,
         });
         await itemRepo.save(newItem);
     }
