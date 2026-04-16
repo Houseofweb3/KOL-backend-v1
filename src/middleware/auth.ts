@@ -7,6 +7,7 @@ import { ENV } from '../config/env';
 import { UserRole } from '../constants/roles';
 import { AppDataSource } from '../config/data-source';
 import { Client } from '../entity/client.entity';
+import { User } from '../entity/user.entity';
 
 const jwtSecret = ENV.JWT_SECRET;
 
@@ -15,6 +16,15 @@ export interface JwtPayload {
     type: UserRole;
     email?: string;
 }
+
+/** Express request after JWT middleware attaches decoded payload or entity refs. */
+export type JwtRequest = Request & {
+    user?: JwtPayload;
+    client?: { id: string; email?: string };
+    clientEntity?: Client;
+    webUser?: { id: string; email?: string };
+    webUserEntity?: User;
+};
 
 /** Single JWT token, expires in 3 days. Used for admin/auth. */
 export const generateToken3Days = (payload: JwtPayload): string => {
@@ -50,7 +60,7 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
                 message: 'Internal server error',
             });
         }
-        (req as any).user = decoded as JwtPayload;
+        (req as JwtRequest).user = decoded as JwtPayload;
         next();
     });
 };
@@ -59,6 +69,15 @@ export const verifyAccessToken = (req: Request, res: Response, next: NextFunctio
 export const generateClientToken3Days = (clientId: string, email: string): string => {
     return jwt.sign(
         { id: clientId, type: UserRole.CLIENT, email } as JwtPayload,
+        jwtSecret,
+        { expiresIn: '3d' }
+    );
+};
+
+/** Web user (users table) OTP login: id = userId, type = USER, email. 3 days expiry. */
+export const generateUserToken3Days = (userId: string, email: string): string => {
+    return jwt.sign(
+        { id: userId, type: UserRole.USER, email } as JwtPayload,
         jwtSecret,
         { expiresIn: '3d' }
     );
@@ -109,8 +128,9 @@ export const verifyClientAuth = (req: Request, res: Response, next: NextFunction
                         message: 'Client not found or deactivated',
                     });
                 }
-            (req as any).client = { id: payload.id, email: payload.email };
-            (req as any).clientEntity = client;
+            const r = req as JwtRequest;
+            r.client = { id: payload.id, email: payload.email };
+            r.clientEntity = client;
             next();
         }).catch(() => {
             res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -118,6 +138,67 @@ export const verifyClientAuth = (req: Request, res: Response, next: NextFunction
                 message: 'Internal server error',
             });
         });
+    });
+};
+
+/** Verify web user JWT (OTP login): type === USER, user exists and is not deleted. Sets req.webUser / req.webUserEntity. */
+export const verifyWebUserAuth = (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.header('Authorization');
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+            success: false,
+            message: 'Access token is not provided',
+        });
+    }
+    jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) {
+            if (err.name === 'TokenExpiredError') {
+                return res.status(HttpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Access token has expired',
+                });
+            }
+            if (err.name === 'JsonWebTokenError') {
+                return res.status(HttpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Access token is not valid',
+                });
+            }
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: 'Internal server error',
+            });
+        }
+        const payload = decoded as JwtPayload;
+        if (payload.type !== UserRole.USER) {
+            return res.status(HttpStatus.FORBIDDEN).json({
+                success: false,
+                message: 'Invalid token type',
+            });
+        }
+        const userRepo = AppDataSource.getRepository(User);
+        userRepo
+            .findOne({ where: { id: payload.id } })
+            .then((user) => {
+                if (!user || user.isDeleted) {
+                    return res.status(HttpStatus.UNAUTHORIZED).json({
+                        success: false,
+                        message: 'User not found or deactivated',
+                    });
+                }
+                const r = req as JwtRequest;
+                r.webUser = { id: payload.id, email: payload.email };
+                r.webUserEntity = user;
+                next();
+            })
+            .catch(() => {
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: 'Internal server error',
+                });
+            });
     });
 };
 
@@ -158,7 +239,7 @@ export const verifyAdminAuth = (req: Request, res: Response, next: NextFunction)
                 message: 'Admin access required',
             });
         }
-        (req as any).user = payload;
+        (req as JwtRequest).user = payload;
         next();
     });
 };

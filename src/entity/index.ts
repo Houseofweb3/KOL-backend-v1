@@ -9,3 +9,4 @@ export * from './proposal-link.entity';
 export * from './billing-info.entity';
 export * from './media-folder.entity';
 export * from './media-file.entity';
+export * from './blog.entity';
