@@ -20,12 +20,26 @@ export interface BlogListItemDTO {
     title: string;
     slug: string;
     teaser: string;
+    coverImage: string;
     author: string;
     createdAt: Date;
 }
 
-export interface BlogDetailDTO extends BlogListItemDTO {
+/** Public list cards: summary fields plus cover and SEO for listing pages (no auth). */
+export interface BlogPublicListItemDTO {
+    id: string;
+    title: string;
+    slug: string;
+    teaser: string;
     coverImage: string;
+    author: string;
+    createdAt: Date;
+    seoTitle: string;
+    seoDescription: string;
+    seoKeywords: string;
+}
+
+export interface BlogDetailDTO extends BlogListItemDTO {
     content: string;
     /** SEO `<title>` / og:title style override (optional in forms; empty string if unset). */
     seoTitle: string;
@@ -86,15 +100,25 @@ function mapListRow(b: Blog): BlogListItemDTO {
         title: b.title ?? '',
         slug: b.slug ?? '',
         teaser: b.teaser ?? '',
+        coverImage: b.coverImage ?? '',
         author: b.author ?? '',
         createdAt: b.createdAt,
+    };
+}
+
+function mapPublicListRow(b: Blog): BlogPublicListItemDTO {
+    return {
+        ...mapListRow(b),
+        coverImage: b.coverImage ?? '',
+        seoTitle: b.seoTitle ?? '',
+        seoDescription: b.seoDescription ?? '',
+        seoKeywords: b.seoKeywords ?? '',
     };
 }
 
 function mapDetail(b: Blog): BlogDetailDTO {
     return {
         ...mapListRow(b),
-        coverImage: b.coverImage ?? '',
         content: b.content ?? '',
         seoTitle: b.seoTitle ?? '',
         seoDescription: b.seoDescription ?? '',
@@ -110,6 +134,15 @@ export async function listBlogs(): Promise<BlogListItemDTO[]> {
         order: { createdAt: 'DESC' },
     });
     return rows.map(mapListRow);
+}
+
+export async function listPublicBlogs(): Promise<BlogPublicListItemDTO[]> {
+    const repo = AppDataSource.getRepository(Blog);
+    const rows = await repo.find({
+        where: { deletedAt: IsNull() },
+        order: { createdAt: 'DESC' },
+    });
+    return rows.map(mapPublicListRow);
 }
 
 export async function getBlogBySlug(slug: string): Promise<BlogDetailDTO> {
