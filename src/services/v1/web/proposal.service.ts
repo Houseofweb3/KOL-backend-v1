@@ -19,6 +19,13 @@ export interface ProposalCartResult {
 }
 
 type CartWithClient = Cart & { client?: { name: string } };
+type HttpError = Error & { status?: number };
+
+function withStatus(message: string, status: number): HttpError {
+    const err: HttpError = new Error(message);
+    err.status = status;
+    return err;
+}
 
 /**
  * Resolves an active proposal link when the URL path matches the cart (client slug, cart createdAt UTC date, cart id).
@@ -32,23 +39,17 @@ async function resolveActiveProposalLinkFromSlugPath(
     const cartRepo = AppDataSource.getRepository(Cart);
     const cart = await cartRepo.findOne({ where: { id: cartId }, relations: ['client'] });
     if (!cart) {
-        const err = new Error('Cart not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
-        throw err;
+        throw withStatus('Cart not found', HttpStatus.NOT_FOUND);
     }
     const clientName = (cart as CartWithClient).client?.name ?? '';
     const expectedSlug = slugifyClientNameForProposal(clientName);
     const pathSlug = slugifyClientNameForProposal(clientSlug);
     if (expectedSlug !== pathSlug) {
-        const err = new Error('Invalid proposal link');
-        (err as any).status = HttpStatus.BAD_REQUEST;
-        throw err;
+        throw withStatus('Invalid proposal link', HttpStatus.BAD_REQUEST);
     }
     const expectedDate = formatCartCreatedDateForProposalUrl(cart.createdAt);
     if (expectedDate !== dateYmd) {
-        const err = new Error('Invalid proposal link');
-        (err as any).status = HttpStatus.BAD_REQUEST;
-        throw err;
+        throw withStatus('Invalid proposal link', HttpStatus.BAD_REQUEST);
     }
 
     const linkRepo = AppDataSource.getRepository(ProposalLink);
@@ -57,19 +58,13 @@ async function resolveActiveProposalLinkFromSlugPath(
         order: { createdAt: 'DESC' },
     });
     if (!link) {
-        const err = new Error('Proposal link not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
-        throw err;
+        throw withStatus('Proposal link not found', HttpStatus.NOT_FOUND);
     }
     if (link.usedAt) {
-        const err = new Error('This proposal link has already been used');
-        (err as any).status = HttpStatus.GONE;
-        throw err;
+        throw withStatus('This proposal link has already been used', HttpStatus.GONE);
     }
     if (link.clientId !== cart.clientId) {
-        const err = new Error('Invalid proposal link');
-        (err as any).status = HttpStatus.BAD_REQUEST;
-        throw err;
+        throw withStatus('Invalid proposal link', HttpStatus.BAD_REQUEST);
     }
     return link;
 }
@@ -98,19 +93,13 @@ export async function getProposalCart(token: string): Promise<ProposalCartResult
         where: { id: payload.proposalLinkId },
     });
     if (!link) {
-        const err = new Error('Proposal link not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
-        throw err;
+        throw withStatus('Proposal link not found', HttpStatus.NOT_FOUND);
     }
     if (link.usedAt) {
-        const err = new Error('This proposal link has already been used');
-        (err as any).status = HttpStatus.GONE;
-        throw err;
+        throw withStatus('This proposal link has already been used', HttpStatus.GONE);
     }
     if (link.cartId !== payload.cartId || link.clientId !== payload.clientId) {
-        const err = new Error('Invalid proposal token');
-        (err as any).status = HttpStatus.BAD_REQUEST;
-        throw err;
+        throw withStatus('Invalid proposal token', HttpStatus.BAD_REQUEST);
     }
 
     const cart = await getCart(link.cartId);
@@ -125,16 +114,16 @@ export interface ProposalItemAcceptInput {
 
 export interface BillingInfoInput {
     /** Cart item accept/reject: each item id with accepted true/false. */
-    items: ProposalItemAcceptInput[];
-    registeredCompanyName: string;
-    registeredCompanyAddress: string;
-    authorizedSignatoryName: string;
-    authorizedSignatoryDesignation: string;
-    officialEmailId: string;
-    phoneNumber: string;
-    preferredPaymentMode: PaymentMode;
+    items?: ProposalItemAcceptInput[];
+    registeredCompanyName?: string;
+    registeredCompanyAddress?: string;
+    authorizedSignatoryName?: string;
+    authorizedSignatoryDesignation?: string;
+    officialEmailId?: string;
+    phoneNumber?: string;
+    preferredPaymentMode?: PaymentMode;
     docusignProofLink?: string | null;
-    isTermsConfirmed: boolean;
+    isTermsConfirmed?: boolean;
 }
 
 export interface SubmitProposalResult {
@@ -152,11 +141,14 @@ async function submitProposalWithLink(link: ProposalLink, input: BillingInfoInpu
     const cartRepo = AppDataSource.getRepository(Cart);
     const itemRepo = AppDataSource.getRepository(CartItem);
 
-    if (!input.isTermsConfirmed) {
-        const err = new Error('Terms and conditions must be confirmed');
-        (err as any).status = HttpStatus.BAD_REQUEST;
-        throw err;
-    }
+    const registeredCompanyName = (input.registeredCompanyName ?? '').trim();
+    const registeredCompanyAddress = (input.registeredCompanyAddress ?? '').trim();
+    const authorizedSignatoryName = (input.authorizedSignatoryName ?? '').trim();
+    const authorizedSignatoryDesignation = (input.authorizedSignatoryDesignation ?? '').trim();
+    const officialEmailId = (input.officialEmailId ?? '').trim();
+    const phoneNumber = (input.phoneNumber ?? '').trim();
+    const docusignProofLink = input.docusignProofLink?.trim() || null;
+    const isTermsConfirmed = !!input.isTermsConfirmed;
 
     const cartItems = await itemRepo.find({ where: { cartId: link.cartId } });
     const itemById = new Map(cartItems.map((i) => [i.id, i]));
@@ -188,33 +180,34 @@ async function submitProposalWithLink(link: ProposalLink, input: BillingInfoInpu
         await cartRepo.save(cart);
     }
 
-    const mode = input.preferredPaymentMode === 'bank_transfer' || input.preferredPaymentMode === 'crypto'
-        ? input.preferredPaymentMode
-        : 'bank_transfer';
+    const mode =
+        input.preferredPaymentMode === 'bank_transfer' || input.preferredPaymentMode === 'crypto'
+            ? input.preferredPaymentMode
+            : 'bank_transfer';
 
     let billing = await billingRepo.findOne({ where: { cartId: link.cartId } });
     if (billing) {
-        billing.registeredCompanyName = input.registeredCompanyName.trim();
-        billing.registeredCompanyAddress = input.registeredCompanyAddress.trim();
-        billing.authorizedSignatoryName = input.authorizedSignatoryName.trim();
-        billing.authorizedSignatoryDesignation = input.authorizedSignatoryDesignation.trim();
-        billing.officialEmailId = input.officialEmailId.trim();
-        billing.phoneNumber = input.phoneNumber.trim();
+        billing.registeredCompanyName = registeredCompanyName;
+        billing.registeredCompanyAddress = registeredCompanyAddress;
+        billing.authorizedSignatoryName = authorizedSignatoryName;
+        billing.authorizedSignatoryDesignation = authorizedSignatoryDesignation;
+        billing.officialEmailId = officialEmailId;
+        billing.phoneNumber = phoneNumber;
         billing.preferredPaymentMode = mode;
-        billing.docusignProofLink = input.docusignProofLink?.trim() || null;
-        billing.isTermsConfirmed = true;
+        billing.docusignProofLink = docusignProofLink;
+        billing.isTermsConfirmed = isTermsConfirmed;
     } else {
         billing = billingRepo.create({
             cartId: link.cartId,
-            registeredCompanyName: input.registeredCompanyName.trim(),
-            registeredCompanyAddress: input.registeredCompanyAddress.trim(),
-            authorizedSignatoryName: input.authorizedSignatoryName.trim(),
-            authorizedSignatoryDesignation: input.authorizedSignatoryDesignation.trim(),
-            officialEmailId: input.officialEmailId.trim(),
-            phoneNumber: input.phoneNumber.trim(),
+            registeredCompanyName,
+            registeredCompanyAddress,
+            authorizedSignatoryName,
+            authorizedSignatoryDesignation,
+            officialEmailId,
+            phoneNumber,
             preferredPaymentMode: mode,
-            docusignProofLink: input.docusignProofLink?.trim() || null,
-            isTermsConfirmed: true,
+            docusignProofLink,
+            isTermsConfirmed,
         });
     }
     await billingRepo.save(billing);
@@ -230,19 +223,13 @@ export async function submitProposal(token: string, input: BillingInfoInput): Pr
     const linkRepo = AppDataSource.getRepository(ProposalLink);
     const link = await linkRepo.findOne({ where: { id: payload.proposalLinkId } });
     if (!link) {
-        const err = new Error('Proposal link not found');
-        (err as any).status = HttpStatus.NOT_FOUND;
-        throw err;
+        throw withStatus('Proposal link not found', HttpStatus.NOT_FOUND);
     }
     if (link.usedAt) {
-        const err = new Error('This proposal link has already been used');
-        (err as any).status = HttpStatus.GONE;
-        throw err;
+        throw withStatus('This proposal link has already been used', HttpStatus.GONE);
     }
     if (link.cartId !== payload.cartId || link.clientId !== payload.clientId) {
-        const err = new Error('Invalid proposal token');
-        (err as any).status = HttpStatus.BAD_REQUEST;
-        throw err;
+        throw withStatus('Invalid proposal token', HttpStatus.BAD_REQUEST);
     }
     return submitProposalWithLink(link, input);
 }

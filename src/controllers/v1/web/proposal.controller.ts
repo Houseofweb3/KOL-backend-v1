@@ -24,10 +24,12 @@ export const getProposalBySlugPathController = async (req: Request, res: Respons
         }
         const result = await getProposalCartBySlugPath(clientSlug.trim(), date.trim(), cartId.trim());
         return res.status(HttpStatus.OK).json(result);
-    } catch (error: any) {
-        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Web get proposal (slug path) error (${status}): ${error.message}`);
-        return res.status(status).json({ error: error.message });
+    } catch (error: unknown) {
+        const err = error as { status?: number; message?: string };
+        const status = err.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
+        const message = err.message ?? 'Internal server error';
+        logger.error(`Web get proposal (slug path) error (${status}): ${message}`);
+        return res.status(status).json({ error: message });
     }
 };
 
@@ -39,10 +41,12 @@ export const getProposalByTokenController = async (req: Request, res: Response) 
         }
         const result = await getProposalCart(token.trim());
         return res.status(HttpStatus.OK).json(result);
-    } catch (error: any) {
-        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Web get proposal error (${status}): ${error.message}`);
-        return res.status(status).json({ error: error.message });
+    } catch (error: unknown) {
+        const err = error as { status?: number; message?: string };
+        const status = err.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
+        const message = err.message ?? 'Internal server error';
+        logger.error(`Web get proposal error (${status}): ${message}`);
+        return res.status(status).json({ error: message });
     }
 };
 
@@ -57,7 +61,10 @@ export const submitProposalBySlugPathController = async (req: Request, res: Resp
         }
         const body = req.body || {};
         const items = Array.isArray(body.items)
-            ? body.items.map((it: any) => ({ id: String(it?.id ?? '').trim(), accepted: !!it?.accepted }))
+            ? body.items.map((it: unknown) => {
+                  const obj = (it ?? {}) as Record<string, unknown>;
+                  return { id: String(obj.id ?? '').trim(), accepted: !!obj.accepted };
+              })
             : [];
         const result = await submitProposalBySlugPath(clientSlug.trim(), date.trim(), cartId.trim(), {
             items,
@@ -72,10 +79,12 @@ export const submitProposalBySlugPathController = async (req: Request, res: Resp
             isTermsConfirmed: !!body.isTermsConfirmed,
         });
         return res.status(HttpStatus.OK).json(result);
-    } catch (error: any) {
-        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Web submit proposal (slug path) error (${status}): ${error.message}`);
-        return res.status(status).json({ error: error.message });
+    } catch (error: unknown) {
+        const err = error as { status?: number; message?: string };
+        const status = err.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
+        const message = err.message ?? 'Internal server error';
+        logger.error(`Web submit proposal (slug path) error (${status}): ${message}`);
+        return res.status(status).json({ error: message });
     }
 };
 
@@ -87,7 +96,10 @@ export const submitProposalController = async (req: Request, res: Response) => {
         }
         const body = req.body || {};
         const items = Array.isArray(body.items)
-            ? body.items.map((it: any) => ({ id: String(it?.id ?? '').trim(), accepted: !!it?.accepted }))
+            ? body.items.map((it: unknown) => {
+                  const obj = (it ?? {}) as Record<string, unknown>;
+                  return { id: String(obj.id ?? '').trim(), accepted: !!obj.accepted };
+              })
             : [];
         const result = await submitProposal(token.trim(), {
             items,
@@ -102,9 +114,11 @@ export const submitProposalController = async (req: Request, res: Response) => {
             isTermsConfirmed: !!body.isTermsConfirmed,
         });
         return res.status(HttpStatus.OK).json(result);
-    } catch (error: any) {
-        const status = error.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Web submit proposal error (${status}): ${error.message}`);
-        return res.status(status).json({ error: error.message });
+    } catch (error: unknown) {
+        const err = error as { status?: number; message?: string };
+        const status = err.status ?? HttpStatus.INTERNAL_SERVER_ERROR;
+        const message = err.message ?? 'Internal server error';
+        logger.error(`Web submit proposal error (${status}): ${message}`);
+        return res.status(status).json({ error: message });
     }
 };
