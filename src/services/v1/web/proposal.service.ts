@@ -2,6 +2,7 @@ import HttpStatus from 'http-status-codes';
 import { AppDataSource } from '../../../config/data-source';
 import { ProposalLink } from '../../../entity/proposal-link.entity';
 import { BillingInfo } from '../../../entity/billing-info.entity';
+import { ClientBillingInfo } from '../../../entity/client-billing-info.entity';
 import { Cart } from '../../../entity/cart.entity';
 import { CartItem } from '../../../entity/cart-item.entity';
 import { CartStatus } from '../../../constants/cart';
@@ -16,6 +17,17 @@ import type { PaymentMode } from '../../../entity/billing-info.entity';
 
 export interface ProposalCartResult {
     cart: AdminCartDTO;
+    billingInfoPrefill: {
+        registeredCompanyName: string;
+        registeredCompanyAddress: string;
+        authorizedSignatoryName: string;
+        authorizedSignatoryDesignation: string;
+        officialEmailId: string;
+        phoneNumber: string;
+        preferredPaymentMode: PaymentMode;
+        docusignProofLink: string | null;
+        isTermsConfirmed: boolean;
+    } | null;
 }
 
 type CartWithClient = Cart & { client?: { name: string } };
@@ -79,7 +91,24 @@ export async function getProposalCartBySlugPath(
 ): Promise<ProposalCartResult> {
     const link = await resolveActiveProposalLinkFromSlugPath(clientSlug, dateYmd, cartId);
     const cart = await getCart(link.cartId);
-    return { cart };
+    const billingRepo = AppDataSource.getRepository(ClientBillingInfo);
+    const prefill = await billingRepo.findOne({ where: { clientId: link.clientId } });
+    return {
+        cart,
+        billingInfoPrefill: prefill
+            ? {
+                  registeredCompanyName: prefill.registeredCompanyName,
+                  registeredCompanyAddress: prefill.registeredCompanyAddress,
+                  authorizedSignatoryName: prefill.authorizedSignatoryName,
+                  authorizedSignatoryDesignation: prefill.authorizedSignatoryDesignation,
+                  officialEmailId: prefill.officialEmailId,
+                  phoneNumber: prefill.phoneNumber,
+                  preferredPaymentMode: (prefill.preferredPaymentMode as PaymentMode) ?? 'bank_transfer',
+                  docusignProofLink: prefill.docusignProofLink ?? null,
+                  isTermsConfirmed: !!prefill.isTermsConfirmed,
+              }
+            : null,
+    };
 }
 
 /**
@@ -103,7 +132,24 @@ export async function getProposalCart(token: string): Promise<ProposalCartResult
     }
 
     const cart = await getCart(link.cartId);
-    return { cart };
+    const billingRepo = AppDataSource.getRepository(ClientBillingInfo);
+    const prefill = await billingRepo.findOne({ where: { clientId: link.clientId } });
+    return {
+        cart,
+        billingInfoPrefill: prefill
+            ? {
+                  registeredCompanyName: prefill.registeredCompanyName,
+                  registeredCompanyAddress: prefill.registeredCompanyAddress,
+                  authorizedSignatoryName: prefill.authorizedSignatoryName,
+                  authorizedSignatoryDesignation: prefill.authorizedSignatoryDesignation,
+                  officialEmailId: prefill.officialEmailId,
+                  phoneNumber: prefill.phoneNumber,
+                  preferredPaymentMode: (prefill.preferredPaymentMode as PaymentMode) ?? 'bank_transfer',
+                  docusignProofLink: prefill.docusignProofLink ?? null,
+                  isTermsConfirmed: !!prefill.isTermsConfirmed,
+              }
+            : null,
+    };
 }
 
 /** Per-item acceptance: cart item id and whether client accepted this influencer line. */
@@ -138,6 +184,7 @@ export interface SubmitProposalResult {
 async function submitProposalWithLink(link: ProposalLink, input: BillingInfoInput): Promise<SubmitProposalResult> {
     const linkRepo = AppDataSource.getRepository(ProposalLink);
     const billingRepo = AppDataSource.getRepository(BillingInfo);
+    const clientBillingRepo = AppDataSource.getRepository(ClientBillingInfo);
     const cartRepo = AppDataSource.getRepository(Cart);
     const itemRepo = AppDataSource.getRepository(CartItem);
 
@@ -211,6 +258,34 @@ async function submitProposalWithLink(link: ProposalLink, input: BillingInfoInpu
         });
     }
     await billingRepo.save(billing);
+
+    // Also persist billing details on the client record (for auto-prefill on future proposals).
+    let clientBilling = await clientBillingRepo.findOne({ where: { clientId: link.clientId } });
+    if (clientBilling) {
+        clientBilling.registeredCompanyName = registeredCompanyName;
+        clientBilling.registeredCompanyAddress = registeredCompanyAddress;
+        clientBilling.authorizedSignatoryName = authorizedSignatoryName;
+        clientBilling.authorizedSignatoryDesignation = authorizedSignatoryDesignation;
+        clientBilling.officialEmailId = officialEmailId;
+        clientBilling.phoneNumber = phoneNumber;
+        clientBilling.preferredPaymentMode = mode;
+        clientBilling.docusignProofLink = docusignProofLink;
+        clientBilling.isTermsConfirmed = isTermsConfirmed;
+    } else {
+        clientBilling = clientBillingRepo.create({
+            clientId: link.clientId,
+            registeredCompanyName,
+            registeredCompanyAddress,
+            authorizedSignatoryName,
+            authorizedSignatoryDesignation,
+            officialEmailId,
+            phoneNumber,
+            preferredPaymentMode: mode,
+            docusignProofLink,
+            isTermsConfirmed,
+        });
+    }
+    await clientBillingRepo.save(clientBilling);
 
     link.usedAt = new Date();
     await linkRepo.save(link);

@@ -53,6 +53,13 @@ The client receives an email with subject “Your proposal is ready – Ampli5�
 
 **Errors:** 400 if path does not match cart; 404 cart or proposal link not found; 410 link already used.
 
+### Billing auto-fill (prefill)
+
+The response also includes:
+
+- `billingInfoPrefill`: **object or null** — taken from the client’s saved billing info (`client_billing_info`) if present.
+  Use this to auto-fill the billing form on the proposal page.
+
 ---
 
 ## Web: Get proposal cart (legacy — token only in path)
@@ -67,6 +74,17 @@ The client receives an email with subject “Your proposal is ready – Ampli5�
 
 ```json
 {
+  "billingInfoPrefill": {
+    "registeredCompanyName": "Acme Ltd",
+    "registeredCompanyAddress": "123 Street, City",
+    "authorizedSignatoryName": "John Doe",
+    "authorizedSignatoryDesignation": "Director",
+    "officialEmailId": "legal@acme.com",
+    "phoneNumber": "+1234567890",
+    "preferredPaymentMode": "bank_transfer",
+    "docusignProofLink": null,
+    "isTermsConfirmed": true
+  },
   "cart": {
     "id": "cart-uuid",
     "clientId": "client-uuid",
@@ -170,6 +188,7 @@ Same **body** as legacy submit. No query parameters.
 - **Cart totals** (subtotal, discountAmount, managementFeeAmount, total) are **recalculated on the backend** using **only items where `is_approved` is true**. The cart’s discount and management fee percentages are applied to this accepted-items subtotal.
 - **Cart** `status` is set to **`approved`** (from `CartStatus` enum).
 - **Billing info** is saved in `billing_info` (one per cart).
+- The same billing fields are also upserted into `client_billing_info` (one per client) so future proposals can auto-fill.
 - **Proposal link** is marked as used (`used_at` set); further slug or legacy token requests return 410 for GET/POST.
 
 **Errors:** 400 (e.g. terms not confirmed), 404, 410 (link already used).

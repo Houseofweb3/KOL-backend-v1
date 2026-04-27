@@ -46,6 +46,31 @@ Responses return **Client** objects with the following fields (camelCase in JSON
 | `createdAt` | `string` (ISO date) | — | From BaseModel |
 | `updatedAt` | `string` (ISO date) | — | From BaseModel |
 | `deletedAt` | `string \| null` (ISO date) | — | Set when soft-deleted |
+| `billingInfo` | `object \| null` | No | Client billing information (admin-managed). Present on `GET /:id`, `POST`, `PATCH`. |
+
+---
+
+## Client BillingInfo Shape
+
+`billingInfo` is a nested object (or `null`) with:
+
+| Field | Type | Required (Create) | Description |
+|-------|------|-------------------|-------------|
+| `id` | `string` (UUID) | — | Set by server |
+| `clientId` | `string` (UUID) | — | Set by server |
+| `registeredCompanyName` | `string` | ✅ (if billingInfo provided) | Registered company name |
+| `registeredCompanyAddress` | `string` | ✅ (if billingInfo provided) | Registered company address |
+| `authorizedSignatoryName` | `string` | ✅ (if billingInfo provided) | Authorized signatory name |
+| `authorizedSignatoryDesignation` | `string` | ✅ (if billingInfo provided) | Authorized signatory designation |
+| `officialEmailId` | `string` | ✅ (if billingInfo provided) | Official email ID |
+| `phoneNumber` | `string` | ✅ (if billingInfo provided) | Phone number |
+| `preferredPaymentMode` | `"bank_transfer" \| "crypto"` | ✅ (if billingInfo provided) | Preferred payment mode |
+| `docusignProofLink` | `string \| null` | No | Optional DocuSign link |
+| `isTermsConfirmed` | `boolean` | No | Defaults to `false` |
+| `createdAt` | `string` (ISO date) | — | From BaseModel |
+| `updatedAt` | `string` (ISO date) | — | From BaseModel |
+
+To **clear** billing info on update, send: `"billingInfo": null`.
 
 ---
 
@@ -169,11 +194,25 @@ Authorization: Bearer <admin_jwt_token>
   "genderSkew": "Neutral",
   "campaignStartTimeline": "ASAP",
   "customBrief": "Looking for tech influencers.",
-  "isVerified": true,
   "isDeleted": false,
   "createdAt": "2025-02-01T12:00:00.000Z",
   "updatedAt": "2025-02-01T12:00:00.000Z",
-  "deletedAt": null
+  "deletedAt": null,
+  "billingInfo": {
+    "id": "b1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "clientId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "registeredCompanyName": "Acme Corp Pvt Ltd",
+    "registeredCompanyAddress": "123 Main St, City, Country",
+    "authorizedSignatoryName": "John Doe",
+    "authorizedSignatoryDesignation": "Director",
+    "officialEmailId": "finance@acme.com",
+    "phoneNumber": "+1234567890",
+    "preferredPaymentMode": "bank_transfer",
+    "docusignProofLink": null,
+    "isTermsConfirmed": true,
+    "createdAt": "2025-02-01T12:00:00.000Z",
+    "updatedAt": "2025-02-01T12:00:00.000Z"
+  }
 }
 ```
 
@@ -218,6 +257,7 @@ Creates a new client. Only `name` and `email` are required; all other fields are
 | `genderSkew` | string \| null | No | Gender skew |
 | `campaignStartTimeline` | string \| null | No | Campaign start timeline |
 | `customBrief` | string \| null | No | Custom brief (long text) |
+| `billingInfo` | object \| null | No | Optional nested billing info (see Client BillingInfo Shape) |
 
 Only the keys listed above are accepted; any other keys in the body are ignored.
 
@@ -254,7 +294,18 @@ Content-Type: application/json
   "ageRange": "25-34",
   "genderSkew": "Neutral",
   "campaignStartTimeline": "ASAP",
-  "customBrief": "Looking for tech influencers for Q1 campaign."
+  "customBrief": "Looking for tech influencers for Q1 campaign.",
+  "billingInfo": {
+    "registeredCompanyName": "Acme Corp Pvt Ltd",
+    "registeredCompanyAddress": "123 Main St, City, Country",
+    "authorizedSignatoryName": "John Doe",
+    "authorizedSignatoryDesignation": "Director",
+    "officialEmailId": "finance@acme.com",
+    "phoneNumber": "+1234567890",
+    "preferredPaymentMode": "bank_transfer",
+    "docusignProofLink": null,
+    "isTermsConfirmed": true
+  }
 }
 ```
 
@@ -276,6 +327,21 @@ Content-Type: application/json
   "genderSkew": "Neutral",
   "campaignStartTimeline": "ASAP",
   "customBrief": "Looking for tech influencers for Q1 campaign.",
+  "billingInfo": {
+    "id": "b1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "clientId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "registeredCompanyName": "Acme Corp Pvt Ltd",
+    "registeredCompanyAddress": "123 Main St, City, Country",
+    "authorizedSignatoryName": "John Doe",
+    "authorizedSignatoryDesignation": "Director",
+    "officialEmailId": "finance@acme.com",
+    "phoneNumber": "+1234567890",
+    "preferredPaymentMode": "bank_transfer",
+    "docusignProofLink": null,
+    "isTermsConfirmed": true,
+    "createdAt": "2025-02-07T14:30:00.000Z",
+    "updatedAt": "2025-02-07T14:30:00.000Z"
+  },
   "isDeleted": false,
   "createdAt": "2025-02-07T14:30:00.000Z",
   "updatedAt": "2025-02-07T14:30:00.000Z",
@@ -336,6 +402,7 @@ Any subset of the following keys. Only provided keys are updated.
 | `genderSkew` | string \| null | Gender skew |
 | `campaignStartTimeline` | string \| null | Campaign start timeline |
 | `customBrief` | string \| null | Custom brief |
+| `billingInfo` | object \| null | Upsert billing info (object) or remove it (`null`) |
 
 ### Example request (update a few fields)
 

@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany, OneToOne } from 'typeorm';
 import { BaseModel } from './baseEntities/BaseModel';
 import { Cart } from './cart.entity';
+import { ClientBillingInfo } from './client-billing-info.entity';
 
 /**
  * Client = the customer who purchases influencer services.
@@ -57,4 +58,7 @@ export class Client extends BaseModel {
 
     @OneToMany(() => Cart, (cart) => cart.client)
     carts!: Cart[];
+
+    @OneToOne(() => ClientBillingInfo, (b) => b.client)
+    billingInfo!: ClientBillingInfo | null;
 }

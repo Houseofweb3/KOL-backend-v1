@@ -77,6 +77,7 @@ export const createClientController = async (req: Request, res: Response) => {
         for (const key of CLIENT_CREATE_KEYS) {
             if (key !== 'name' && key !== 'email' && key in body) data[key] = body[key];
         }
+        if ('billingInfo' in body) data.billingInfo = body.billingInfo;
         const client = await createClient(data as Parameters<typeof createClient>[0]);
         return res.status(HttpStatus.CREATED).json(client);
     } catch (error: any) {
@@ -93,6 +94,7 @@ export const updateClientController = async (req: Request, res: Response) => {
         for (const key of CLIENT_UPDATE_KEYS) {
             if (key in body) data[key] = body[key];
         }
+        if ('billingInfo' in body) data.billingInfo = body.billingInfo;
         const client = await updateClient(req.params.id, data as Parameters<typeof updateClient>[1]);
         return res.status(HttpStatus.OK).json(client);
     } catch (error: any) {
