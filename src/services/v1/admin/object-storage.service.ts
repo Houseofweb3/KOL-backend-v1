@@ -45,6 +45,38 @@ export async function deleteFromStorage(keyOrSuffix: string): Promise<void> {
 }
 
 /**
+ * List object keys by prefix (full key or suffix). Returns full storage keys.
+ * NOTE: This does not generate URLs; use getPublicUrl() for that.
+ */
+export async function listStorageKeys(prefixOrSuffix: string, maxKeys = 1000): Promise<string[]> {
+    const prefix = prefixOrSuffix.startsWith(MEDIA_PREFIX) ? prefixOrSuffix : MEDIA_PREFIX + prefixOrSuffix;
+    const client = getClient();
+    const out: string[] = [];
+
+    let ContinuationToken: string | undefined = undefined;
+    const safeMax = Math.max(1, Math.min(1000, maxKeys));
+
+    while (out.length < safeMax) {
+        const resp = await client
+            .listObjectsV2({
+                Bucket: BUCKET,
+                Prefix: prefix,
+                MaxKeys: Math.min(1000, safeMax - out.length),
+                ContinuationToken,
+            })
+            .promise();
+
+        const keys = (resp.Contents || []).map((c) => c.Key).filter((k): k is string => typeof k === 'string');
+        out.push(...keys);
+
+        if (!resp.IsTruncated || !resp.NextContinuationToken) break;
+        ContinuationToken = resp.NextContinuationToken;
+    }
+
+    return out;
+}
+
+/**
  * Get a signed GET URL valid for 1 hour. Use for private buckets (e.g. Hetzner).
  */
 export function getSignedGetUrl(storageKey: string, expiresInSeconds = 3600): string {

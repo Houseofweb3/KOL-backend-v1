@@ -118,6 +118,21 @@ export interface AdminCartItemDTO {
     influencerName?: string | null;
 }
 
+export interface AdminClientBillingInfoDTO {
+    id: string;
+    registeredCompanyName: string;
+    registeredCompanyAddress: string;
+    authorizedSignatoryName: string;
+    authorizedSignatoryDesignation: string;
+    officialEmailId: string;
+    phoneNumber: string;
+    preferredPaymentMode: string;
+    docusignProofLink: string | null;
+    isTermsConfirmed: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface AdminCartDTO {
     id: string;
     clientId: string;
@@ -136,6 +151,7 @@ export interface AdminCartDTO {
         id: string;
         name: string;
         email: string;
+        billingInfo: AdminClientBillingInfoDTO | null;
     };
     items: AdminCartItemDTO[];
 }
@@ -271,8 +287,9 @@ export const listCarts = async (options: ListCartsOptions = {}): Promise<ListCar
 function mapCartToAdminDto(
     cart: Cart,
     items: CartItem[],
-    client: { id: string; name: string; email: string } | null
+    client: { id: string; name: string; email: string; billingInfo?: any } | null
 ): AdminCartDTO {
+    const billingInfoRaw = client && 'billingInfo' in client ? (client as any).billingInfo : null;
     return {
         id: cart.id,
         clientId: cart.clientId,
@@ -287,8 +304,28 @@ function mapCartToAdminDto(
         managementFeeAmount: cart.managementFeeAmount ?? '0.00',
         total: cart.total ?? '0.00',
         client: client
-            ? { id: client.id, name: client.name, email: client.email }
-            : { id: cart.clientId, name: '', email: '' },
+            ? {
+                id: client.id,
+                name: client.name,
+                email: client.email,
+                billingInfo: billingInfoRaw
+                    ? {
+                        id: billingInfoRaw.id,
+                        registeredCompanyName: billingInfoRaw.registeredCompanyName,
+                        registeredCompanyAddress: billingInfoRaw.registeredCompanyAddress,
+                        authorizedSignatoryName: billingInfoRaw.authorizedSignatoryName,
+                        authorizedSignatoryDesignation: billingInfoRaw.authorizedSignatoryDesignation,
+                        officialEmailId: billingInfoRaw.officialEmailId,
+                        phoneNumber: billingInfoRaw.phoneNumber,
+                        preferredPaymentMode: billingInfoRaw.preferredPaymentMode,
+                        docusignProofLink: billingInfoRaw.docusignProofLink ?? null,
+                        isTermsConfirmed: Boolean(billingInfoRaw.isTermsConfirmed),
+                        createdAt: billingInfoRaw.createdAt ? new Date(billingInfoRaw.createdAt).toISOString() : '',
+                        updatedAt: billingInfoRaw.updatedAt ? new Date(billingInfoRaw.updatedAt).toISOString() : '',
+                    }
+                    : null,
+            }
+            : { id: cart.clientId, name: '', email: '', billingInfo: null },
         items: items.map((item) => {
             const inf = (item as any).influencer;
             return {
@@ -314,7 +351,7 @@ function mapCartToAdminDto(
 export const getCart = async (cartId: string): Promise<AdminCartDTO> => {
     const cartRepo = AppDataSource.getRepository(Cart);
     const itemRepo = AppDataSource.getRepository(CartItem);
-    const cart = await cartRepo.findOne({ where: { id: cartId }, relations: ['client'] });
+    const cart = await cartRepo.findOne({ where: { id: cartId }, relations: ['client', 'client.billingInfo'] });
     if (!cart) {
         const err = new Error('Cart not found');
         (err as any).status = HttpStatus.NOT_FOUND;

@@ -8,6 +8,7 @@ import { creatorOnboardingRoutes } from './creator-onboarding.routes';
 import { webBlogRoutes } from './blog.routes';
 import { webBlogPublicRoutes } from './blog-public.routes';
 import { webBlogPublicImageRoutes } from './blog-public-image.routes';
+import { webAmpli5ImageRoutes } from './ampli5-image.routes';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/creator-onboarding', creatorOnboardingRoutes);
 router.use('/blogs/public', webBlogPublicRoutes);
 router.use('/blogs', webBlogRoutes);
 router.use('/blog-images', webBlogPublicImageRoutes);
+router.use('/ampli5-images', webAmpli5ImageRoutes);
 
 export const webRoutes = router;

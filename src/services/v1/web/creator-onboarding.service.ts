@@ -13,6 +13,18 @@ export interface CreatorOnboardingInventoryItem {
     ccp?: string;
 }
 
+export interface CreatorOnboardingAudienceProof {
+    ageScreenshot?: string;
+    genderScreenshot?: string;
+    topCountriesScreenshot?: string;
+}
+
+export interface CreatorOnboardingCollaborationProof {
+    image1?: string;
+    image2?: string;
+    image3?: string;
+}
+
 /** Request body: matches frontend CreatorOnboardingFormData. */
 export interface CreatorOnboardingPayload {
     channelBrandName: string;
@@ -31,11 +43,21 @@ export interface CreatorOnboardingPayload {
     ageScreenshot?: string;
     genderScreenshot?: string;
     topCountriesScreenshot?: string;
+    /**
+     * Platform-wise audience proof images (preferred over global screenshot fields).
+     * Keys should match entries in `platforms` array (e.g. "X", "Youtube").
+     */
+    platformAudienceProof?: Record<string, CreatorOnboardingAudienceProof>;
     paymentTerms?: string;
     turnaroundTimes?: string[];
     firstCollaborationImage1?: string;
     firstCollaborationImage2?: string;
     firstCollaborationImage3?: string;
+    /**
+     * Platform-wise collaboration proof images (preferred over global collaboration image fields).
+     * Keys should match entries in `platforms` array (e.g. "X", "Youtube").
+     */
+    platformCollaborationProof?: Record<string, CreatorOnboardingCollaborationProof>;
     xLink?: string;
     instagramLink?: string;
     youtubeLink?: string;
@@ -71,14 +93,26 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
     const platformUrls = payload.platformUrls ?? {};
     const inventoryItems = payload.inventoryItems ?? {};
     const platforms = payload.platforms ?? [];
+    const platformAudienceProof = payload.platformAudienceProof ?? {};
+    const platformCollaborationProof = payload.platformCollaborationProof ?? {};
 
     const toStr = (arr: string[] | undefined): string | null =>
         arr && arr.length > 0 ? arr.join(', ') : null;
+
+    const pickUrl = (...candidates: Array<string | undefined | null>): string | null => {
+        for (const c of candidates) {
+            const v = typeof c === 'string' ? c.trim() : '';
+            if (v) return v;
+        }
+        return null;
+    };
 
     const influencerIds: string[] = [];
 
     for (const platform of platforms) {
         const platformLink = platformUrls[platform] ?? '';
+        const audience = platformAudienceProof[platform] ?? {};
+        const collab = platformCollaborationProof[platform] ?? {};
         const optionsForPlatform = PLATFORM_INVENTORY_OPTIONS[platform] ?? [];
         for (const inventoryLabel of optionsForPlatform) {
             const inv = inventoryItems[inventoryLabel];
@@ -111,16 +145,18 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 categories: toStr(payload.categories),
                 primaryAudienceGeography: toStr(payload.primaryAudienceGeography),
                 secondaryAudienceGeography: toStr(payload.secondaryAudienceGeography),
-                ageScreenshotUrl: payload.ageScreenshot?.trim() || null,
-                genderScreenshotUrl: payload.genderScreenshot?.trim() || null,
-                topCountriesScreenshotUrl: payload.topCountriesScreenshot?.trim() || null,
+                // Prefer platform-wise proof, fallback to legacy global fields.
+                ageScreenshotUrl: pickUrl(audience.ageScreenshot, payload.ageScreenshot),
+                genderScreenshotUrl: pickUrl(audience.genderScreenshot, payload.genderScreenshot),
+                topCountriesScreenshotUrl: pickUrl(audience.topCountriesScreenshot, payload.topCountriesScreenshot),
                 paymentTerms: payload.paymentTerms?.trim() || null,
                 turnaroundTimes: payload.turnaroundTimes && payload.turnaroundTimes.length > 0
                     ? payload.turnaroundTimes.join(', ')
                     : null,
-                firstCollaborationImage1: payload.firstCollaborationImage1?.trim() || null,
-                firstCollaborationImage2: payload.firstCollaborationImage2?.trim() || null,
-                firstCollaborationImage3: payload.firstCollaborationImage3?.trim() || null,
+                // Prefer platform-wise proof, fallback to legacy global fields.
+                firstCollaborationImage1: pickUrl(collab.image1, payload.firstCollaborationImage1),
+                firstCollaborationImage2: pickUrl(collab.image2, payload.firstCollaborationImage2),
+                firstCollaborationImage3: pickUrl(collab.image3, payload.firstCollaborationImage3),
                 xLink: payload.xLink?.trim() || null,
                 instagramLink: payload.instagramLink?.trim() || null,
                 youtubeLink: payload.youtubeLink?.trim() || null,
