@@ -13,6 +13,7 @@ import {
     MediaFolder,
     MediaFile,
     Blog,
+    Task,
 } from '../entity';
 
 export const AppDataSource = new DataSource({
@@ -24,7 +25,7 @@ export const AppDataSource = new DataSource({
     database: ENV.DB_DATABASE,
     synchronize: true,
     logging: false,
-    entities: [User, Otp, Influencer, Client, ClientBillingInfo, Cart, CartItem, ProposalLink, BillingInfo, MediaFolder, MediaFile, Blog],
+    entities: [User, Otp, Influencer, Client, ClientBillingInfo, Cart, CartItem, ProposalLink, BillingInfo, MediaFolder, MediaFile, Blog, Task],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
     ssl: {

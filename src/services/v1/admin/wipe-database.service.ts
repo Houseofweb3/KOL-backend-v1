@@ -5,6 +5,7 @@ import { AppDataSource } from '../../../config/data-source';
  * Order: child tables first to satisfy FK; CASCADE will handle dependents.
  */
 const TABLES = [
+    'tasks',
     'billing_info',
     'proposal_links',
     'cart_items',

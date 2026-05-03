@@ -8,6 +8,7 @@ import { adminDatabaseRoutes } from './database.routes';
 import { adminMediaRoutes } from './media.routes';
 import { adminDashboardStatsRoutes } from './dashboard-stats.routes';
 import { adminRateRoutes } from './rate.routes';
+import { adminTaskRoutes } from './task.routes';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/database', adminDatabaseRoutes);
 router.use('/media', adminMediaRoutes);
 router.use('/rate', adminRateRoutes);
 router.use('/dashboard', adminDashboardStatsRoutes);
+router.use('/task', adminTaskRoutes);
 
 export const adminRoutes = router;
