@@ -6,6 +6,7 @@ import { AppDataSource } from '../../../config/data-source';
  */
 const TABLES = [
     'tasks',
+    'koal_invoices',
     'billing_info',
     'proposal_links',
     'cart_items',

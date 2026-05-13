@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice <%= invoiceNumber %></title>
+    <style>
+        @page { size: A4; margin: 28px 32px; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            color: #111;
+            line-height: 1.5;
+        }
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 18px;
+        }
+        .title-block h1 {
+            margin: 0 0 6px 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .inv-num { font-size: 12px; color: #444; }
+        .inv-num strong { color: #111; }
+        .brand {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-align: right;
+        }
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #ddd;
+        }
+        .meta-label { font-size: 10px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+        .meta-value { font-size: 12px; color: #111; max-width: 360px; }
+        .dates { display: flex; gap: 32px; text-align: right; }
+        .date-col { min-width: 100px; }
+        .columns {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 22px;
+        }
+        .col { flex: 1; min-width: 0; }
+        .col h2 {
+            margin: 0 0 10px 0;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #333;
+        }
+        .addr-line { margin-bottom: 3px; color: #222; font-size: 11px; }
+        .addr-line.muted { color: #555; }
+        table.lines {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+        table.lines thead th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #333;
+            background: #f0f0f0;
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        table.lines thead th:nth-child(2),
+        table.lines thead th:nth-child(3),
+        table.lines thead th:nth-child(4),
+        table.lines thead th:nth-child(5) { text-align: right; }
+        table.lines tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e8e8e8;
+            vertical-align: top;
+        }
+        table.lines tbody td:nth-child(2),
+        table.lines tbody td:nth-child(3),
+        table.lines tbody td:nth-child(4),
+        table.lines tbody td:nth-child(5) { text-align: right; white-space: nowrap; }
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: baseline;
+            gap: 24px;
+            margin-top: 8px;
+            padding-right: 12px;
+        }
+        .total-row .lbl { font-size: 11px; font-weight: 600; color: #333; }
+        .total-row .amt { font-size: 15px; font-weight: 700; }
+        .note-box {
+            border: 1px solid #e0e0e0;
+            background: #fafafa;
+            padding: 10px 12px;
+            margin: 18px 0;
+            font-size: 10px;
+            color: #444;
+            line-height: 1.45;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 32px;
+            margin-top: 28px;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+        }
+        .pay h3 {
+            margin: 0 0 8px 0;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .pay .row2 { margin-bottom: 4px; font-size: 11px; }
+        .pay .k { color: #666; display: inline-block; min-width: 112px; }
+        .sign { text-align: right; max-width: 220px; }
+        .sign .line { border-top: 1px solid #111; margin-bottom: 6px; padding-top: 8px; margin-top: 36px; width: 180px; margin-left: auto; }
+        .sign .name { font-weight: 600; font-size: 12px; }
+        .sign .sub { font-size: 9px; color: #666; margin-top: 4px; }
+        .status-pill {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #f0f0f0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <header class="top">
+        <div class="title-block">
+            <h1>Invoice</h1>
+            <div class="inv-num"># <strong><%= invoiceNumber %></strong></div>
+        </div>
+        <div class="brand"><%= companyBrand %></div>
+    </header>
+
+    <section class="meta-row">
+        <div>
+            <div class="meta-label">Project</div>
+            <div class="meta-value"><%= projectTitle %></div>
+        </div>
+        <div class="dates">
+            <div class="date-col">
+                <div class="meta-label">Issued date</div>
+                <div class="meta-value"><%= issuedDateLong %></div>
+            </div>
+            <div class="date-col">
+                <div class="meta-label">Due date</div>
+                <div class="meta-value"><%= dueDateLong %></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="columns">
+        <div class="col">
+            <h2>From</h2>
+            <div class="addr-line"><strong><%= invoiceByName %></strong></div>
+            <% if (showOnBehalf) { %>
+                <div class="addr-line muted">On behalf of: <strong><%= fromName %></strong> (<%= fromDesignation %>)</div>
+            <% } %>
+            <div class="addr-line muted">Email: <%= invoiceByEmail %></div>
+            <div class="addr-line muted">Phone: <%= invoiceByPhone %></div>
+            <% if (invoiceByPlatformLink !== '—') { %>
+                <div class="addr-line muted">Link: <%= invoiceByPlatformLink %></div>
+            <% } %>
+        </div>
+        <div class="col">
+            <h2>To</h2>
+            <div class="addr-line"><strong><%= billToName %></strong></div>
+            <div class="addr-line muted" style="white-space: pre-line;"><%= billToAddress %></div>
+            <div class="addr-line muted">Email: <%= billToEmail %></div>
+            <div class="addr-line muted">Phone: <%= billToPhone %></div>
+            <% if (billToWebsite !== '—') { %>
+                <div class="addr-line muted">Website: <%= billToWebsite %></div>
+            <% } %>
+        </div>
+    </section>
+
+    <table class="lines">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="width: 48px;">Units</th>
+                <th style="width: 88px;">Price</th>
+                <th style="width: 64px;">GST</th>
+                <th style="width: 88px;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% projectRows.forEach(function (row) { %>
+                <tr>
+                    <td><%= row.description %></td>
+                    <td><%= row.units %></td>
+                    <td>$<%= row.priceDisplay %></td>
+                    <td><%= row.gstDisplay %></td>
+                    <td>$<%= row.amountDisplay %></td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <div class="total-row">
+        <span class="lbl">Total amount</span>
+        <span class="amt">$<%= amountPayableDisplay %></span>
+    </div>
+
+    <div class="note-box">
+        <strong>Payment status:</strong> <span class="status-pill"><%= statusLabel %></span>
+        <% if (showUtrRow) { %>
+            &nbsp;·&nbsp; <strong>Payment reference (UTR):</strong> <%= utrDisplay %>
+        <% } %>
+        <br />
+        Amounts in USD (major units). GST column shows <strong>0.00</strong> where not applicable.
+    </div>
+
+    <footer class="footer">
+        <div class="pay">
+            <h3>Payment method</h3>
+            <div class="row2"><span class="k">Type</span><%= paymentMethodLabel %></div>
+            <% if (paymentIsBank) { %>
+                <div class="row2"><span class="k">Account name</span><%= bankAccountHolderName %></div>
+                <div class="row2"><span class="k">Bank</span><%= bankName %></div>
+                <div class="row2"><span class="k">BIC / IFSC</span><%= bankSwiftOrIfsc %></div>
+                <div class="row2"><span class="k">Account number</span><%= bankAccountNumberOrIban %></div>
+                <div class="row2"><span class="k">Country</span><%= bankCountry %></div>
+            <% } else { %>
+                <div class="row2"><span class="k">Network</span><%= cryptoChainAddress %></div>
+                <div class="row2"><span class="k">Wallet</span><%= cryptoWalletAddress %></div>
+            <% } %>
+        </div>
+        <div class="sign">
+            <div class="line"></div>
+            <div class="name"><%= invoiceByName %></div>
+            <div class="sub">Authorized signatory · Issued electronically</div>
+        </div>
+    </footer>
+</body>
+</html>
