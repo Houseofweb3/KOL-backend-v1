@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Invoice <%= invoiceNumber %></title>
     <style>
-        @page { size: A4; margin: 28px 32px; }
+        @page { size: A4; margin: 0; }
         * { box-sizing: border-box; }
         body {
             margin: 0;
@@ -15,57 +15,77 @@
             color: #111;
             line-height: 1.5;
         }
-        .top {
+        .page { padding: 40px 44px 40px 44px; }
+
+        /* Header */
+        .invoice-block {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: flex-end;
             padding-bottom: 18px;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 18px;
+            border-bottom: 1px solid #e5e5e5;
+            margin-bottom: 22px;
         }
-        .title-block h1 {
-            margin: 0 0 6px 0;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-        .inv-num { font-size: 12px; color: #444; }
-        .inv-num strong { color: #111; }
-        .brand {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
+        .invoice-block .brand { line-height: 0; }
+        .invoice-block .brand svg { display: block; width: 180px; height: auto; }
+        .invoice-block .meta {
             text-align: right;
         }
-        .meta-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 24px;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #ddd;
+        .invoice-block .inv-num {
+            font-size: 13px;
+            color: #111;
+            font-weight: 600;
         }
-        .meta-label { font-size: 10px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-        .meta-value { font-size: 12px; color: #111; max-width: 360px; }
-        .dates { display: flex; gap: 32px; text-align: right; }
-        .date-col { min-width: 100px; }
+        .invoice-block .meta-line {
+            font-size: 11px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .invoice-block .meta-line .k { color: #888; margin-right: 4px; }
+        .invoice-block .meta-line .status-pill { margin-left: 0; }
+
+        /* Parties */
         .columns {
             display: flex;
             gap: 40px;
-            margin-bottom: 22px;
+            margin-bottom: 24px;
         }
         .col { flex: 1; min-width: 0; }
         .col h2 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: #333;
+            color: #666;
         }
         .addr-line { margin-bottom: 3px; color: #222; font-size: 11px; }
-        .addr-line.muted { color: #555; }
+        .addr-line.strong { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .addr-line.muted { color: #666; }
+
+        /* Deliverables */
+        .deliverables {
+            margin-bottom: 20px;
+        }
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .deliverables ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+        .deliverables li {
+            font-size: 11px;
+            color: #222;
+            margin-bottom: 3px;
+        }
+
+        /* Line items */
         table.lines {
             width: 100%;
             border-collapse: collapse;
@@ -74,187 +94,190 @@
         table.lines thead th {
             text-align: left;
             font-size: 10px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
             color: #333;
-            background: #f0f0f0;
+            background: #f4f4f4;
             padding: 10px 12px;
             border-bottom: 1px solid #ddd;
         }
-        table.lines thead th:nth-child(2),
-        table.lines thead th:nth-child(3),
-        table.lines thead th:nth-child(4),
-        table.lines thead th:nth-child(5) { text-align: right; }
+        table.lines thead th.amt-col { text-align: right; width: 140px; }
         table.lines tbody td {
             padding: 10px 12px;
-            border-bottom: 1px solid #e8e8e8;
+            border-bottom: 1px solid #eee;
             vertical-align: top;
+            font-size: 11px;
         }
-        table.lines tbody td:nth-child(2),
-        table.lines tbody td:nth-child(3),
-        table.lines tbody td:nth-child(4),
-        table.lines tbody td:nth-child(5) { text-align: right; white-space: nowrap; }
+        table.lines tbody td.amt-col { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
         .total-row {
             display: flex;
             justify-content: flex-end;
             align-items: baseline;
             gap: 24px;
-            margin-top: 8px;
-            padding-right: 12px;
+            margin-top: 6px;
+            padding: 10px 12px 0 12px;
+            border-top: 2px solid #111;
         }
-        .total-row .lbl { font-size: 11px; font-weight: 600; color: #333; }
-        .total-row .amt { font-size: 15px; font-weight: 700; }
-        .note-box {
-            border: 1px solid #e0e0e0;
-            background: #fafafa;
-            padding: 10px 12px;
-            margin: 18px 0;
+        .total-row .lbl { font-size: 11px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.06em; }
+        .total-row .amt { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+        /* Deliverables block placed below totals */
+        .deliverables { margin-top: 22px; }
+
+        /* Status block */
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 14px 0 0 0;
+            font-size: 11px;
+        }
+        .invoice-block .meta-line .status-pill { display: inline-block; }
+        .status-pill {
+            display: inline-block;
             font-size: 10px;
-            color: #444;
-            line-height: 1.45;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 3px 10px;
+            border-radius: 999px;
         }
+        .status-pill.paid { background: #e6f6ec; color: #14723c; }
+        .status-pill.unpaid { background: #fdecec; color: #a3261a; }
+        .status-row .utr { color: #333; }
+        .status-row .utr strong { color: #111; }
+
+        /* Footer / payment + signature */
         .footer {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             gap: 32px;
-            margin-top: 28px;
-            padding-top: 16px;
-            border-top: 1px solid #ddd;
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #e5e5e5;
         }
+        .pay { max-width: 60%; }
         .pay h3 {
-            margin: 0 0 8px 0;
+            margin: 0 0 10px 0;
             font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
+            color: #666;
         }
         .pay .row2 { margin-bottom: 4px; font-size: 11px; }
-        .pay .k { color: #666; display: inline-block; min-width: 112px; }
-        .sign { text-align: right; max-width: 220px; }
-        .sign .line { border-top: 1px solid #111; margin-bottom: 6px; padding-top: 8px; margin-top: 36px; width: 180px; margin-left: auto; }
+        .pay .k { color: #666; display: inline-block; min-width: 120px; }
+        .sign { text-align: right; max-width: 240px; }
+        .sign .line { border-top: 1px solid #111; margin-bottom: 6px; padding-top: 8px; margin-top: 40px; width: 200px; margin-left: auto; }
         .sign .name { font-weight: 600; font-size: 12px; }
         .sign .sub { font-size: 9px; color: #666; margin-top: 4px; }
-        .status-pill {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: #f0f0f0;
-            color: #333;
-        }
     </style>
 </head>
 <body>
-    <header class="top">
-        <div class="title-block">
-            <h1>Invoice</h1>
-            <div class="inv-num"># <strong><%= invoiceNumber %></strong></div>
-        </div>
-        <div class="brand"><%= companyBrand %></div>
-    </header>
-
-    <section class="meta-row">
-        <div>
-            <div class="meta-label">Project</div>
-            <div class="meta-value"><%= projectTitle %></div>
-        </div>
-        <div class="dates">
-            <div class="date-col">
-                <div class="meta-label">Issued date</div>
-                <div class="meta-value"><%= issuedDateLong %></div>
+    <div class="page">
+        <section class="invoice-block">
+            <div class="brand" aria-label="<%= companyBrand %>">
+                <svg xmlns="http://www.w3.org/2000/svg" width="207" height="76" viewBox="0 0 207 76" fill="none">
+                    <path d="M146.812 18.7071H140.288L140.227 12H146.812V18.7071ZM146.873 52.8522H140.288V22.3655H146.873V52.8522Z" fill="#313131" />
+                    <path d="M136.03 52.8522H129.445V12H136.03V52.8522Z" fill="#313131" />
+                    <path d="M102.899 63.4034H96.375V22.5511H102.35V27.551H102.655C104.058 24.0145 107.533 21.9414 112.777 21.9414C121.313 21.9414 126.008 28.0997 126.008 37.7335C126.008 47.3064 121.435 53.4647 113.204 53.4647C107.777 53.4647 104.424 50.9648 103.082 48.16H102.899V63.4034ZM102.899 40.4164C102.899 45.4772 105.826 47.8551 111.192 47.8551C116.984 47.8551 119.423 45.1723 119.423 37.7335C119.423 30.2338 117.045 27.551 111.192 27.551C105.826 27.551 102.899 29.9289 102.899 34.9897V40.4164Z" fill="#313131" />
+                    <path d="M50.0734 52.855H43.4883V22.5511H49.5247V28.2217H49.7685C51.1709 24.9901 54.3416 21.9414 60.134 21.9414C65.4387 21.9414 68.7313 24.3803 70.1947 28.2217H70.3776C71.78 25.0511 74.8896 21.9414 80.865 21.9414C88.6696 21.9414 92.1451 26.9412 92.1451 33.8312V52.855H85.56V35.2946C85.56 29.868 83.9137 27.6119 78.4261 27.6119C73.4263 27.6119 71.1093 29.685 71.1093 35.2336V52.855H64.5241V35.2946C64.5241 29.868 62.8778 27.6119 57.3902 27.6119C52.3904 27.6119 50.0734 29.685 50.0734 35.1727V52.855Z" fill="#313131" />
+                    <path d="M21.6338 53.4647C16.2072 53.4647 12 50.6599 12 45.3552C12 40.3554 15.6584 37.7335 22.1216 36.8189L32.731 35.2336V33.5873C32.731 29.0753 30.6579 27.7339 25.902 27.7339C21.085 27.7339 19.1949 29.2582 19.1949 33.2825V34.1971H12.8536V33.5873C12.8536 26.8193 18.1583 21.9414 26.2678 21.9414C34.7431 21.9414 39.0113 27.0632 39.0113 34.441V52.855H32.9139V48.099H32.609C30.8408 50.9648 27.3653 53.4647 21.6338 53.4647ZM18.4022 44.8674C18.4022 47.2454 19.9266 48.221 23.7679 48.221C28.036 48.221 32.731 46.5137 32.731 40.4164V39.8676L23.0972 41.331C19.6217 41.8188 18.4022 42.6114 18.4022 44.8674Z" fill="#313131" />
+                    <path d="M157.686 23.4325L194.524 12L169.118 34.8651L157.686 23.4325Z" fill="#A762FE" />
+                    <path d="M186.9 42.4865L153.873 52.6487L176.738 32.3242L186.9 42.4865Z" fill="#A762FE" />
+                </svg>
             </div>
-            <div class="date-col">
-                <div class="meta-label">Due date</div>
-                <div class="meta-value"><%= dueDateLong %></div>
+            <div class="meta">
+                <div class="inv-num">#<%= invoiceNumber %></div>
+                <div class="meta-line"><span class="k">Date:</span><%= issuedDateLong %></div>
+                <div class="meta-line">
+                    <span class="status-pill <%= paymentIsPaid ? 'paid' : 'unpaid' %>"><%= statusLabel %></span>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="columns">
-        <div class="col">
-            <h2>From</h2>
-            <div class="addr-line"><strong><%= invoiceByName %></strong></div>
-            <% if (showOnBehalf) { %>
-                <div class="addr-line muted">On behalf of: <strong><%= fromName %></strong> (<%= fromDesignation %>)</div>
-            <% } %>
-            <div class="addr-line muted">Email: <%= invoiceByEmail %></div>
-            <div class="addr-line muted">Phone: <%= invoiceByPhone %></div>
-            <% if (invoiceByPlatformLink !== '—') { %>
-                <div class="addr-line muted">Link: <%= invoiceByPlatformLink %></div>
-            <% } %>
-        </div>
-        <div class="col">
-            <h2>To</h2>
-            <div class="addr-line"><strong><%= billToName %></strong></div>
-            <div class="addr-line muted" style="white-space: pre-line;"><%= billToAddress %></div>
-            <div class="addr-line muted">Email: <%= billToEmail %></div>
-            <div class="addr-line muted">Phone: <%= billToPhone %></div>
-            <% if (billToWebsite !== '—') { %>
-                <div class="addr-line muted">Website: <%= billToWebsite %></div>
-            <% } %>
-        </div>
-    </section>
+        <section class="columns">
+            <div class="col">
+                <h2>From</h2>
+                <div class="addr-line strong"><%= invoiceByName %></div>
+                <% if (showOnBehalf) { %>
+                    <div class="addr-line muted">On behalf of <strong><%= fromName %></strong> (<%= fromDesignation %>)</div>
+                <% } %>
+                <% if (invoiceByEmail !== '—') { %>
+                    <div class="addr-line muted"><%= invoiceByEmail %></div>
+                <% } %>
+                <% if (invoiceByPhone !== '—') { %>
+                    <div class="addr-line muted"><%= invoiceByPhone %></div>
+                <% } %>
+                <% if (invoiceByPlatformLink !== '—') { %>
+                    <div class="addr-line muted"><%= invoiceByPlatformLink %></div>
+                <% } %>
+            </div>
+        </section>
 
-    <table class="lines">
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th style="width: 48px;">Units</th>
-                <th style="width: 88px;">Price</th>
-                <th style="width: 64px;">GST</th>
-                <th style="width: 88px;">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% projectRows.forEach(function (row) { %>
+        <table class="lines">
+            <thead>
                 <tr>
-                    <td><%= row.description %></td>
-                    <td><%= row.units %></td>
-                    <td>$<%= row.priceDisplay %></td>
-                    <td><%= row.gstDisplay %></td>
-                    <td>$<%= row.amountDisplay %></td>
+                    <th>Client</th>
+                    <th class="amt-col">Amount</th>
                 </tr>
-            <% }); %>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <% projectRows.forEach(function (row) { %>
+                    <tr>
+                        <td><%= row.clientName %></td>
+                        <td class="amt-col">$<%= row.amountDisplay %></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
 
-    <div class="total-row">
-        <span class="lbl">Total amount</span>
-        <span class="amt">$<%= amountPayableDisplay %></span>
-    </div>
+        <div class="total-row">
+            <span class="lbl">Total payable (USD)</span>
+            <span class="amt">$<%= amountPayableDisplay %></span>
+        </div>
 
-    <div class="note-box">
-        <strong>Payment status:</strong> <span class="status-pill"><%= statusLabel %></span>
-        <% if (showUtrRow) { %>
-            &nbsp;·&nbsp; <strong>Payment reference (UTR):</strong> <%= utrDisplay %>
+        <% if (deliverables && deliverables.length > 0) { %>
+            <section class="deliverables">
+                <div class="section-label">Deliverables</div>
+                <ul>
+                    <% deliverables.forEach(function (d) { %>
+                        <li><%= d %></li>
+                    <% }); %>
+                </ul>
+            </section>
         <% } %>
-        <br />
-        Amounts in USD (major units). GST column shows <strong>0.00</strong> where not applicable.
-    </div>
 
-    <footer class="footer">
-        <div class="pay">
-            <h3>Payment method</h3>
-            <div class="row2"><span class="k">Type</span><%= paymentMethodLabel %></div>
-            <% if (paymentIsBank) { %>
-                <div class="row2"><span class="k">Account name</span><%= bankAccountHolderName %></div>
-                <div class="row2"><span class="k">Bank</span><%= bankName %></div>
-                <div class="row2"><span class="k">BIC / IFSC</span><%= bankSwiftOrIfsc %></div>
-                <div class="row2"><span class="k">Account number</span><%= bankAccountNumberOrIban %></div>
-                <div class="row2"><span class="k">Country</span><%= bankCountry %></div>
-            <% } else { %>
-                <div class="row2"><span class="k">Network</span><%= cryptoChainAddress %></div>
-                <div class="row2"><span class="k">Wallet</span><%= cryptoWalletAddress %></div>
-            <% } %>
-        </div>
-        <div class="sign">
-            <div class="line"></div>
-            <div class="name"><%= invoiceByName %></div>
-            <div class="sub">Authorized signatory · Issued electronically</div>
-        </div>
-    </footer>
+        <% if (showUtrRow) { %>
+            <div class="status-row">
+                <span class="utr">Payment reference (UTR): <strong><%= utrDisplay %></strong></span>
+            </div>
+        <% } %>
+
+        <footer class="footer">
+            <div class="pay">
+                <h3>Payment method</h3>
+                <div class="row2"><span class="k">Type</span><%= paymentMethodLabel %></div>
+                <% if (paymentIsBank) { %>
+                    <div class="row2"><span class="k">Account name</span><%= bankAccountHolderName %></div>
+                    <div class="row2"><span class="k">Bank</span><%= bankName %></div>
+                    <div class="row2"><span class="k">SWIFT / IFSC</span><%= bankSwiftOrIfsc %></div>
+                    <div class="row2"><span class="k">Account / IBAN</span><%= bankAccountNumberOrIban %></div>
+                    <div class="row2"><span class="k">Country</span><%= bankCountry %></div>
+                <% } else { %>
+                    <div class="row2"><span class="k">Network</span><%= cryptoChainAddress %></div>
+                    <div class="row2"><span class="k">Wallet</span><%= cryptoWalletAddress %></div>
+                <% } %>
+            </div>
+            <div class="sign">
+                <div class="line"></div>
+                <div class="name"><%= invoiceByName %></div>
+                <div class="sub">Authorized signatory · Issued electronically</div>
+            </div>
+        </footer>
+    </div>
 </body>
 </html>

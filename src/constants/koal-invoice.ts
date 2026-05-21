@@ -65,9 +65,6 @@ export function parseKoalInvoiceNumber(value: string): { year: number; sequence:
 /** Letterhead brand on generated Koal invoice PDFs. */
 export const KOAL_INVOICE_PDF_COMPANY_BRAND = 'AMPLI5';
 
-/** PDF “due date” is invoice date plus this many days (until a due date exists on the entity). */
-export const KOAL_INVOICE_PDF_DUE_NET_DAYS = 7;
-
 /** One project line on the invoice (client reference + amount). */
 export interface KoalInvoiceProjectLine {
     clientId: string;

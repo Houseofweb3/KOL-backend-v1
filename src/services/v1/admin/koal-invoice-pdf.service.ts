@@ -6,7 +6,7 @@ import { In } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Client } from '../../../entity/client.entity';
 import { KoalInvoice } from '../../../entity/koal-invoice.entity';
-import { KOAL_INVOICE_PAYMENT_BANK, KOAL_INVOICE_STATUS_PAID, KOAL_INVOICE_PDF_COMPANY_BRAND, KOAL_INVOICE_PDF_DUE_NET_DAYS } from '../../../constants/koal-invoice';
+import { KOAL_INVOICE_PAYMENT_BANK, KOAL_INVOICE_STATUS_PAID, KOAL_INVOICE_PDF_COMPANY_BRAND } from '../../../constants/koal-invoice';
 
 const TEMPLATE_NAME = 'koalInvoice.ejs';
 
@@ -17,26 +17,16 @@ function getTemplatePath(): string {
 export interface KoalInvoicePdfProjectRow {
     clientName: string;
     amountDisplay: string;
-    /** Table description column (client-focused line item). */
-    description: string;
-    units: string;
-    priceDisplay: string;
-    gstDisplay: string;
 }
 
 export interface KoalInvoicePdfViewData {
     companyBrand: string;
     invoiceNumber: string;
     invoiceDateDisplay: string;
-    /** Human-readable issued date, e.g. "Feb 15, 2026". */
     issuedDateLong: string;
-    /** Display due date (derived from invoice date + net days until a field exists on the entity). */
-    dueDateLong: string;
-    projectTitle: string;
     fromName: string;
     fromDesignation: string;
     invoiceByName: string;
-    /** True when issuer and "from" influencer differ — show an on-behalf line. */
     showOnBehalf: boolean;
     billToName: string;
     billToAddress: string;
@@ -56,9 +46,9 @@ export interface KoalInvoicePdfViewData {
     cryptoChainAddress: string;
     cryptoWalletAddress: string;
     statusLabel: string;
+    paymentIsPaid: boolean;
     showUtrRow: boolean;
     utrDisplay: string;
-    /** Issuer email / phone for "From" block (invoice-by influencer). */
     invoiceByEmail: string;
     invoiceByPhone: string;
     invoiceByPlatformLink: string;
@@ -77,19 +67,10 @@ function safeFilenamePart(s: string): string {
         .slice(0, 80) || 'invoice';
 }
 
-const DUE_NET_DAYS = KOAL_INVOICE_PDF_DUE_NET_DAYS;
-
 function formatIsoDateUtcLong(isoYmd: string): string {
     const d = new Date(`${isoYmd}T12:00:00.000Z`);
     if (Number.isNaN(d.getTime())) return isoYmd;
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-}
-
-function addDaysIsoUtc(isoYmd: string, days: number): string {
-    const d = new Date(`${isoYmd}T12:00:00.000Z`);
-    if (Number.isNaN(d.getTime())) return isoYmd;
-    d.setUTCDate(d.getUTCDate() + days);
-    return d.toISOString().slice(0, 10);
 }
 
 function dashIfEmpty(s: string): string {
@@ -124,34 +105,15 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
         const name = c?.name?.trim() ? c.name.trim() : `Client (${p.clientId.slice(0, 8)}…)`;
         const amt = typeof p.amount === 'number' ? p.amount : parseFloat(String(p.amount));
         const amountDisplay = Number.isFinite(amt) ? amt.toFixed(2) : String(p.amount);
-        return {
-            clientName: name,
-            amountDisplay,
-            description: `${name} — campaign / collaboration`,
-            units: '1',
-            priceDisplay: amountDisplay,
-            gstDisplay: '0.00',
-        };
+        return { clientName: name, amountDisplay };
     });
 
     const invDate = invoice.invoiceDate;
     const invoiceDateDisplay =
         typeof invDate === 'string' && invDate.length >= 10 ? invDate.slice(0, 10) : String(invDate);
     const issuedDateLong = formatIsoDateUtcLong(invoiceDateDisplay);
-    const dueYmd = addDaysIsoUtc(invoiceDateDisplay, DUE_NET_DAYS);
-    const dueDateLong = formatIsoDateUtcLong(dueYmd);
 
     const deliverables = invoice.deliverables.map((d) => String(d));
-    const delJoin = deliverables.join(', ');
-    const fallbackTitle = projectRows.map((r) => r.clientName).join(', ');
-    const projectTitle =
-        delJoin.length > 0
-            ? delJoin.length > 180
-                ? `${delJoin.slice(0, 180)}…`
-                : delJoin
-            : fallbackTitle.length > 180
-              ? `${fallbackTitle.slice(0, 180)}…`
-              : fallbackTitle;
 
     const uniqueClientCount = clientIds.length;
     const primaryClientId = invoice.projects[0]?.clientId;
@@ -192,8 +154,6 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
         invoiceNumber: invoice.invoiceNumber,
         invoiceDateDisplay,
         issuedDateLong,
-        dueDateLong,
-        projectTitle,
         fromName: fromInf.name?.trim() || 'Influencer',
         fromDesignation,
         invoiceByName: byInf.name?.trim() || 'Influencer',
@@ -216,6 +176,7 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
         cryptoChainAddress: invoice.cryptoChainAddress?.trim() || '',
         cryptoWalletAddress: invoice.cryptoWalletAddress?.trim() || '',
         statusLabel: isPaid ? 'Paid' : 'Unpaid',
+        paymentIsPaid: isPaid,
         showUtrRow: isPaid,
         utrDisplay: utrTrim || '—',
         invoiceByEmail: dashIfEmpty(byInf.email || ''),
