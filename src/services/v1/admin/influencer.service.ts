@@ -288,6 +288,7 @@ export type CreateInfluencerData = {
     avgViews?: string | null;
     industries?: string | null;
     categories?: string | null;
+    creatorType?: string | null;
     primaryAudienceGeography?: string | null;
     secondaryAudienceGeography?: string | null;
     ageScreenshotUrl?: string | null;
@@ -339,6 +340,7 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
         avgViews,
         industries: data.industries ?? null,
         categories: data.categories ?? null,
+        creatorType: data.creatorType ?? null,
         primaryAudienceGeography: data.primaryAudienceGeography ?? null,
         secondaryAudienceGeography: data.secondaryAudienceGeography ?? null,
         ageScreenshotUrl: data.ageScreenshotUrl ?? null,
@@ -432,6 +434,7 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
     }
     if (data.industries !== undefined) influencer.industries = data.industries;
     if (data.categories !== undefined) influencer.categories = data.categories;
+    if (data.creatorType !== undefined) influencer.creatorType = data.creatorType;
     if (data.primaryAudienceGeography !== undefined) influencer.primaryAudienceGeography = data.primaryAudienceGeography;
     if (data.secondaryAudienceGeography !== undefined) influencer.secondaryAudienceGeography = data.secondaryAudienceGeography;
     if (data.ageScreenshotUrl !== undefined) influencer.ageScreenshotUrl = data.ageScreenshotUrl;
@@ -480,6 +483,7 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
                 platformLink: data.platformLink ?? influencer.platformLink,
                 industries: data.industries ?? influencer.industries,
                 categories: data.categories ?? influencer.categories,
+                creatorType: data.creatorType ?? influencer.creatorType,
                 primaryAudienceGeography: data.primaryAudienceGeography ?? influencer.primaryAudienceGeography,
                 secondaryAudienceGeography: data.secondaryAudienceGeography ?? influencer.secondaryAudienceGeography,
                 ageScreenshotUrl: data.ageScreenshotUrl ?? influencer.ageScreenshotUrl,

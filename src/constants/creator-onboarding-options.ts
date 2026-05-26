@@ -2,6 +2,26 @@
  * Creator onboarding Step 4 / admin stats canonical lists.
  * Keep in sync with the creator onboarding frontend.
  */
+
+/** “About me → I am a …” roles (single select). */
+export const CREATOR_TYPE_OPTIONS = [
+    'Influencer',
+    'Content creator',
+    'Videographer',
+    'Photographer',
+    'Blogger',
+    'Vlogger',
+    'Reel specialist',
+    'Event Host',
+    'Event organizer',
+    'Script writer',
+    'Voice artist',
+    'Actor',
+    'Artist',
+] as const;
+
+export type CreatorTypeOption = (typeof CREATOR_TYPE_OPTIONS)[number];
+
 export const PLATFORM_INVENTORY_OPTIONS: Record<string, string[]> = {
     X: [
         'Single tweet',

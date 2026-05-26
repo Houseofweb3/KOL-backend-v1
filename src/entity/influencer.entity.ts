@@ -71,6 +71,10 @@ export class Influencer extends BaseModel {
     @Column({ type: 'varchar', length: 255, nullable: true })
     categories!: string | null;
 
+    /** Creator role from onboarding (“I am a …”). */
+    @Column({ type: 'varchar', length: 500, nullable: true, name: 'creator_type' })
+    creatorType!: string | null;
+
     @Column({ type: 'varchar', length: 255, nullable: true, name: 'primary_audience_geography' })
     primaryAudienceGeography!: string | null;
 

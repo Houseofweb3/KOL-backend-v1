@@ -1,9 +1,16 @@
 import HttpStatus from 'http-status-codes';
 import { createInfluencer, sellingPriceFromBuyingPrice, stripPriceToNumeric, type CreateInfluencerData } from '../admin/influencer.service';
 import { sendClientOnboardNotification } from '../../../notifications/client-onboard';
-import { PLATFORM_INVENTORY_OPTIONS } from '../../../constants/creator-onboarding-options';
+import {
+    CREATOR_TYPE_OPTIONS,
+    PLATFORM_INVENTORY_OPTIONS,
+} from '../../../constants/creator-onboarding-options';
 
-export { INDUSTRY_CATEGORY_OPTIONS, PLATFORM_INVENTORY_OPTIONS } from '../../../constants/creator-onboarding-options';
+export {
+    CREATOR_TYPE_OPTIONS,
+    INDUSTRY_CATEGORY_OPTIONS,
+    PLATFORM_INVENTORY_OPTIONS,
+} from '../../../constants/creator-onboarding-options';
 
 export interface CreatorOnboardingInventoryItem {
     selected: boolean;
@@ -29,6 +36,8 @@ export interface CreatorOnboardingCollaborationProof {
 export interface CreatorOnboardingPayload {
     channelBrandName: string;
     primaryContactEmail: string;
+    /** Creator role (“I am a …”), e.g. `"Influencer"`. */
+    type?: string;
     telegramId?: string;
     whatsappNumber?: string;
     primaryCountry?: string;
@@ -72,6 +81,13 @@ export interface CreatorOnboardingResult {
     influencerIds: string[];
 }
 
+/** Normalize API `type` (single string) for DB `creatorType`. */
+export function normalizeCreatorTypeFromPayload(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
 /**
  * Submit creator onboarding: create one influencer per (platform + selected inventory item) in DB.
  * buyPrice = rate (numeric only); sellPrice = buyPrice + 16% rounded to nearest 100.
@@ -84,6 +100,13 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
     }
     if (!payload.primaryContactEmail?.trim()) {
         const err = new Error('Primary Contact Email is required.');
+        (err as unknown as { status: number }).status = HttpStatus.BAD_REQUEST;
+        throw err;
+    }
+
+    const creatorType = normalizeCreatorTypeFromPayload(payload.type);
+    if (!creatorType) {
+        const err = new Error('type is required (e.g. "Influencer").');
         (err as unknown as { status: number }).status = HttpStatus.BAD_REQUEST;
         throw err;
     }
@@ -143,6 +166,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 avgViews,
                 industries: toStr(payload.industries),
                 categories: toStr(payload.categories),
+                creatorType,
                 primaryAudienceGeography: toStr(payload.primaryAudienceGeography),
                 secondaryAudienceGeography: toStr(payload.secondaryAudienceGeography),
                 // Prefer platform-wise proof, fallback to legacy global fields.
@@ -183,6 +207,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
         'New Creator Onboarding entry',
         `Channel/Brand: ${name}`,
         `Email: ${email}`,
+        `Type: ${creatorType}`,
         `Platforms: ${platforms.join(', ') || '-'}`,
         `Created ${influencerIds.length} influencer record(s)`,
         `Submitted at: ${new Date().toISOString()}`,

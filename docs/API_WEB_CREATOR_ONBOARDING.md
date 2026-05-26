@@ -16,12 +16,13 @@ Creators submit the onboarding form; the backend creates **influencer** records 
 
 ## Request body
 
-Same shape as the frontend creator onboarding form (Next.js). All fields except `channelBrandName` and `primaryContactEmail` are optional.
+Same shape as the frontend creator onboarding form (Next.js). Required: **`channelBrandName`**, **`primaryContactEmail`**, and **`type`**.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | **channelBrandName** | string | Yes | Channel / Brand name. |
 | **primaryContactEmail** | string | Yes | Primary contact email. |
+| **type** | string | Yes | Creator role (“I am a …”), e.g. `"Influencer"`. Stored on each created influencer as **`creatorType`**. See **`CREATOR_TYPE_OPTIONS`** in `src/constants/creator-onboarding-options.ts` for canonical labels. |
 | telegramId | string | No | Telegram ID. |
 | whatsappNumber | string | No | WhatsApp number. |
 | primaryCountry | string | No | Primary country. |
@@ -65,6 +66,7 @@ One influencer row is created per (platform × selected inventory item with a no
 {
   "channelBrandName": "My Channel",
   "primaryContactEmail": "creator@example.com",
+  "type": "Influencer",
   "telegramId": "@handle",
   "whatsappNumber": "+1234567890",
   "primaryCountry": "India",
