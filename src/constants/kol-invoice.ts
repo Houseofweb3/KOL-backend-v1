@@ -37,7 +37,7 @@ export const KOAL_INVOICE_NUMBER_PREFIX = 'INV' as const;
 export const KOAL_INVOICE_SEQUENCE_PAD = 3;
 
 /**
- * Build a canonical Koal invoice number: `INV-<year>-<sequence>` with zero-padded sequence.
+ * Build a canonical kol invoice number: `INV-<year>-<sequence>` with zero-padded sequence.
  * Sequence grows beyond the pad width when needed (e.g. `INV-2026-1000`).
  */
 export function buildKoalInvoiceNumber(year: number, sequence: number): string {
@@ -62,7 +62,7 @@ export function parseKoalInvoiceNumber(value: string): { year: number; sequence:
     return { year, sequence };
 }
 
-/** Letterhead brand on generated Koal invoice PDFs. */
+/** Letterhead brand on generated kol invoice PDFs. */
 export const KOAL_INVOICE_PDF_COMPANY_BRAND = 'AMPLI5';
 
 /** One project line on the invoice (client reference + amount). */

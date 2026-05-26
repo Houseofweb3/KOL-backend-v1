@@ -9,7 +9,7 @@ import { adminMediaRoutes } from './media.routes';
 import { adminDashboardStatsRoutes } from './dashboard-stats.routes';
 import { adminRateRoutes } from './rate.routes';
 import { adminTaskRoutes } from './task.routes';
-import { adminKoalInvoiceRoutes } from './koal-invoice.routes';
+import { adminKoalInvoiceRoutes } from './kol-invoice.routes';
 
 const router = express.Router();
 
@@ -23,6 +23,6 @@ router.use('/media', adminMediaRoutes);
 router.use('/rate', adminRateRoutes);
 router.use('/dashboard', adminDashboardStatsRoutes);
 router.use('/task', adminTaskRoutes);
-router.use('/koal-invoices', adminKoalInvoiceRoutes);
+router.use('/kol-invoices', adminKoalInvoiceRoutes);
 
 export const adminRoutes = router;

@@ -5,7 +5,7 @@ import type {
     KoalInvoicePaymentDetails,
     KoalInvoiceProjectLine,
     KoalInvoiceStatus,
-} from '../constants/koal-invoice';
+} from '../constants/kol-invoice';
 
 @Entity('koal_invoices')
 export class KoalInvoice extends BaseModel {
@@ -18,14 +18,6 @@ export class KoalInvoice extends BaseModel {
 
     @Column({ type: 'date', name: 'invoice_date' })
     invoiceDate!: string;
-
-    /** Party the invoice is from (PDF: name / platform as designation). */
-    @Column({ type: 'uuid', name: 'from_influencer_id' })
-    fromInfluencerId!: string;
-
-    @ManyToOne(() => Influencer, { onDelete: 'RESTRICT' })
-    @JoinColumn({ name: 'from_influencer_id' })
-    fromInfluencer!: Influencer;
 
     /** Who issued the invoice (influencer reference). */
     @Column({ type: 'uuid', name: 'invoice_by_influencer_id' })

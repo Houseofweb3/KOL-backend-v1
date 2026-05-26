@@ -8,7 +8,7 @@ import {
     markKoalInvoicePaidController,
     deleteKoalInvoiceController,
     getKoalInvoicePdfController,
-} from '../../../controllers/v1/admin/koal-invoice.controller';
+} from '../../../controllers/v1/admin/kol-invoice.controller';
 import { verifyAdminAuth } from '../../../middleware/auth';
 
 const router = express.Router();

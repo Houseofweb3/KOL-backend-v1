@@ -203,8 +203,8 @@
             <div class="col">
                 <h2>From</h2>
                 <div class="addr-line strong"><%= invoiceByName %></div>
-                <% if (showOnBehalf) { %>
-                    <div class="addr-line muted">On behalf of <strong><%= fromName %></strong> (<%= fromDesignation %>)</div>
+                <% if (invoiceByPlatform !== '—') { %>
+                    <div class="addr-line muted"><%= invoiceByPlatform %></div>
                 <% } %>
                 <% if (invoiceByEmail !== '—') { %>
                     <div class="addr-line muted"><%= invoiceByEmail %></div>

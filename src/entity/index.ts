@@ -12,4 +12,4 @@ export * from './media-folder.entity';
 export * from './media-file.entity';
 export * from './blog.entity';
 export * from './task.entity';
-export * from './koal-invoice.entity';
+export * from './kol-invoice.entity';

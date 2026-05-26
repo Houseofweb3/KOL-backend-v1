@@ -5,10 +5,10 @@ import HttpStatus from 'http-status-codes';
 import { In } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Client } from '../../../entity/client.entity';
-import { KoalInvoice } from '../../../entity/koal-invoice.entity';
-import { KOAL_INVOICE_PAYMENT_BANK, KOAL_INVOICE_STATUS_PAID, KOAL_INVOICE_PDF_COMPANY_BRAND } from '../../../constants/koal-invoice';
+import { KoalInvoice } from '../../../entity/kol-invoice.entity';
+import { KOAL_INVOICE_PAYMENT_BANK, KOAL_INVOICE_STATUS_PAID, KOAL_INVOICE_PDF_COMPANY_BRAND } from '../../../constants/kol-invoice';
 
-const TEMPLATE_NAME = 'koalInvoice.ejs';
+const TEMPLATE_NAME = 'kolInvoice.ejs';
 
 function getTemplatePath(): string {
     return path.join(process.cwd(), 'src', 'templates', TEMPLATE_NAME);
@@ -24,10 +24,8 @@ export interface KoalInvoicePdfViewData {
     invoiceNumber: string;
     invoiceDateDisplay: string;
     issuedDateLong: string;
-    fromName: string;
-    fromDesignation: string;
     invoiceByName: string;
-    showOnBehalf: boolean;
+    invoiceByPlatform: string;
     billToName: string;
     billToAddress: string;
     billToEmail: string;
@@ -79,15 +77,14 @@ function dashIfEmpty(s: string): string {
 }
 
 async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewData> {
-    const fromInf = invoice.fromInfluencer;
     const byInf = invoice.invoiceByInfluencer;
-    if (!fromInf || !byInf) {
-        const err = new Error('Invoice is missing influencer relations');
+    if (!byInf) {
+        const err = new Error('Invoice is missing invoice-by influencer relation');
         (err as Error & { status: number }).status = HttpStatus.INTERNAL_SERVER_ERROR;
         throw err;
     }
 
-    const fromDesignation = fromInf.platform?.trim() ? String(fromInf.platform).trim() : '—';
+    const invoiceByPlatform = byInf.platform?.trim() ? String(byInf.platform).trim() : '—';
 
     const clientIds = [...new Set(invoice.projects.map((p) => p.clientId))];
     const clientRepo = AppDataSource.getRepository(Client);
@@ -147,17 +144,13 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
     const isPaid = invoice.status === KOAL_INVOICE_STATUS_PAID;
     const utrTrim = invoice.utr?.trim() || '';
 
-    const showOnBehalf = fromInf.id !== byInf.id;
-
     return {
         companyBrand: KOAL_INVOICE_PDF_COMPANY_BRAND,
         invoiceNumber: invoice.invoiceNumber,
         invoiceDateDisplay,
         issuedDateLong,
-        fromName: fromInf.name?.trim() || 'Influencer',
-        fromDesignation,
         invoiceByName: byInf.name?.trim() || 'Influencer',
-        showOnBehalf,
+        invoiceByPlatform,
         billToName,
         billToAddress,
         billToEmail,
@@ -186,13 +179,13 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
 }
 
 /**
- * Generate a PDF buffer and suggested filename for a Koal invoice.
+ * Generate a PDF buffer and suggested filename for a kol invoice.
  */
 export async function generateKoalInvoicePdf(invoiceId: string): Promise<{ buffer: Buffer; filename: string }> {
     const repo = AppDataSource.getRepository(KoalInvoice);
     const invoice = await repo.findOne({
         where: { id: invoiceId, isDeleted: false },
-        relations: ['fromInfluencer', 'invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer'],
     });
     if (!invoice) throw notFound();
 

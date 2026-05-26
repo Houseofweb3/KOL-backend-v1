@@ -2,7 +2,7 @@ import HttpStatus from 'http-status-codes';
 import { AppDataSource } from '../../../config/data-source';
 import { Client } from '../../../entity/client.entity';
 import { Influencer } from '../../../entity/influencer.entity';
-import { KoalInvoice } from '../../../entity/koal-invoice.entity';
+import { KoalInvoice } from '../../../entity/kol-invoice.entity';
 import {
     buildKoalInvoiceNumber,
     isKoalInvoicePaymentDetails,
@@ -16,7 +16,7 @@ import {
     type KoalInvoicePaymentDetails,
     type KoalInvoiceProjectLine,
     type KoalInvoiceStatus,
-} from '../../../constants/koal-invoice';
+} from '../../../constants/kol-invoice';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -147,7 +147,6 @@ export const listKoalInvoices = async (options: ListKoalInvoicesOptions = {}): P
     const repo = AppDataSource.getRepository(KoalInvoice);
     const qb = repo
         .createQueryBuilder('inv')
-        .leftJoinAndSelect('inv.fromInfluencer', 'fromInf')
         .leftJoinAndSelect('inv.invoiceByInfluencer', 'byInf')
         .where('inv.isDeleted = :isDeleted', { isDeleted: false })
         .orderBy('inv.createdAt', 'DESC')
@@ -252,7 +251,7 @@ export const getKoalInvoiceById = async (id: string): Promise<KoalInvoice> => {
     const repo = AppDataSource.getRepository(KoalInvoice);
     const inv = await repo.findOne({
         where: { id, isDeleted: false },
-        relations: ['fromInfluencer', 'invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer'],
     });
     if (!inv) throw notFound('Invoice not found');
     return inv;
@@ -261,7 +260,6 @@ export const getKoalInvoiceById = async (id: string): Promise<KoalInvoice> => {
 export interface KoalInvoiceCreateInput {
     invoiceNumber: string;
     invoiceDate: unknown;
-    fromInfluencerId: string;
     invoiceByInfluencerId: string;
     deliverables: unknown;
     projects: unknown;
@@ -328,13 +326,11 @@ export const createKoalInvoice = async (body: KoalInvoiceCreateInput): Promise<K
     }
     const paymentDetails = body.paymentDetails;
 
-    const fromInfluencerId = typeof body.fromInfluencerId === 'string' ? body.fromInfluencerId.trim() : '';
     const invoiceByInfluencerId = typeof body.invoiceByInfluencerId === 'string' ? body.invoiceByInfluencerId.trim() : '';
-    if (!fromInfluencerId || !invoiceByInfluencerId) {
-        throw badRequest('fromInfluencerId and invoiceByInfluencerId are required');
+    if (!invoiceByInfluencerId) {
+        throw badRequest('invoiceByInfluencerId is required');
     }
 
-    await assertInfluencerExists(fromInfluencerId);
     await assertInfluencerExists(invoiceByInfluencerId);
 
     const projects = normalizeProjects(body.projects);
@@ -351,7 +347,6 @@ export const createKoalInvoice = async (body: KoalInvoiceCreateInput): Promise<K
     const entity = repo.create({
         invoiceNumber,
         invoiceDate: parseInvoiceDate(body.invoiceDate),
-        fromInfluencerId,
         invoiceByInfluencerId,
         deliverables: normalizeDeliverables(body.deliverables),
         projects,
@@ -366,7 +361,7 @@ export const createKoalInvoice = async (body: KoalInvoiceCreateInput): Promise<K
     const saved = await repo.save(entity);
     const full = await repo.findOne({
         where: { id: saved.id },
-        relations: ['fromInfluencer', 'invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer'],
     });
     if (!full) throw notFound('Invoice not found after create');
     return full;
@@ -424,12 +419,6 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
     if (body.invoiceDate !== undefined) {
         existing.invoiceDate = parseInvoiceDate(body.invoiceDate);
     }
-    if (body.fromInfluencerId !== undefined) {
-        const v = typeof body.fromInfluencerId === 'string' ? body.fromInfluencerId.trim() : '';
-        if (!v) throw badRequest('fromInfluencerId cannot be empty');
-        await assertInfluencerExists(v);
-        existing.fromInfluencerId = v;
-    }
     if (body.invoiceByInfluencerId !== undefined) {
         const v = typeof body.invoiceByInfluencerId === 'string' ? body.invoiceByInfluencerId.trim() : '';
         if (!v) throw badRequest('invoiceByInfluencerId cannot be empty');
@@ -466,7 +455,6 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
     const mergedForValidation: KoalInvoiceCreateInput = {
         invoiceNumber: existing.invoiceNumber,
         invoiceDate: existing.invoiceDate,
-        fromInfluencerId: existing.fromInfluencerId,
         invoiceByInfluencerId: existing.invoiceByInfluencerId,
         deliverables: existing.deliverables,
         projects: existing.projects,
@@ -489,7 +477,7 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
     await repo.save(existing);
     const full = await repo.findOne({
         where: { id },
-        relations: ['fromInfluencer', 'invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer'],
     });
     if (!full) throw notFound('Invoice not found after update');
     return full;
@@ -508,7 +496,7 @@ function parsePaymentUtrFromMarkPaidBody(body: unknown): string {
 }
 
 /**
- * Mark a Koal invoice as **paid** using only a payment reference (`payment_utr` in the JSON body).
+ * Mark a kol invoice as **paid** using only a payment reference (`payment_utr` in the JSON body).
  * Idempotent: if the invoice is already `paid` with the same UTR, returns the invoice unchanged.
  */
 export const markKoalInvoicePaidWithUtr = async (id: string, body: unknown): Promise<KoalInvoice> => {
@@ -522,7 +510,7 @@ export const markKoalInvoicePaidWithUtr = async (id: string, body: unknown): Pro
         if (existingUtr === utr) {
             const full = await repo.findOne({
                 where: { id },
-                relations: ['fromInfluencer', 'invoiceByInfluencer'],
+                relations: ['invoiceByInfluencer'],
             });
             if (!full) throw notFound('Invoice not found');
             return full;
@@ -536,7 +524,7 @@ export const markKoalInvoicePaidWithUtr = async (id: string, body: unknown): Pro
 
     const full = await repo.findOne({
         where: { id },
-        relations: ['fromInfluencer', 'invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer'],
     });
     if (!full) throw notFound('Invoice not found after update');
     return full;

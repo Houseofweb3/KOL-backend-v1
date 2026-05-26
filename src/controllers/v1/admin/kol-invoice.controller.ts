@@ -9,9 +9,9 @@ import {
     deleteKoalInvoice,
     getNextKoalInvoiceNumber,
     markKoalInvoicePaidWithUtr,
-} from '../../../services/v1/admin/koal-invoice.service';
-import { isKoalInvoiceStatus } from '../../../constants/koal-invoice';
-import { generateKoalInvoicePdf } from '../../../services/v1/admin/koal-invoice-pdf.service';
+} from '../../../services/v1/admin/kol-invoice.service';
+import { isKoalInvoiceStatus } from '../../../constants/kol-invoice';
+import { generateKoalInvoicePdf } from '../../../services/v1/admin/kol-invoice-pdf.service';
 
 export const listKoalInvoicesController = async (req: Request, res: Response) => {
     try {
@@ -27,7 +27,7 @@ export const listKoalInvoicesController = async (req: Request, res: Response) =>
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin list koal invoices error (${status}): ${err.message}`);
+        logger.error(`Admin list kol invoices error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
@@ -45,7 +45,7 @@ export const getNextKoalInvoiceNumberController = async (req: Request, res: Resp
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin next koal invoice number error (${status}): ${err.message}`);
+        logger.error(`Admin next kol invoice number error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
@@ -57,7 +57,7 @@ export const getKoalInvoiceByIdController = async (req: Request, res: Response) 
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin get koal invoice error (${status}): ${err.message}`);
+        logger.error(`Admin get kol invoice error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
@@ -69,7 +69,7 @@ export const createKoalInvoiceController = async (req: Request, res: Response) =
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin create koal invoice error (${status}): ${err.message}`);
+        logger.error(`Admin create kol invoice error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
@@ -81,12 +81,12 @@ export const updateKoalInvoiceController = async (req: Request, res: Response) =
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin update koal invoice error (${status}): ${err.message}`);
+        logger.error(`Admin update kol invoice error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
 
-/** POST /admin/koal-invoices/:id/mark-paid — body `{ "payment_utr": "..." }` sets status to paid. */
+/** POST /admin/kol-invoices/:id/mark-paid — body `{ "payment_utr": "..." }` sets status to paid. */
 export const markKoalInvoicePaidController = async (req: Request, res: Response) => {
     try {
         const invoice = await markKoalInvoicePaidWithUtr(req.params.id, req.body || {});
@@ -94,7 +94,7 @@ export const markKoalInvoicePaidController = async (req: Request, res: Response)
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin mark koal invoice paid error (${status}): ${err.message}`);
+        logger.error(`Admin mark kol invoice paid error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
@@ -106,12 +106,12 @@ export const deleteKoalInvoiceController = async (req: Request, res: Response) =
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin delete koal invoice error (${status}): ${err.message}`);
+        logger.error(`Admin delete kol invoice error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
 
-/** GET /admin/koal-invoices/:id/pdf */
+/** GET /admin/kol-invoices/:id/pdf */
 export const getKoalInvoicePdfController = async (req: Request, res: Response) => {
     try {
         const { buffer, filename } = await generateKoalInvoicePdf(req.params.id);
@@ -121,7 +121,7 @@ export const getKoalInvoicePdfController = async (req: Request, res: Response) =
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        logger.error(`Admin koal invoice PDF error (${status}): ${err.message}`);
+        logger.error(`Admin kol invoice PDF error (${status}): ${err.message}`);
         return res.status(status).json({ error: err.message });
     }
 };
