@@ -1,4 +1,5 @@
 import HttpStatus from 'http-status-codes';
+import { QueryFailedError } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Client } from '../../../entity/client.entity';
 import { Influencer } from '../../../entity/influencer.entity';
@@ -13,8 +14,10 @@ import {
     KOAL_INVOICE_STATUS_PAID,
     KOAL_INVOICE_STATUS_UNPAID,
     parseKoalInvoiceNumber,
+    resolveKoalInvoiceCurrency,
     type KoalInvoicePaymentDetails,
-    type KoalInvoiceProjectLine,
+    type KoalInvoiceCurrency,
+    type KoalInvoiceLineItem,
     type KoalInvoiceStatus,
 } from '../../../constants/kol-invoice';
 
@@ -32,6 +35,28 @@ function badRequest(message: string): Error {
     const err = new Error(message);
     (err as Error & { status: number }).status = HttpStatus.BAD_REQUEST;
     return err;
+}
+
+function isPgUniqueViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) return false;
+    const driverError = (error as QueryFailedError & { driverError?: { code?: string } }).driverError;
+    return driverError?.code === '23505';
+}
+
+/** Uniqueness applies only to non-deleted invoices (matches partial DB index). */
+async function assertInvoiceNumberAvailable(invoiceNumber: string, excludeId?: string): Promise<void> {
+    const repo = AppDataSource.getRepository(KoalInvoice);
+    const existing = await repo.findOne({ where: { invoiceNumber, isDeleted: false } });
+    if (!existing) return;
+    if (excludeId && existing.id === excludeId) return;
+    throw badRequest('invoiceNumber already exists');
+}
+
+function rethrowIfInvoiceNumberConflict(error: unknown): never {
+    if (isPgUniqueViolation(error)) {
+        throw badRequest('invoiceNumber already exists');
+    }
+    throw error;
 }
 
 async function assertInfluencerExists(id: string): Promise<void> {
@@ -55,37 +80,30 @@ function parseInvoiceDate(value: unknown): string {
     return d.toISOString().slice(0, 10);
 }
 
-function normalizeDeliverables(value: unknown): string[] {
-    if (!Array.isArray(value) || value.length === 0) {
-        throw badRequest('deliverables must be a non-empty array of strings');
+function normalizeClientId(value: unknown): string {
+    if (typeof value !== 'string' || !value.trim()) {
+        throw badRequest('clientId is required (uuid)');
     }
-    const out: string[] = [];
-    for (const item of value) {
-        if (typeof item !== 'string' || !item.trim()) {
-            throw badRequest('Each deliverable must be a non-empty string');
-        }
-        out.push(item.trim());
-    }
-    return out;
+    return value.trim();
 }
 
-function normalizeProjects(value: unknown): KoalInvoiceProjectLine[] {
+function normalizeLineItems(value: unknown): KoalInvoiceLineItem[] {
     if (!Array.isArray(value) || value.length === 0) {
-        throw badRequest('projects must be a non-empty array of { clientId, amount }');
+        throw badRequest('lineItems must be a non-empty array of { deliverable, amount }');
     }
-    const out: KoalInvoiceProjectLine[] = [];
+    const out: KoalInvoiceLineItem[] = [];
     for (const row of value) {
-        if (!row || typeof row !== 'object') throw badRequest('Each project must be an object');
-        const clientId = (row as { clientId?: unknown }).clientId;
+        if (!row || typeof row !== 'object') throw badRequest('Each line item must be an object');
+        const deliverable = (row as { deliverable?: unknown }).deliverable;
         const amount = (row as { amount?: unknown }).amount;
-        if (typeof clientId !== 'string' || !clientId.trim()) {
-            throw badRequest('Each project requires clientId (uuid)');
+        if (typeof deliverable !== 'string' || !deliverable.trim()) {
+            throw badRequest('Each line item requires deliverable (non-empty string)');
         }
         const num = typeof amount === 'number' ? amount : typeof amount === 'string' ? parseFloat(amount) : NaN;
         if (!Number.isFinite(num) || num <= 0) {
-            throw badRequest('Each project amount must be a positive number');
+            throw badRequest('Each line item amount must be a positive number');
         }
-        out.push({ clientId: clientId.trim(), amount: num });
+        out.push({ deliverable: deliverable.trim(), amount: num });
     }
     return out;
 }
@@ -148,6 +166,7 @@ export const listKoalInvoices = async (options: ListKoalInvoicesOptions = {}): P
     const qb = repo
         .createQueryBuilder('inv')
         .leftJoinAndSelect('inv.invoiceByInfluencer', 'byInf')
+        .leftJoinAndSelect('inv.client', 'client')
         .where('inv.isDeleted = :isDeleted', { isDeleted: false })
         .orderBy('inv.createdAt', 'DESC')
         .skip((page - 1) * limit)
@@ -251,7 +270,7 @@ export const getKoalInvoiceById = async (id: string): Promise<KoalInvoice> => {
     const repo = AppDataSource.getRepository(KoalInvoice);
     const inv = await repo.findOne({
         where: { id, isDeleted: false },
-        relations: ['invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer', 'client'],
     });
     if (!inv) throw notFound('Invoice not found');
     return inv;
@@ -260,10 +279,11 @@ export const getKoalInvoiceById = async (id: string): Promise<KoalInvoice> => {
 export interface KoalInvoiceCreateInput {
     invoiceNumber: string;
     invoiceDate: unknown;
+    clientId: unknown;
     invoiceByInfluencerId: string;
-    deliverables: unknown;
-    projects: unknown;
+    lineItems: unknown;
     amountPayable: unknown;
+    currency?: unknown;
     paymentDetails: unknown;
     bankAccountHolderName?: unknown;
     bankName?: unknown;
@@ -333,23 +353,24 @@ export const createKoalInvoice = async (body: KoalInvoiceCreateInput): Promise<K
 
     await assertInfluencerExists(invoiceByInfluencerId);
 
-    const projects = normalizeProjects(body.projects);
-    for (const p of projects) {
-        await assertClientExists(p.clientId);
-    }
+    const clientId = normalizeClientId(body.clientId);
+    await assertClientExists(clientId);
+
+    const currency = resolveKoalInvoiceCurrency(body.currency);
+    const lineItems = normalizeLineItems(body.lineItems);
 
     const repo = AppDataSource.getRepository(KoalInvoice);
-    const dup = await repo.findOne({ where: { invoiceNumber, isDeleted: false } });
-    if (dup) throw badRequest('invoiceNumber already exists');
+    await assertInvoiceNumberAvailable(invoiceNumber);
 
     const paymentCols = paymentFieldsFromBody(body, paymentDetails);
 
     const entity = repo.create({
         invoiceNumber,
         invoiceDate: parseInvoiceDate(body.invoiceDate),
+        clientId,
+        currency,
         invoiceByInfluencerId,
-        deliverables: normalizeDeliverables(body.deliverables),
-        projects,
+        lineItems,
         amountPayable: normalizeAmountPayable(body.amountPayable),
         paymentDetails,
         ...paymentCols,
@@ -358,10 +379,15 @@ export const createKoalInvoice = async (body: KoalInvoiceCreateInput): Promise<K
         isDeleted: false,
     });
 
-    const saved = await repo.save(entity);
+    let saved: KoalInvoice;
+    try {
+        saved = await repo.save(entity);
+    } catch (error: unknown) {
+        rethrowIfInvoiceNumberConflict(error);
+    }
     const full = await repo.findOne({
         where: { id: saved.id },
-        relations: ['invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer', 'client'],
     });
     if (!full) throw notFound('Invoice not found after create');
     return full;
@@ -412,8 +438,7 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
     if (body.invoiceNumber !== undefined) {
         const invoiceNumber = typeof body.invoiceNumber === 'string' ? body.invoiceNumber.trim() : '';
         if (!invoiceNumber) throw badRequest('invoiceNumber cannot be empty');
-        const dup = await repo.findOne({ where: { invoiceNumber, isDeleted: false } });
-        if (dup && dup.id !== id) throw badRequest('invoiceNumber already exists');
+        await assertInvoiceNumberAvailable(invoiceNumber, id);
         existing.invoiceNumber = invoiceNumber;
     }
     if (body.invoiceDate !== undefined) {
@@ -425,15 +450,16 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
         await assertInfluencerExists(v);
         existing.invoiceByInfluencerId = v;
     }
-    if (body.deliverables !== undefined) {
-        existing.deliverables = normalizeDeliverables(body.deliverables);
+    if (body.clientId !== undefined) {
+        const v = normalizeClientId(body.clientId);
+        await assertClientExists(v);
+        existing.clientId = v;
     }
-    if (body.projects !== undefined) {
-        const projects = normalizeProjects(body.projects);
-        for (const p of projects) {
-            await assertClientExists(p.clientId);
-        }
-        existing.projects = projects;
+    if (body.currency !== undefined) {
+        existing.currency = resolveKoalInvoiceCurrency(body.currency);
+    }
+    if (body.lineItems !== undefined) {
+        existing.lineItems = normalizeLineItems(body.lineItems);
     }
     if (body.amountPayable !== undefined) {
         existing.amountPayable = normalizeAmountPayable(body.amountPayable);
@@ -455,9 +481,9 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
     const mergedForValidation: KoalInvoiceCreateInput = {
         invoiceNumber: existing.invoiceNumber,
         invoiceDate: existing.invoiceDate,
+        clientId: existing.clientId,
         invoiceByInfluencerId: existing.invoiceByInfluencerId,
-        deliverables: existing.deliverables,
-        projects: existing.projects,
+        lineItems: existing.lineItems,
         amountPayable: existing.amountPayable,
         paymentDetails: paymentDetailsNext,
         bankAccountHolderName: body.bankAccountHolderName ?? existing.bankAccountHolderName,
@@ -474,10 +500,14 @@ export const updateKoalInvoice = async (id: string, body: KoalInvoiceUpdateInput
 
     applyInvoiceStatusAndUtr(existing, body);
 
-    await repo.save(existing);
+    try {
+        await repo.save(existing);
+    } catch (error: unknown) {
+        rethrowIfInvoiceNumberConflict(error);
+    }
     const full = await repo.findOne({
         where: { id },
-        relations: ['invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer', 'client'],
     });
     if (!full) throw notFound('Invoice not found after update');
     return full;
@@ -510,7 +540,7 @@ export const markKoalInvoicePaidWithUtr = async (id: string, body: unknown): Pro
         if (existingUtr === utr) {
             const full = await repo.findOne({
                 where: { id },
-                relations: ['invoiceByInfluencer'],
+                relations: ['invoiceByInfluencer', 'client'],
             });
             if (!full) throw notFound('Invoice not found');
             return full;
@@ -524,7 +554,7 @@ export const markKoalInvoicePaidWithUtr = async (id: string, body: unknown): Pro
 
     const full = await repo.findOne({
         where: { id },
-        relations: ['invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer', 'client'],
     });
     if (!full) throw notFound('Invoice not found after update');
     return full;

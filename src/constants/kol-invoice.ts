@@ -30,6 +30,48 @@ export function isKoalInvoicePaymentDetails(value: unknown): value is KoalInvoic
     return value === KOAL_INVOICE_PAYMENT_BANK || value === KOAL_INVOICE_PAYMENT_CRYPTO;
 }
 
+/** Proposal / invoice currency codes supported on kol invoices. */
+export const KOAL_INVOICE_CURRENCY_USD = 'USD' as const;
+export const KOAL_INVOICE_CURRENCY_INR = 'INR' as const;
+export const KOAL_INVOICE_CURRENCY_AED = 'AED' as const;
+
+export type KoalInvoiceCurrency = typeof KOAL_INVOICE_CURRENCY_USD | typeof KOAL_INVOICE_CURRENCY_INR | typeof KOAL_INVOICE_CURRENCY_AED;
+
+export const KOAL_INVOICE_CURRENCY_VALUES: KoalInvoiceCurrency[] = [KOAL_INVOICE_CURRENCY_USD, KOAL_INVOICE_CURRENCY_INR, KOAL_INVOICE_CURRENCY_AED];
+
+export function isKoalInvoiceCurrency(value: unknown): value is KoalInvoiceCurrency {
+    return value === KOAL_INVOICE_CURRENCY_USD || value === KOAL_INVOICE_CURRENCY_INR || value === KOAL_INVOICE_CURRENCY_AED;
+}
+
+/**
+ * Resolve invoice currency from API input.
+ * Empty/absent => USD. Invalid values => throws.
+ */
+export function resolveKoalInvoiceCurrency(raw: unknown, defaultCurrency: KoalInvoiceCurrency = KOAL_INVOICE_CURRENCY_USD): KoalInvoiceCurrency {
+    if (raw === undefined || raw === null) return defaultCurrency;
+    const u = String(raw).trim().toUpperCase();
+    if (u === '') return defaultCurrency;
+    if (!isKoalInvoiceCurrency(u)) {
+        throw new Error(`Invalid currency. Allowed: ${KOAL_INVOICE_CURRENCY_VALUES.join(', ')}`);
+    }
+    return u;
+}
+
+export function getKoalInvoiceCurrencySymbol(currency: string): string {
+    const u = String(currency).trim().toUpperCase();
+    if (u === KOAL_INVOICE_CURRENCY_INR) return '₹';
+    if (u === KOAL_INVOICE_CURRENCY_AED) return 'AED ';
+    return '$';
+}
+
+export function getKoalInvoiceCurrencyDisplayName(currency: string): string {
+    const u = String(currency).trim().toUpperCase();
+    if (u === KOAL_INVOICE_CURRENCY_USD) return 'US Dollar';
+    if (u === KOAL_INVOICE_CURRENCY_INR) return 'Indian Rupee';
+    if (u === KOAL_INVOICE_CURRENCY_AED) return 'UAE Dirham';
+    return u;
+}
+
 /** Human-readable prefix for generated invoice numbers (`INV-2026-001`). */
 export const KOAL_INVOICE_NUMBER_PREFIX = 'INV' as const;
 
@@ -65,9 +107,10 @@ export function parseKoalInvoiceNumber(value: string): { year: number; sequence:
 /** Letterhead brand on generated kol invoice PDFs. */
 export const KOAL_INVOICE_PDF_COMPANY_BRAND = 'AMPLI5';
 
-/** One project line on the invoice (client reference + amount). */
-export interface KoalInvoiceProjectLine {
-    clientId: string;
-    /** Amount for this client/project line (major currency units). */
+/** One billable line on the invoice (deliverable description + amount). */
+export interface KoalInvoiceLineItem {
+    /** Deliverable / service description for this line. */
+    deliverable: string;
+    /** Amount for this line (major currency units). */
     amount: number;
 }

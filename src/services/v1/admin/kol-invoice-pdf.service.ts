@@ -2,11 +2,16 @@ import path from 'path';
 import ejs from 'ejs';
 import puppeteer from 'puppeteer';
 import HttpStatus from 'http-status-codes';
-import { In } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Client } from '../../../entity/client.entity';
 import { KoalInvoice } from '../../../entity/kol-invoice.entity';
-import { KOAL_INVOICE_PAYMENT_BANK, KOAL_INVOICE_STATUS_PAID, KOAL_INVOICE_PDF_COMPANY_BRAND } from '../../../constants/kol-invoice';
+import {
+    getKoalInvoiceCurrencyDisplayName,
+    getKoalInvoiceCurrencySymbol,
+    KOAL_INVOICE_PAYMENT_BANK,
+    KOAL_INVOICE_STATUS_PAID,
+    KOAL_INVOICE_PDF_COMPANY_BRAND,
+} from '../../../constants/kol-invoice';
 
 const TEMPLATE_NAME = 'kolInvoice.ejs';
 
@@ -14,8 +19,8 @@ function getTemplatePath(): string {
     return path.join(process.cwd(), 'src', 'templates', TEMPLATE_NAME);
 }
 
-export interface KoalInvoicePdfProjectRow {
-    clientName: string;
+export interface KoalInvoicePdfLineRow {
+    deliverable: string;
     amountDisplay: string;
 }
 
@@ -24,6 +29,9 @@ export interface KoalInvoicePdfViewData {
     invoiceNumber: string;
     invoiceDateDisplay: string;
     issuedDateLong: string;
+    currencyCode: string;
+    currencyDisplayName: string;
+    currencySymbol: string;
     invoiceByName: string;
     invoiceByPlatform: string;
     billToName: string;
@@ -31,8 +39,7 @@ export interface KoalInvoicePdfViewData {
     billToEmail: string;
     billToPhone: string;
     billToWebsite: string;
-    deliverables: string[];
-    projectRows: KoalInvoicePdfProjectRow[];
+    lineRows: KoalInvoicePdfLineRow[];
     amountPayableDisplay: string;
     paymentIsBank: boolean;
     paymentMethodLabel: string;
@@ -76,6 +83,14 @@ function dashIfEmpty(s: string): string {
     return t.length > 0 ? t : '—';
 }
 
+async function loadClientWithBilling(clientId: string): Promise<Client | null> {
+    const clientRepo = AppDataSource.getRepository(Client);
+    return clientRepo.findOne({
+        where: { id: clientId, isDeleted: false },
+        relations: ['billingInfo'],
+    });
+}
+
 async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewData> {
     const byInf = invoice.invoiceByInfluencer;
     if (!byInf) {
@@ -86,23 +101,19 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
 
     const invoiceByPlatform = byInf.platform?.trim() ? String(byInf.platform).trim() : '—';
 
-    const clientIds = [...new Set(invoice.projects.map((p) => p.clientId))];
-    const clientRepo = AppDataSource.getRepository(Client);
-    const clients =
-        clientIds.length > 0
-            ? await clientRepo.find({
-                  where: { id: In(clientIds), isDeleted: false },
-                  relations: ['billingInfo'],
-              })
-            : [];
-    const clientMap = new Map(clients.map((c) => [c.id, c]));
+    const currencyCode = invoice.currency ?? 'USD';
+    const currencySymbol = getKoalInvoiceCurrencySymbol(currencyCode);
+    const currencyDisplayName = getKoalInvoiceCurrencyDisplayName(currencyCode);
 
-    const projectRows: KoalInvoicePdfProjectRow[] = invoice.projects.map((p) => {
-        const c = clientMap.get(p.clientId);
-        const name = c?.name?.trim() ? c.name.trim() : `Client (${p.clientId.slice(0, 8)}…)`;
-        const amt = typeof p.amount === 'number' ? p.amount : parseFloat(String(p.amount));
-        const amountDisplay = Number.isFinite(amt) ? amt.toFixed(2) : String(p.amount);
-        return { clientName: name, amountDisplay };
+    const billToClient =
+        invoice.client ??
+        (invoice.clientId ? await loadClientWithBilling(invoice.clientId) : null);
+
+    const safeLineItems = Array.isArray(invoice.lineItems) ? invoice.lineItems : [];
+    const lineRows: KoalInvoicePdfLineRow[] = safeLineItems.map((item) => {
+        const amt = typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount));
+        const amountDisplay = Number.isFinite(amt) ? amt.toFixed(2) : String(item.amount);
+        return { deliverable: String(item.deliverable), amountDisplay };
     });
 
     const invDate = invoice.invoiceDate;
@@ -110,30 +121,18 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
         typeof invDate === 'string' && invDate.length >= 10 ? invDate.slice(0, 10) : String(invDate);
     const issuedDateLong = formatIsoDateUtcLong(invoiceDateDisplay);
 
-    const deliverables = invoice.deliverables.map((d) => String(d));
-
-    const uniqueClientCount = clientIds.length;
-    const primaryClientId = invoice.projects[0]?.clientId;
-    const primaryClient = primaryClientId ? clientMap.get(primaryClientId) : undefined;
-
     let billToName = '—';
     let billToAddress = '—';
     let billToEmail = '—';
     let billToPhone = '—';
     let billToWebsite = '—';
-    if (uniqueClientCount === 1 && primaryClient) {
-        billToName = dashIfEmpty(primaryClient.name || '');
-        billToEmail = dashIfEmpty(primaryClient.email || '');
-        billToWebsite = dashIfEmpty(primaryClient.website || '');
-        billToPhone = dashIfEmpty(primaryClient.whatsAppNumber || '');
-        const addr = primaryClient.billingInfo?.registeredCompanyAddress?.trim();
+    if (billToClient) {
+        billToName = dashIfEmpty(billToClient.name || '');
+        billToEmail = dashIfEmpty(billToClient.email || '');
+        billToWebsite = dashIfEmpty(billToClient.website || '');
+        billToPhone = dashIfEmpty(billToClient.whatsAppNumber || '');
+        const addr = billToClient.billingInfo?.registeredCompanyAddress?.trim();
         billToAddress = addr && addr.length > 0 ? addr : '—';
-    } else if (uniqueClientCount > 1) {
-        billToName = 'Multiple clients (see line items)';
-        billToEmail = primaryClient ? dashIfEmpty(primaryClient.email || '') : '—';
-        billToAddress = '—';
-        billToPhone = primaryClient ? dashIfEmpty(primaryClient.whatsAppNumber || '') : '—';
-        billToWebsite = primaryClient ? dashIfEmpty(primaryClient.website || '') : '—';
     }
 
     const ap = parseFloat(String(invoice.amountPayable));
@@ -149,6 +148,9 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
         invoiceNumber: invoice.invoiceNumber,
         invoiceDateDisplay,
         issuedDateLong,
+        currencyCode,
+        currencyDisplayName,
+        currencySymbol,
         invoiceByName: byInf.name?.trim() || 'Influencer',
         invoiceByPlatform,
         billToName,
@@ -156,8 +158,7 @@ async function buildViewData(invoice: KoalInvoice): Promise<KoalInvoicePdfViewDa
         billToEmail,
         billToPhone,
         billToWebsite,
-        deliverables,
-        projectRows,
+        lineRows,
         amountPayableDisplay,
         paymentIsBank,
         paymentMethodLabel,
@@ -185,7 +186,7 @@ export async function generateKoalInvoicePdf(invoiceId: string): Promise<{ buffe
     const repo = AppDataSource.getRepository(KoalInvoice);
     const invoice = await repo.findOne({
         where: { id: invoiceId, isDeleted: false },
-        relations: ['invoiceByInfluencer'],
+        relations: ['invoiceByInfluencer', 'client', 'client.billingInfo'],
     });
     if (!invoice) throw notFound();
 

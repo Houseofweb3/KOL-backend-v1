@@ -4,6 +4,7 @@ import express, { Application, Request, Response } from 'express';
 import { ENV } from './config/env';
 import logger from './config/logger';
 import { AppDataSource } from './config/data-source';
+import { ensureKoalInvoiceNumberIndex } from './db/ensure-koal-invoice-indexes';
 import corsMiddleware from './middleware/cors';
 import { requestLogger } from './middleware/requestLogger';
 import { indexRoutes } from './routes/v1/index';
@@ -26,7 +27,8 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 AppDataSource.initialize()
-    .then(() => {
+    .then(async () => {
+        await ensureKoalInvoiceNumberIndex();
         logger.info('Database connected successfully');
         const server: HttpServer = createServer(app);
         server.listen(port, () => logger.info(`Server is running on port ${port}`));

@@ -1,6 +1,6 @@
-# Admin Koal Invoice API – Frontend integration guide
+# Admin kol Invoice API – Frontend integration guide
 
-Use this document to implement the **Koal Invoice** admin UI (list, create, edit, delete, mark paid, PDF download) and wire **dropdowns** for clients and influencers.
+Use this document to implement the **kol Invoice** admin UI (list, create, edit, delete, mark paid, PDF download) and wire **dropdowns** for clients and influencers.
 
 **Base URL:** All paths below are relative to:
 
@@ -21,7 +21,7 @@ The app reads `VERSION` from environment (typically **`1`**), so URLs look like:
 
 **Protected routes in this doc:**
 
-- All **`/admin/koal-invoices`** routes use `verifyAdminAuth`.
+- All **`/admin/kol-invoices`** routes use `verifyAdminAuth`.
 - **`/admin/client`** routes use `verifyAdminAuth`.
 
 **Important:** In the current codebase, **`/admin/influencer`** routes have `verifyAdminAuth` **commented out** in `src/routes/v1/admin/influencer.routes.ts`. That means influencer list/select may work **without** a token in some deployments. For production, align with your team: either enable admin auth on influencer routes or keep using a token everywhere for consistency.
@@ -32,8 +32,8 @@ The app reads `VERSION` from environment (typically **`1`**), so URLs look like:
 
 The invoice form needs:
 
-1. **Client** options → for each **project** row (`clientId`).
-2. **Influencer** options → for **From** (`fromInfluencerId`) and **Invoice by** (`invoiceByInfluencerId`).
+1. **Client** options → single **client** select (`clientId`) for the whole invoice.
+2. **Influencer** options → for **Invoice by** (`invoiceByInfluencerId`).
 
 Use the **select** endpoints (lightweight, paginated, searchable).
 
@@ -71,7 +71,7 @@ Use the **select** endpoints (lightweight, paginated, searchable).
 
 **Frontend tips:**
 
-- Use `clients[].id` as the **value** for `clientId` in `projects[]`.
+- Use `clients[].id` as the **value** for **`clientId`** (one client per invoice).
 - Show `name` (and optionally `email`) in the dropdown label.
 - Paginate or debounce search; increase `limit` (up to 100) if you need more rows per request.
 
@@ -122,30 +122,30 @@ Use the **select** endpoints (lightweight, paginated, searchable).
 
 **Frontend tips:**
 
-- Use `influencers[].id` for **`fromInfluencerId`** and **`invoiceByInfluencerId`**.
+- Use `influencers[].id` for **`invoiceByInfluencerId`**.
 - Label can be `name` + optional `platform`.
-- PDF uses **from** influencer **name** and **platform** as designation text.
+- PDF uses **invoice-by** influencer **name** and **platform** as designation text.
 
 ---
 
-## Koal Invoice API (CRUD, mark paid, PDF)
+## kol Invoice API (CRUD, mark paid, PDF)
 
-Resource name in URLs: **`koal-invoices`** (kebab-case). All routes below require **`Authorization: Bearer <admin_token>`** unless noted otherwise.
+Resource name in URLs: **`kol-invoices`** (kebab-case). All routes below require **`Authorization: Bearer <admin_token>`** unless noted otherwise.
 
 | Method | Path | Summary |
 |--------|------|---------|
-| **GET** | `/api/v1/admin/koal-invoices` | Paginated list (`page`, `limit`, optional `search`, `status`). |
-| **GET** | `/api/v1/admin/koal-invoices/next-invoice-number` | Next suggested **`INV-YYYY-NNN`** (optional query **`year`**). |
-| **GET** | `/api/v1/admin/koal-invoices/:id` | Single invoice (JSON). |
-| **GET** | `/api/v1/admin/koal-invoices/:id/pdf` | PDF download (binary, not JSON). |
-| **POST** | `/api/v1/admin/koal-invoices` | Create invoice. |
-| **POST** | `/api/v1/admin/koal-invoices/:id/mark-paid` | Set **`paid`**; body **`{ "payment_utr": "..." }`**. |
-| **PATCH** | `/api/v1/admin/koal-invoices/:id` | Partial update (including **`status`** + **`utr`**). |
-| **DELETE** | `/api/v1/admin/koal-invoices/:id` | Soft delete. |
+| **GET** | `/api/v1/admin/kol-invoices` | Paginated list (`page`, `limit`, optional `search`, `status`). |
+| **GET** | `/api/v1/admin/kol-invoices/next-invoice-number` | Next suggested **`INV-YYYY-NNN`** (optional query **`year`**). |
+| **GET** | `/api/v1/admin/kol-invoices/:id` | Single invoice (JSON). |
+| **GET** | `/api/v1/admin/kol-invoices/:id/pdf` | PDF download (binary, not JSON). |
+| **POST** | `/api/v1/admin/kol-invoices` | Create invoice. |
+| **POST** | `/api/v1/admin/kol-invoices/:id/mark-paid` | Set **`paid`**; body **`{ "payment_utr": "..." }`**. |
+| **PATCH** | `/api/v1/admin/kol-invoices/:id` | Partial update (including **`status`** + **`utr`**). |
+| **DELETE** | `/api/v1/admin/kol-invoices/:id` | Soft delete. |
 
 ---
 
-**GET** `/api/v1/admin/koal-invoices/next-invoice-number`
+**GET** `/api/v1/admin/kol-invoices/next-invoice-number`
 
 **Auth:** `Authorization: Bearer <admin_token>`
 
@@ -205,7 +205,7 @@ Legacy numbers that do **not** follow `INV-YYYY-…` (e.g. old `INV-042`) do **n
 
 ### List invoices
 
-**GET** `/api/v1/admin/koal-invoices`
+**GET** `/api/v1/admin/kol-invoices`
 
 **Auth:** `Authorization: Bearer <admin_token>`
 
@@ -227,11 +227,12 @@ Legacy numbers that do **not** follow `INV-YYYY-…` (e.g. old `INV-042`) do **n
       "id": "invoice-uuid",
       "invoiceNumber": "INV-2026-001",
       "invoiceDate": "2026-05-12",
-      "fromInfluencerId": "uuid",
+      "currency": "USD",
+      "clientId": "client-uuid",
       "invoiceByInfluencerId": "uuid",
-      "deliverables": ["Deliverable A", "Deliverable B"],
-      "projects": [
-        { "clientId": "client-uuid", "amount": 1500 }
+      "lineItems": [
+        { "deliverable": "Instagram story set", "amount": 1500 },
+        { "deliverable": "Tweet thread", "amount": 800 }
       ],
       "amountPayable": "2300.00",
       "paymentDetails": "bank",
@@ -247,8 +248,8 @@ Legacy numbers that do **not** follow `INV-YYYY-…` (e.g. old `INV-042`) do **n
       "isDeleted": false,
       "createdAt": "2026-05-12T10:00:00.000Z",
       "updatedAt": "2026-05-12T10:00:00.000Z",
-      "fromInfluencer": { "id": "...", "name": "...", "platform": "instagram", "...": "..." },
-      "invoiceByInfluencer": { "id": "...", "name": "...", "...": "..." }
+      "invoiceByInfluencer": { "id": "...", "name": "...", "...": "..." },
+      "client": { "id": "...", "name": "...", "email": "...", "...": "..." }
     }
   ],
   "total": 1,
@@ -260,7 +261,7 @@ Legacy numbers that do **not** follow `INV-YYYY-…` (e.g. old `INV-042`) do **n
 
 Notes:
 
-- List items include joined **`fromInfluencer`** and **`invoiceByInfluencer`** (full entity shapes as TypeORM returns them).
+- List items include joined **`invoiceByInfluencer`** and **`client`** (full entity shapes as TypeORM returns them).
 - `amountPayable` is stored as a **decimal string** (e.g. `"2300.00"`).
 - `paymentDetails` is **`"bank"`** or **`"crypto"`**.
 - **`status`** is **`"unpaid"`** or **`"paid"`** (payment received). New invoices are always created as **`unpaid`** with **`utr`** `null`.
@@ -270,11 +271,11 @@ Notes:
 
 ### Get one invoice
 
-**GET** `/api/v1/admin/koal-invoices/:id`
+**GET** `/api/v1/admin/kol-invoices/:id`
 
 **Auth:** Bearer admin token.
 
-**Success (200):** Single invoice object (same shape as one element in `invoices` above), including `fromInfluencer` and `invoiceByInfluencer`.
+**Success (200):** Single invoice object (same shape as one element in `invoices` above), including `invoiceByInfluencer` and `client`.
 
 **Errors:**
 
@@ -284,7 +285,7 @@ Notes:
 
 ### Create invoice
 
-**POST** `/api/v1/admin/koal-invoices`
+**POST** `/api/v1/admin/kol-invoices`
 
 **Auth:** Bearer admin token.
 
@@ -296,10 +297,10 @@ Notes:
 |---------------------------|----------|-------------|
 | `invoiceNumber`           | string   | Unique among non-deleted invoices. Suggested format: **`INV-<year>-<seq>`** (e.g. `INV-2026-001`) from **next-invoice-number**; user may override if unique. |
 | `invoiceDate`             | string   | ISO date, e.g. `"2026-05-12"`. |
-| `fromInfluencerId`        | string (uuid) | “From” party (dropdown). |
+| `clientId`                | string (uuid) | Bill-to client (single select for the whole invoice). |
+| `currency`                | string   | No | Invoice currency: `USD`, `INR`, or `AED`. Defaults to `USD`. |
 | `invoiceByInfluencerId`   | string (uuid) | Who issues the invoice (dropdown). |
-| `deliverables`            | string[] | Non-empty array of non-empty strings. |
-| `projects`                | object[] | Non-empty; each item: `clientId` (uuid), `amount` (positive number). |
+| `lineItems`               | object[] | Non-empty; each item: `deliverable` (non-empty string), `amount` (positive number). |
 | `amountPayable`           | number or string | Positive; stored to 2 decimal places. |
 | `paymentDetails`        | string   | **`"bank"`** or **`"crypto"`**. |
 
@@ -332,12 +333,12 @@ Bank fields should be omitted or ignored; server stores them as `null`.
 {
   "invoiceNumber": "INV-2026-001",
   "invoiceDate": "2026-05-12",
-  "fromInfluencerId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "currency": "USD",
+  "clientId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
   "invoiceByInfluencerId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-  "deliverables": ["Instagram story set", "Tweet thread"],
-  "projects": [
-    { "clientId": "cccccccc-cccc-cccc-cccc-cccccccccccc", "amount": 1500 },
-    { "clientId": "dddddddd-dddd-dddd-dddd-dddddddddddd", "amount": 800 }
+  "lineItems": [
+    { "deliverable": "Instagram story set", "amount": 1500 },
+    { "deliverable": "Tweet thread", "amount": 800 }
   ],
   "amountPayable": 2300,
   "paymentDetails": "bank",
@@ -355,11 +356,11 @@ Bank fields should be omitted or ignored; server stores them as `null`.
 {
   "invoiceNumber": "INV-2026-002",
   "invoiceDate": "2026-05-12",
-  "fromInfluencerId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  "currency": "USD",
+  "clientId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
   "invoiceByInfluencerId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-  "deliverables": ["YouTube integration"],
-  "projects": [
-    { "clientId": "cccccccc-cccc-cccc-cccc-cccccccccccc", "amount": 5000 }
+  "lineItems": [
+    { "deliverable": "YouTube integration", "amount": 5000 }
   ],
   "amountPayable": "5000.00",
   "paymentDetails": "crypto",
@@ -368,25 +369,26 @@ Bank fields should be omitted or ignored; server stores them as `null`.
 }
 ```
 
-**Success (201):** Created invoice JSON (with relations `fromInfluencer`, `invoiceByInfluencer` loaded).
+**Success (201):** Created invoice JSON (with relations `invoiceByInfluencer`, `client` loaded).
 
 **Typical errors (4xx):**
 
-- **400** `{ "error": "<validation message>" }` — e.g. missing bank fields when `paymentDetails` is `bank`, duplicate `invoiceNumber`, invalid `projects`, unknown client/influencer id.
+- **400** `{ "error": "<validation message>" }` — e.g. missing bank fields when `paymentDetails` is `bank`, duplicate `invoiceNumber`, invalid `lineItems`, unknown client/influencer id.
 - **404** — referenced influencer or client not found / deleted.
 
 ---
 
 ### Update invoice
 
-**PATCH** `/api/v1/admin/koal-invoices/:id`
+**PATCH** `/api/v1/admin/kol-invoices/:id`
 
 **Auth:** Bearer admin token.
 
 **Body:** Partial object; any supplied field overwrites that field. Rules:
 
 - If you change `paymentDetails`, re-send the appropriate bank or crypto fields (merged with existing in memory for validation).
-- `projects` / `deliverables` when sent must still satisfy non-empty rules.
+- `currency` (when sent) must be one of `USD`, `INR`, `AED` (defaults to `USD` when omitted).
+- `lineItems` / `clientId` when sent must still satisfy non-empty rules.
 - `invoiceNumber` must remain unique.
 
 #### Payment received (“Mark as paid”) — option A: full PATCH
@@ -420,7 +422,7 @@ Rules:
 
 ### Mark invoice as paid (UTR only) — option B: dedicated endpoint
 
-**POST** `/api/v1/admin/koal-invoices/:id/mark-paid`
+**POST** `/api/v1/admin/kol-invoices/:id/mark-paid`
 
 **Auth:** Bearer admin token.
 
@@ -444,7 +446,7 @@ Example (preferred):
 }
 ```
 
-**Success (200):** Full invoice JSON (same shape as **GET** one invoice), including `fromInfluencer` and `invoiceByInfluencer`.
+**Success (200):** Full invoice JSON (same shape as **GET** one invoice), including `invoiceByInfluencer` and `client`.
 
 **Behavior**
 
@@ -460,7 +462,7 @@ To set an invoice back to **unpaid**, use **`PATCH`** with **`status`**: `"unpai
 
 ### Delete invoice (soft delete)
 
-**DELETE** `/api/v1/admin/koal-invoices/:id`
+**DELETE** `/api/v1/admin/kol-invoices/:id`
 
 **Auth:** Bearer admin token.
 
@@ -476,7 +478,7 @@ Deleted invoices are not returned in list/get and cannot be PDF-downloaded.
 
 ### Download PDF
 
-**GET** `/api/v1/admin/koal-invoices/:id/pdf`
+**GET** `/api/v1/admin/kol-invoices/:id/pdf`
 
 **Auth:** Bearer admin token.
 
@@ -494,9 +496,9 @@ Deleted invoices are not returned in list/get and cannot be PDF-downloaded.
 **PDF content (high level):**
 
 - Invoice number, date, invoice-by name.
-- From: influencer name + platform (designation).
-- Deliverables list.
-- Projects table: **client name** (from `clients` table by `clientId`) and amount.
+- From: invoice-by influencer name + platform (designation).
+- Bill to: client name and billing details (from `clientId`).
+- Line items table: **deliverable** description and amount.
 - Amount payable.
 - Payment block: bank details **or** crypto details depending on `paymentDetails`.
 - **Payment status** (`Paid` / `Unpaid`) and **UTR / payment reference** when paid (see `status` and `utr` on the invoice).
@@ -509,19 +511,18 @@ Deleted invoices are not returned in list/get and cannot be PDF-downloaded.
 2. **Load dropdowns:**
    - Clients: `GET .../admin/client/select?page=1&limit=100&search=`
    - Influencers: `GET .../admin/influencer/select?page=1&limit=100&search=`
-3. **New invoice only:** `GET .../admin/koal-invoices/next-invoice-number` (optional **`?year=`** from **`invoiceDate`**) → pre-fill **`invoiceNumber`** from **`invoiceNumber`** (user may edit).
+3. **New invoice only:** `GET .../admin/kol-invoices/next-invoice-number` (optional **`?year=`** from **`invoiceDate`**) → pre-fill **`invoiceNumber`** from **`invoiceNumber`** (user may edit).
 4. **Invoice form:**
    - Text: `invoiceNumber`, `invoiceDate`.
-   - Select: `fromInfluencerId`, `invoiceByInfluencerId`.
-   - Dynamic list: `deliverables` (add/remove strings).
-   - Dynamic table: `projects[]` — per row: client select (`clientId`) + amount (number > 0).
+   - Select: `clientId` (single client for the whole invoice), `invoiceByInfluencerId`.
+   - Dynamic table: `lineItems[]` — per row: deliverable text + amount (number > 0).
    - Number: `amountPayable` (> 0).
    - Radio / select: `paymentDetails` → show **bank** fields OR **crypto** fields only (do not send the other branch’s fields as empty strings if you can omit them).
-5. **Submit:** `POST .../admin/koal-invoices` with JSON body.
-6. **List page:** `GET .../admin/koal-invoices?page=1&limit=10&search=`.
-7. **Edit:** `GET .../admin/koal-invoices/:id` → fill form → `PATCH .../admin/koal-invoices/:id`.
-8. **Mark paid (simple):** `POST .../admin/koal-invoices/:id/mark-paid` with JSON `{ "payment_utr": "..." }` when the user records payment (alternative to `PATCH` with `status` + `utr`).
-9. **PDF:** `GET .../admin/koal-invoices/:id/pdf` → save blob as file.
+5. **Submit:** `POST .../admin/kol-invoices` with JSON body.
+6. **List page:** `GET .../admin/kol-invoices?page=1&limit=10&search=`.
+7. **Edit:** `GET .../admin/kol-invoices/:id` → fill form → `PATCH .../admin/kol-invoices/:id`.
+8. **Mark paid (simple):** `POST .../admin/kol-invoices/:id/mark-paid` with JSON `{ "payment_utr": "..." }` when the user records payment (alternative to `PATCH` with `status` + `utr`).
+9. **PDF:** `GET .../admin/kol-invoices/:id/pdf` → save blob as file.
 
 ---
 
@@ -547,11 +548,11 @@ Handle **401**, **403**, **404**, **400**, **409** (next-invoice-number allocati
 
 | Area        | Path |
 |------------|------|
-| Routes     | `src/routes/v1/admin/koal-invoice.routes.ts` |
-| Controller | `src/controllers/v1/admin/koal-invoice.controller.ts` |
-| Service    | `src/services/v1/admin/koal-invoice.service.ts` |
-| PDF        | `src/services/v1/admin/koal-invoice-pdf.service.ts`, `src/templates/koalInvoice.ejs` |
-| Entity     | `src/entity/koal-invoice.entity.ts` |
-| Constants  | `src/constants/koal-invoice.ts` |
+| Routes     | `src/routes/v1/admin/kol-invoice.routes.ts` |
+| Controller | `src/controllers/v1/admin/kol-invoice.controller.ts` |
+| Service    | `src/services/v1/admin/kol-invoice.service.ts` |
+| PDF        | `src/services/v1/admin/kol-invoice-pdf.service.ts`, `src/templates/koalInvoice.ejs` |
+| Entity     | `src/entity/kol-invoice.entity.ts` |
+| Constants  | `src/constants/kol-invoice.ts` |
 | Client select | `src/routes/v1/admin/client.routes.ts` (`GET /select`) |
 | Influencer select | `src/routes/v1/admin/influencer.routes.ts` (`GET /select`) |

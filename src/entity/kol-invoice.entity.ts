@@ -1,23 +1,40 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { BaseModel } from './baseEntities/BaseModel';
+import { Client } from './client.entity';
 import { Influencer } from './influencer.entity';
 import type {
+    KoalInvoiceLineItem,
     KoalInvoicePaymentDetails,
-    KoalInvoiceProjectLine,
     KoalInvoiceStatus,
+    KoalInvoiceCurrency,
 } from '../constants/kol-invoice';
 
 @Entity('koal_invoices')
+@Index('UQ_koal_invoices_invoice_number_active', ['invoiceNumber'], {
+    unique: true,
+    where: '"is_deleted" = false',
+})
 export class KoalInvoice extends BaseModel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Index({ unique: true })
     @Column({ type: 'varchar', length: 100, name: 'invoice_number' })
     invoiceNumber!: string;
 
     @Column({ type: 'date', name: 'invoice_date' })
     invoiceDate!: string;
+
+    /** Currency for amounts on this invoice. Defaults to USD. */
+    @Column({ type: 'varchar', length: 3, nullable: true, default: 'USD', name: 'currency' })
+    currency!: KoalInvoiceCurrency | null;
+
+    /** Bill-to client (single per invoice). */
+    @Column({ type: 'uuid', name: 'client_id', nullable: true })
+    clientId!: string | null;
+
+    @ManyToOne(() => Client, { onDelete: 'RESTRICT', nullable: true })
+    @JoinColumn({ name: 'client_id' })
+    client!: Client | null;
 
     /** Who issued the invoice (influencer reference). */
     @Column({ type: 'uuid', name: 'invoice_by_influencer_id' })
@@ -27,11 +44,8 @@ export class KoalInvoice extends BaseModel {
     @JoinColumn({ name: 'invoice_by_influencer_id' })
     invoiceByInfluencer!: Influencer;
 
-    @Column({ type: 'jsonb' })
-    deliverables!: string[];
-
-    @Column({ type: 'jsonb' })
-    projects!: KoalInvoiceProjectLine[];
+    @Column({ type: 'jsonb', name: 'line_items', nullable: true })
+    lineItems!: KoalInvoiceLineItem[] | null;
 
     @Column({ type: 'decimal', precision: 18, scale: 2, name: 'amount_payable' })
     amountPayable!: string;

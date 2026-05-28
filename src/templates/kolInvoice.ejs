@@ -216,40 +216,45 @@
                     <div class="addr-line muted"><%= invoiceByPlatformLink %></div>
                 <% } %>
             </div>
+            <div class="col">
+                <h2>Bill to</h2>
+                <div class="addr-line strong"><%= billToName %></div>
+                <% if (billToAddress !== '—') { %>
+                    <div class="addr-line muted"><%= billToAddress %></div>
+                <% } %>
+                <% if (billToEmail !== '—') { %>
+                    <div class="addr-line muted"><%= billToEmail %></div>
+                <% } %>
+                <% if (billToPhone !== '—') { %>
+                    <div class="addr-line muted"><%= billToPhone %></div>
+                <% } %>
+                <% if (billToWebsite !== '—') { %>
+                    <div class="addr-line muted"><%= billToWebsite %></div>
+                <% } %>
+            </div>
         </section>
 
         <table class="lines">
             <thead>
                 <tr>
-                    <th>Client</th>
+                    <th>Deliverable</th>
                     <th class="amt-col">Amount</th>
                 </tr>
             </thead>
             <tbody>
-                <% projectRows.forEach(function (row) { %>
+                <% lineRows.forEach(function (row) { %>
                     <tr>
-                        <td><%= row.clientName %></td>
-                        <td class="amt-col">$<%= row.amountDisplay %></td>
+                        <td><%= row.deliverable %></td>
+                        <td class="amt-col"><%= currencySymbol %><%= row.amountDisplay %></td>
                     </tr>
                 <% }); %>
             </tbody>
         </table>
 
         <div class="total-row">
-            <span class="lbl">Total payable (USD)</span>
-            <span class="amt">$<%= amountPayableDisplay %></span>
+            <span class="lbl">Total payable (<%= currencyCode %>)</span>
+            <span class="amt"><%= currencySymbol %><%= amountPayableDisplay %></span>
         </div>
-
-        <% if (deliverables && deliverables.length > 0) { %>
-            <section class="deliverables">
-                <div class="section-label">Deliverables</div>
-                <ul>
-                    <% deliverables.forEach(function (d) { %>
-                        <li><%= d %></li>
-                    <% }); %>
-                </ul>
-            </section>
-        <% } %>
 
         <% if (showUtrRow) { %>
             <div class="status-row">
