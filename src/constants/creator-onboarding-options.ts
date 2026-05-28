@@ -107,7 +107,7 @@ export const INDUSTRY_CATEGORY_OPTIONS: Record<string, string[]> = {
         'Fintech product reviews',
         'Fintech Podcasters',
         'Fintech clippers',
-        'Metals Forex Indice Trading',
+        'Metals/Forex/Indice Trading',
     ],
     'Robotics & Hardware': [
         'R&H Tech & Gadget creators',
