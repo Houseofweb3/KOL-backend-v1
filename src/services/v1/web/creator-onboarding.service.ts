@@ -5,12 +5,19 @@ import {
     CREATOR_TYPE_OPTIONS,
     PLATFORM_INVENTORY_OPTIONS,
 } from '../../../constants/creator-onboarding-options';
+import {
+    resolvePlatformCollaborationProof,
+    validatePlatformCollaborationProof,
+    type PlatformCollaborationProof,
+} from '../../../utils/creator-onboarding-collaboration';
 
 export {
     CREATOR_TYPE_OPTIONS,
     INDUSTRY_CATEGORY_OPTIONS,
     PLATFORM_INVENTORY_OPTIONS,
 } from '../../../constants/creator-onboarding-options';
+
+export type { PlatformCollaborationProof };
 
 export interface CreatorOnboardingInventoryItem {
     selected: boolean;
@@ -24,12 +31,6 @@ export interface CreatorOnboardingAudienceProof {
     ageScreenshot?: string;
     genderScreenshot?: string;
     topCountriesScreenshot?: string;
-}
-
-export interface CreatorOnboardingCollaborationProof {
-    image1?: string;
-    image2?: string;
-    image3?: string;
 }
 
 /** Request body: matches frontend CreatorOnboardingFormData. */
@@ -59,14 +60,17 @@ export interface CreatorOnboardingPayload {
     platformAudienceProof?: Record<string, CreatorOnboardingAudienceProof>;
     paymentTerms?: string;
     turnaroundTimes?: string[];
+    /** Legacy: mirrors first platform slot 1 post link. */
+    firstCollaborationPostLink1?: string;
+    /** Legacy: mirrors first platform slot 2 post link. */
+    firstCollaborationPostLink2?: string;
     firstCollaborationImage1?: string;
     firstCollaborationImage2?: string;
     firstCollaborationImage3?: string;
     /**
-     * Platform-wise collaboration proof images (preferred over global collaboration image fields).
-     * Keys should match entries in `platforms` array (e.g. "X", "Youtube").
+     * Platform-wise collaboration proof (post links + screenshots). Keys match `platforms[]`.
      */
-    platformCollaborationProof?: Record<string, CreatorOnboardingCollaborationProof>;
+    platformCollaborationProof?: Record<string, PlatformCollaborationProof>;
     xLink?: string;
     instagramLink?: string;
     youtubeLink?: string;
@@ -117,7 +121,22 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
     const inventoryItems = payload.inventoryItems ?? {};
     const platforms = payload.platforms ?? [];
     const platformAudienceProof = payload.platformAudienceProof ?? {};
-    const platformCollaborationProof = payload.platformCollaborationProof ?? {};
+
+    const platformCollaborationProof = resolvePlatformCollaborationProof(
+        platforms,
+        payload.platformCollaborationProof,
+        {
+            firstCollaborationPostLink1: payload.firstCollaborationPostLink1,
+            firstCollaborationPostLink2: payload.firstCollaborationPostLink2,
+            firstCollaborationImage1: payload.firstCollaborationImage1,
+            firstCollaborationImage2: payload.firstCollaborationImage2,
+            firstCollaborationImage3: payload.firstCollaborationImage3,
+        },
+    );
+
+    for (const platform of platforms) {
+        validatePlatformCollaborationProof(platform, platformCollaborationProof[platform]);
+    }
 
     const toStr = (arr: string[] | undefined): string | null =>
         arr && arr.length > 0 ? arr.join(', ') : null;
@@ -169,7 +188,6 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 creatorType,
                 primaryAudienceGeography: toStr(payload.primaryAudienceGeography),
                 secondaryAudienceGeography: toStr(payload.secondaryAudienceGeography),
-                // Prefer platform-wise proof, fallback to legacy global fields.
                 ageScreenshotUrl: pickUrl(audience.ageScreenshot, payload.ageScreenshot),
                 genderScreenshotUrl: pickUrl(audience.genderScreenshot, payload.genderScreenshot),
                 topCountriesScreenshotUrl: pickUrl(audience.topCountriesScreenshot, payload.topCountriesScreenshot),
@@ -177,7 +195,8 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 turnaroundTimes: payload.turnaroundTimes && payload.turnaroundTimes.length > 0
                     ? payload.turnaroundTimes.join(', ')
                     : null,
-                // Prefer platform-wise proof, fallback to legacy global fields.
+                firstCollaborationPostLink1: pickUrl(collab.postLink1, payload.firstCollaborationPostLink1),
+                firstCollaborationPostLink2: pickUrl(collab.postLink2, payload.firstCollaborationPostLink2),
                 firstCollaborationImage1: pickUrl(collab.image1, payload.firstCollaborationImage1),
                 firstCollaborationImage2: pickUrl(collab.image2, payload.firstCollaborationImage2),
                 firstCollaborationImage3: pickUrl(collab.image3, payload.firstCollaborationImage3),
@@ -187,7 +206,6 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 tiktokLink: payload.tiktokLink?.trim() || null,
                 newsletterLink: payload.newsletterLink?.trim() || null,
                 finalConfirmation: !!payload.finalConfirmation,
-                // New creators must be manually reviewed/verified by admin.
                 isVerified: false,
             };
 

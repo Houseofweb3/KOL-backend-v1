@@ -296,6 +296,8 @@ export type CreateInfluencerData = {
     topCountriesScreenshotUrl?: string | null;
     paymentTerms?: string | null;
     turnaroundTimes?: string | null;
+    firstCollaborationPostLink1?: string | null;
+    firstCollaborationPostLink2?: string | null;
     firstCollaborationImage1?: string | null;
     firstCollaborationImage2?: string | null;
     firstCollaborationImage3?: string | null;
@@ -348,6 +350,8 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
         topCountriesScreenshotUrl: data.topCountriesScreenshotUrl ?? null,
         paymentTerms: data.paymentTerms ?? null,
         turnaroundTimes: data.turnaroundTimes ?? null,
+        firstCollaborationPostLink1: data.firstCollaborationPostLink1 ?? null,
+        firstCollaborationPostLink2: data.firstCollaborationPostLink2 ?? null,
         firstCollaborationImage1: data.firstCollaborationImage1 ?? null,
         firstCollaborationImage2: data.firstCollaborationImage2 ?? null,
         firstCollaborationImage3: data.firstCollaborationImage3 ?? null,
@@ -442,6 +446,12 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
     if (data.topCountriesScreenshotUrl !== undefined) influencer.topCountriesScreenshotUrl = data.topCountriesScreenshotUrl;
     if (data.paymentTerms !== undefined) influencer.paymentTerms = data.paymentTerms;
     if (data.turnaroundTimes !== undefined) influencer.turnaroundTimes = data.turnaroundTimes;
+    if (data.firstCollaborationPostLink1 !== undefined) {
+        influencer.firstCollaborationPostLink1 = data.firstCollaborationPostLink1;
+    }
+    if (data.firstCollaborationPostLink2 !== undefined) {
+        influencer.firstCollaborationPostLink2 = data.firstCollaborationPostLink2;
+    }
     if (data.firstCollaborationImage1 !== undefined) influencer.firstCollaborationImage1 = data.firstCollaborationImage1;
     if (data.firstCollaborationImage2 !== undefined) influencer.firstCollaborationImage2 = data.firstCollaborationImage2;
     if (data.firstCollaborationImage3 !== undefined) influencer.firstCollaborationImage3 = data.firstCollaborationImage3;
@@ -491,6 +501,10 @@ export const updateInfluencer = async (id: string, data: UpdateInfluencerData) =
                 topCountriesScreenshotUrl: data.topCountriesScreenshotUrl ?? influencer.topCountriesScreenshotUrl,
                 paymentTerms: data.paymentTerms ?? influencer.paymentTerms,
                 turnaroundTimes: data.turnaroundTimes ?? influencer.turnaroundTimes,
+                firstCollaborationPostLink1:
+                    data.firstCollaborationPostLink1 ?? influencer.firstCollaborationPostLink1,
+                firstCollaborationPostLink2:
+                    data.firstCollaborationPostLink2 ?? influencer.firstCollaborationPostLink2,
                 firstCollaborationImage1: data.firstCollaborationImage1 ?? influencer.firstCollaborationImage1,
                 firstCollaborationImage2: data.firstCollaborationImage2 ?? influencer.firstCollaborationImage2,
                 firstCollaborationImage3: data.firstCollaborationImage3 ?? influencer.firstCollaborationImage3,

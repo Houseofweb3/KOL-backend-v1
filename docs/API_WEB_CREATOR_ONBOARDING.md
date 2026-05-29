@@ -39,9 +39,13 @@ Same shape as the frontend creator onboarding form (Next.js). Required: **`chann
 | topCountriesScreenshot | string | No | Top countries screenshot URL. |
 | paymentTerms | string | No | Payment terms. |
 | turnaroundTimes | string[] | No | Turnaround times (joined). |
-| firstCollaborationImage1 | string | No | First collaboration image URL. |
-| firstCollaborationImage2 | string | No | |
-| firstCollaborationImage3 | string | No | |
+| **platformCollaborationProof** | object | Yes* | Per-platform collaboration proof. Keys must match `platforms[]`. Required when platforms are selected. |
+| firstCollaborationPostLink1 | string | No | Legacy mirror of first platform’s `postLink1`. |
+| firstCollaborationPostLink2 | string | No | Legacy mirror of first platform’s `postLink2`. |
+| firstCollaborationImage1 | string | No | Legacy mirror of first platform’s `image1`. |
+| firstCollaborationImage2 | string | No | Legacy mirror of first platform’s `image2`. |
+| firstCollaborationImage3 | string | No | Optional third screenshot (legacy). |
+| platformAudienceProof | object | No | Per-platform audience screenshots (preferred over global fields). |
 | xLink | string | No | X (Twitter) profile link. |
 | instagramLink | string | No | |
 | youtubeLink | string | No | |
@@ -57,6 +61,52 @@ Same shape as the frontend creator onboarding form (Next.js). Required: **`chann
 - `cpm` (string, optional): CPM (stored as numeric).
 
 One influencer row is created per (platform × selected inventory item with a non‑zero rate). Same contact info (name, email, etc.) is repeated; platform, platformLink, inventory, buyPrice, sellPrice, avgViews, cpm vary per row.
+
+### Collaboration proof (Step 9)
+
+For **each** entry in `platforms`, send `platformCollaborationProof[platform]`:
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| `postLink1` | Yes | HTTP(S) URL to collaboration post (screenshot 1) |
+| `postLink2` | Yes | HTTP(S) URL to collaboration post (screenshot 2) |
+| `image1` | Yes | Uploaded screenshot URL |
+| `image2` | Yes | Uploaded screenshot URL |
+| `image1PublicId` | No | Storage public id (optional) |
+| `image2PublicId` | No | Storage public id (optional) |
+
+Legacy root fields (`firstCollaborationPostLink1`, `firstCollaborationPostLink2`, `firstCollaborationImage1`, `firstCollaborationImage2`) are merged into the **first** platform when omitted in `platformCollaborationProof`.
+
+Stored on each created influencer as:
+
+- `firstCollaborationPostLink1` / `firstCollaborationPostLink2`
+- `firstCollaborationImage1` / `firstCollaborationImage2`
+
+**Example:**
+
+```json
+{
+  "platforms": ["X", "Youtube"],
+  "platformCollaborationProof": {
+    "X": {
+      "postLink1": "https://x.com/example/status/1",
+      "image1": "https://cdn.example.com/s1.png",
+      "postLink2": "https://x.com/example/status/2",
+      "image2": "https://cdn.example.com/s2.png"
+    },
+    "Youtube": {
+      "postLink1": "https://youtube.com/watch?v=abc",
+      "image1": "https://cdn.example.com/y1.png",
+      "postLink2": "https://youtube.com/watch?v=def",
+      "image2": "https://cdn.example.com/y2.png"
+    }
+  },
+  "firstCollaborationPostLink1": "https://x.com/example/status/1",
+  "firstCollaborationPostLink2": "https://x.com/example/status/2",
+  "firstCollaborationImage1": "https://cdn.example.com/s1.png",
+  "firstCollaborationImage2": "https://cdn.example.com/s2.png"
+}
+```
 
 ---
 
@@ -118,6 +168,9 @@ One influencer row is created per (platform × selected inventory item with a no
 - **400** – Validation:
   - `"Channel / Brand Name is required."`
   - `"Primary Contact Email is required."`
+  - `"type is required (e.g. \"Influencer\")."`
+  - `"Collaboration post link is required for Youtube (Screenshot 1)"` (and similar per platform/field)
+  - `"Collaboration post link must be a valid URL for X (Screenshot 2)"` (invalid URL)
   - `"No inventory items with a rate were selected. Please select at least one item and enter a rate."`
 - **500** – Server error (e.g. DB or notification failure).
 

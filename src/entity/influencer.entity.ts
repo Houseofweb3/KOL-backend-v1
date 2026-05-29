@@ -96,6 +96,12 @@ export class Influencer extends BaseModel {
     @Column({ type: 'text', nullable: true, name: 'turnaround_times' })
     turnaroundTimes!: string | null;
 
+    @Column({ type: 'varchar', length: 500, nullable: true, name: 'first_collaboration_post_link_1' })
+    firstCollaborationPostLink1!: string | null;
+
+    @Column({ type: 'varchar', length: 500, nullable: true, name: 'first_collaboration_post_link_2' })
+    firstCollaborationPostLink2!: string | null;
+
     @Column({ type: 'varchar', length: 500, nullable: true, name: 'first_collaboration_image_1' })
     firstCollaborationImage1!: string | null;
 

@@ -19,6 +19,7 @@ const INFLUENCER_CREATE_KEYS = [
     'platform', 'platformLink', 'inventory', 'buyPrice', 'sellPrice', 'cpm', 'ccp', 'avgViews',
     'industries', 'categories', 'primaryAudienceGeography', 'secondaryAudienceGeography',
     'ageScreenshotUrl', 'genderScreenshotUrl', 'topCountriesScreenshotUrl', 'paymentTerms', 'turnaroundTimes',
+    'firstCollaborationPostLink1', 'firstCollaborationPostLink2',
     'firstCollaborationImage1', 'firstCollaborationImage2', 'firstCollaborationImage3',
     'xLink', 'instagramLink', 'youtubeLink', 'tiktokLink', 'newsletterLink', 'finalConfirmation', 'isVerified',
 ] as const;

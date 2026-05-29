@@ -31,6 +31,10 @@ export const CSV_INFLUENCER_HEADER_MAP: Record<string, string> = {
     'Top Countries Screenshot URL': 'topCountriesScreenshotUrl',
     'Payment Terms': 'paymentTerms',
     'Turnaround Times': 'turnaroundTimes',
+    'Collab post link 1': 'firstCollaborationPostLink1',
+    'Collab post link 2': 'firstCollaborationPostLink2',
+    'First Collaboration Post Link 1': 'firstCollaborationPostLink1',
+    'First Collaboration Post Link 2': 'firstCollaborationPostLink2',
     'First Collaboration Image 1': 'firstCollaborationImage1',
     'First Collaboration Image 2': 'firstCollaborationImage2',
     'First Collaboration Image 3': 'firstCollaborationImage3',
@@ -127,6 +131,10 @@ export function mapCsvRowToInfluencer(row: Record<string, unknown>): CreateInflu
         topCountriesScreenshotUrl: getRaw(raw, 'Top Countries Screenshot URL'),
         paymentTerms: getRaw(raw, 'Payment Terms'),
         turnaroundTimes: getRaw(raw, 'Turnaround Times'),
+        firstCollaborationPostLink1:
+            getRaw(raw, 'Collab post link 1') ?? getRaw(raw, 'First Collaboration Post Link 1'),
+        firstCollaborationPostLink2:
+            getRaw(raw, 'Collab post link 2') ?? getRaw(raw, 'First Collaboration Post Link 2'),
         firstCollaborationImage1: getRaw(raw, 'First Collaboration Image 1'),
         firstCollaborationImage2: getRaw(raw, 'First Collaboration Image 2'),
         firstCollaborationImage3: getRaw(raw, 'First Collaboration Image 3'),
