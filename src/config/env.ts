@@ -37,6 +37,16 @@ interface Env {
   // OTP (admin/auth)
   OTP_EXPIRY_MINUTES: number;
   OTP_LENGTH: number;
+  // Instagram Login (from "API setup with Instagram login" — NOT the app-level Basic credentials)
+  IG_APP_ID: string;
+  IG_APP_SECRET: string;
+  /** Must exactly match the redirect URI registered on the Instagram app and the route we expose (…/api/v1/web/instagram/callback). */
+  IG_REDIRECT_URI: string;
+  IG_SCOPES: string;
+  /** 32-byte hex (64 chars) key for AES-256-GCM encryption of stored long-lived tokens. */
+  TOKEN_ENC_KEY: string;
+  /** Origin allowed to receive the popup postMessage after the OAuth round-trip. */
+  FRONTEND_ORIGIN: string;
 }
 
 const rawNodeEnv = (process.env.NODE_ENV || 'dev').toLowerCase();
@@ -68,6 +78,12 @@ export const ENV: Env = {
   CLIENT_PROPOSAL_WEB_URL: process.env.CLIENT_PROPOSAL_WEB_URL || '',
   OTP_EXPIRY_MINUTES: parseInt(process.env.OTP_EXPIRY_MINUTES || '10', 10),
   OTP_LENGTH: parseInt(process.env.OTP_LENGTH || '6', 10),
+  IG_APP_ID: process.env.IG_APP_ID || '',
+  IG_APP_SECRET: process.env.IG_APP_SECRET || '',
+  IG_REDIRECT_URI: process.env.IG_REDIRECT_URI || '',
+  IG_SCOPES: process.env.IG_SCOPES || 'instagram_business_basic,instagram_business_manage_insights',
+  TOKEN_ENC_KEY: process.env.TOKEN_ENC_KEY || '',
+  FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || '',
 };
 
 // Validate required variables

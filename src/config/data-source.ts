@@ -15,6 +15,7 @@ import {
     Blog,
     Task,
     KoalInvoice,
+    InstagramAccount,
 } from '../entity';
 
 export const AppDataSource = new DataSource({
@@ -26,7 +27,7 @@ export const AppDataSource = new DataSource({
     database: ENV.DB_DATABASE,
     synchronize: true,
     logging: false,
-    entities: [User, Otp, Influencer, Client, ClientBillingInfo, Cart, CartItem, ProposalLink, BillingInfo, MediaFolder, MediaFile, Blog, Task, KoalInvoice],
+    entities: [User, Otp, Influencer, Client, ClientBillingInfo, Cart, CartItem, ProposalLink, BillingInfo, MediaFolder, MediaFile, Blog, Task, KoalInvoice, InstagramAccount],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],
     ssl: {

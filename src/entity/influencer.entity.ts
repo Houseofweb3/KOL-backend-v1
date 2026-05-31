@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseModel } from './baseEntities/BaseModel';
 import { CartItem } from './cart-item.entity';
+import { InstagramAccount } from './instagram-account.entity';
 
 /**
  * Influencer = the service being sold.
@@ -131,6 +132,15 @@ export class Influencer extends BaseModel {
 
     @OneToMany(() => CartItem, (item) => item.influencer)
     cartItems!: CartItem[];
+
+    /** Connected Instagram account (linked at onboarding-submit time; set before the influencer existed). */
+    @Index()
+    @Column({ type: 'uuid', nullable: true, name: 'instagram_account_id' })
+    instagramAccountId!: string | null;
+
+    @ManyToOne(() => InstagramAccount, (account) => account.influencers, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'instagram_account_id' })
+    instagramAccount!: InstagramAccount | null;
 
     @Column({ default: false, name: 'is_verified' })
     isVerified!: boolean;

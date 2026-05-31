@@ -9,6 +9,7 @@ import { webBlogRoutes } from './blog.routes';
 import { webBlogPublicRoutes } from './blog-public.routes';
 import { webBlogPublicImageRoutes } from './blog-public-image.routes';
 import { webAmpli5ImageRoutes } from './ampli5-image.routes';
+import { instagramAuthRoutes } from './instagram-auth.routes';
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use('/blogs/public', webBlogPublicRoutes);
 router.use('/blogs', webBlogRoutes);
 router.use('/blog-images', webBlogPublicImageRoutes);
 router.use('/ampli5-images', webAmpli5ImageRoutes);
+router.use('/instagram', instagramAuthRoutes);
 
 export const webRoutes = router;

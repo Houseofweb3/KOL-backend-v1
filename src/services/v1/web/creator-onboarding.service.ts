@@ -10,6 +10,7 @@ import {
     validatePlatformCollaborationProof,
     type PlatformCollaborationProof,
 } from '../../../utils/creator-onboarding-collaboration';
+import { findInstagramAccountIdByUserId } from './instagram-auth.service';
 
 export {
     CREATOR_TYPE_OPTIONS,
@@ -77,6 +78,8 @@ export interface CreatorOnboardingPayload {
     tiktokLink?: string;
     newsletterLink?: string;
     finalConfirmation?: boolean;
+    /** Instagram user id from a prior "Connect Instagram" round-trip. Links created influencers to the stored token. */
+    instagramUserId?: string;
 }
 
 export interface CreatorOnboardingResult {
@@ -149,6 +152,10 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
         return null;
     };
 
+    // Resolve the connected Instagram account (if any) once — the OAuth round-trip ran
+    // before this form, so the account row already exists keyed by igUserId.
+    const instagramAccountId = await findInstagramAccountIdByUserId(payload.instagramUserId);
+
     const influencerIds: string[] = [];
 
     for (const platform of platforms) {
@@ -207,6 +214,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 newsletterLink: payload.newsletterLink?.trim() || null,
                 finalConfirmation: !!payload.finalConfirmation,
                 isVerified: false,
+                instagramAccountId,
             };
 
             const saved = await createInfluencer(data);

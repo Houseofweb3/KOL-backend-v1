@@ -308,6 +308,8 @@ export type CreateInfluencerData = {
     newsletterLink?: string | null;
     finalConfirmation?: boolean;
     isVerified?: boolean;
+    /** Connected Instagram account FK (set during creator onboarding when the creator linked Instagram). */
+    instagramAccountId?: string | null;
     /** For create: first item mapped to influencer inventory/buyPrice/sellPrice/avgViews/cpm (no extra entity). */
     contentTypes?: ContentTypeItem[];
 }
@@ -362,6 +364,7 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
         newsletterLink: data.newsletterLink ?? null,
         finalConfirmation: data.finalConfirmation ?? false,
         isVerified: data.isVerified ?? false,
+        instagramAccountId: data.instagramAccountId ?? null,
         isDeleted: false,
     };
 }
