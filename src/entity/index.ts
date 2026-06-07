@@ -14,3 +14,4 @@ export * from './blog.entity';
 export * from './task.entity';
 export * from './kol-invoice.entity';
 export * from './instagram-account.entity';
+export * from './youtube-account.entity';

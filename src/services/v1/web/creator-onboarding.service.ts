@@ -11,6 +11,7 @@ import {
     type PlatformCollaborationProof,
 } from '../../../utils/creator-onboarding-collaboration';
 import { findInstagramAccountIdByUserId } from './instagram-auth.service';
+import { findYoutubeAccountIdByChannelId } from './youtube-auth.service';
 
 export {
     CREATOR_TYPE_OPTIONS,
@@ -80,6 +81,8 @@ export interface CreatorOnboardingPayload {
     finalConfirmation?: boolean;
     /** Instagram user id from a prior "Connect Instagram" round-trip. Links created influencers to the stored token. */
     instagramUserId?: string;
+    /** YouTube channel id from a prior "Login with YouTube" round-trip. Links created influencers to the stored channel. */
+    youtubeChannelId?: string;
 }
 
 export interface CreatorOnboardingResult {
@@ -155,6 +158,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
     // Resolve the connected Instagram account (if any) once — the OAuth round-trip ran
     // before this form, so the account row already exists keyed by igUserId.
     const instagramAccountId = await findInstagramAccountIdByUserId(payload.instagramUserId);
+    const youtubeAccountId = await findYoutubeAccountIdByChannelId(payload.youtubeChannelId);
 
     const influencerIds: string[] = [];
 
@@ -215,6 +219,7 @@ export async function submitCreatorOnboarding(payload: CreatorOnboardingPayload)
                 finalConfirmation: !!payload.finalConfirmation,
                 isVerified: false,
                 instagramAccountId,
+                youtubeAccountId,
             };
 
             const saved = await createInfluencer(data);

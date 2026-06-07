@@ -310,6 +310,8 @@ export type CreateInfluencerData = {
     isVerified?: boolean;
     /** Connected Instagram account FK (set during creator onboarding when the creator linked Instagram). */
     instagramAccountId?: string | null;
+    /** Connected YouTube account FK (set during creator onboarding when the creator linked YouTube). */
+    youtubeAccountId?: string | null;
     /** For create: first item mapped to influencer inventory/buyPrice/sellPrice/avgViews/cpm (no extra entity). */
     contentTypes?: ContentTypeItem[];
 }
@@ -365,6 +367,7 @@ function baseInfluencerFromData(data: CreateInfluencerData, ct?: ContentTypeItem
         finalConfirmation: data.finalConfirmation ?? false,
         isVerified: data.isVerified ?? false,
         instagramAccountId: data.instagramAccountId ?? null,
+        youtubeAccountId: data.youtubeAccountId ?? null,
         isDeleted: false,
     };
 }

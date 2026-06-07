@@ -6,6 +6,7 @@ import logger from './config/logger';
 import { AppDataSource } from './config/data-source';
 import { ensureKoalInvoiceNumberIndex } from './db/ensure-koal-invoice-indexes';
 import { startInstagramTokenRefreshCron } from './jobs/instagram-token-refresh.job';
+import { startYoutubeTokenRefreshCron } from './jobs/youtube-token-refresh.job';
 import corsMiddleware from './middleware/cors';
 import { requestLogger } from './middleware/requestLogger';
 import { indexRoutes } from './routes/v1/index';
@@ -32,6 +33,7 @@ AppDataSource.initialize()
         await ensureKoalInvoiceNumberIndex();
         logger.info('Database connected successfully');
         startInstagramTokenRefreshCron();
+        startYoutubeTokenRefreshCron();
         const server: HttpServer = createServer(app);
         server.listen(port, () => logger.info(`Server is running on port ${port}`));
     })

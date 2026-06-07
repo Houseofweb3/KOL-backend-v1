@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany, ManyToOne, Jo
 import { BaseModel } from './baseEntities/BaseModel';
 import { CartItem } from './cart-item.entity';
 import { InstagramAccount } from './instagram-account.entity';
+import { YoutubeAccount } from './youtube-account.entity';
 
 /**
  * Influencer = the service being sold.
@@ -141,6 +142,15 @@ export class Influencer extends BaseModel {
     @ManyToOne(() => InstagramAccount, (account) => account.influencers, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'instagram_account_id' })
     instagramAccount!: InstagramAccount | null;
+
+    /** Connected YouTube channel (linked at onboarding-submit time; set before the influencer existed). */
+    @Index()
+    @Column({ type: 'uuid', nullable: true, name: 'youtube_account_id' })
+    youtubeAccountId!: string | null;
+
+    @ManyToOne(() => YoutubeAccount, (account) => account.influencers, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'youtube_account_id' })
+    youtubeAccount!: YoutubeAccount | null;
 
     @Column({ default: false, name: 'is_verified' })
     isVerified!: boolean;

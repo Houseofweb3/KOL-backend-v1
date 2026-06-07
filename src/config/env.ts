@@ -43,6 +43,13 @@ interface Env {
   /** Must exactly match the redirect URI registered on the Instagram app and the route we expose (…/api/v1/web/instagram/callback). */
   IG_REDIRECT_URI: string;
   IG_SCOPES: string;
+  // YouTube Login (Google OAuth — credentials from a Google Cloud "Web application" OAuth client)
+  YT_CLIENT_ID: string;
+  YT_CLIENT_SECRET: string;
+  /** Must exactly match a redirect URI on the Google OAuth client and the route we expose (…/api/v1/web/youtube/callback). */
+  YT_REDIRECT_URI: string;
+  /** Space-separated Google scopes (youtube.readonly + yt-analytics.readonly for insights). */
+  YT_SCOPES: string;
   /** 32-byte hex (64 chars) key for AES-256-GCM encryption of stored long-lived tokens. */
   TOKEN_ENC_KEY: string;
   /** Origin allowed to receive the popup postMessage after the OAuth round-trip. */
@@ -82,6 +89,12 @@ export const ENV: Env = {
   IG_APP_SECRET: process.env.IG_APP_SECRET || '',
   IG_REDIRECT_URI: process.env.IG_REDIRECT_URI || '',
   IG_SCOPES: process.env.IG_SCOPES || 'instagram_business_basic,instagram_business_manage_insights',
+  YT_CLIENT_ID: process.env.YT_CLIENT_ID || '',
+  YT_CLIENT_SECRET: process.env.YT_CLIENT_SECRET || '',
+  YT_REDIRECT_URI: process.env.YT_REDIRECT_URI || '',
+  YT_SCOPES:
+    process.env.YT_SCOPES ||
+    'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
   TOKEN_ENC_KEY: process.env.TOKEN_ENC_KEY || '',
   FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || '',
 };
