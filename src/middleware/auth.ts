@@ -74,13 +74,9 @@ export const generateClientToken3Days = (clientId: string, email: string): strin
     );
 };
 
-/** Web user (users table) OTP login: id = userId, type = USER, email. 3 days expiry. */
+/** Web user (users table) OTP login: id = userId, type = USER, email. No expiry. */
 export const generateUserToken3Days = (userId: string, email: string): string => {
-    return jwt.sign(
-        { id: userId, type: UserRole.USER, email } as JwtPayload,
-        jwtSecret,
-        { expiresIn: '3d' }
-    );
+    return jwt.sign({ id: userId, type: UserRole.USER, email } as JwtPayload, jwtSecret);
 };
 
 /** Verify client JWT and confirm client exists in clients table (not deleted). Attaches req.client = { id, email } and req.clientEntity = Client. */
